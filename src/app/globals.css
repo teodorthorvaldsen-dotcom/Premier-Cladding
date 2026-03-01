@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f9fafb] text-gray-900 antialiased;
+  }
+}
+
+@layer utilities {
+  @keyframes hero-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-hero-fade-in {
+    animation: hero-fade-in 0.9s ease-out both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-hero-fade-in {
+      animation: none;
+      opacity: 1;
+    }
+  }
+}
