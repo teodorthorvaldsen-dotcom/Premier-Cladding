@@ -241,8 +241,15 @@ export function Configurator() {
                   aria-label={`Panel preview: ${color.name} (${color.code}), ${finishes[0].label}, ${thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}`}
                 >
                   <div
-                    className="absolute inset-0"
-                    style={{ backgroundColor: color.hex }}
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={
+                      "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
+                        ? {
+                            backgroundImage: `url(${(color as { swatchImage: string }).swatchImage})`,
+                            backgroundColor: color.hex,
+                          }
+                        : { backgroundColor: color.hex }
+                    }
                   />
                   <div
                     className="pointer-events-none absolute inset-0 rounded-2xl"
