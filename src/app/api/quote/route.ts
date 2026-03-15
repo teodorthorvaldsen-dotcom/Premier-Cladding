@@ -20,6 +20,8 @@ interface QuotePayload {
   projectState: string;
   notes: string;
   uploadedFilenames?: string[];
+  paymentMethod?: "wire" | "credit";
+  signature?: string;
 }
 
 function formatUSD(n: number): string {
@@ -48,6 +50,8 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Email</td><td><a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a></td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Phone</td><td>${escapeHtml(payload.phone)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Project location</td><td>${escapeHtml(payload.projectCity)}, ${escapeHtml(payload.projectState)}</td></tr>
+    ${payload.paymentMethod ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Payment</td><td>${payload.paymentMethod === "credit" ? "Credit card (3% fee)" : "Wire transfer"}</td></tr>` : ""}
+    ${payload.signature ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Signature</td><td>${escapeHtml(payload.signature)}</td></tr>` : ""}
     ${payload.notes ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Notes</td><td>${escapeHtml(payload.notes)}</td></tr>` : ""}
     ${payload.uploadedFilenames?.length ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Attachments</td><td>${payload.uploadedFilenames.map((f) => escapeHtml(f)).join(", ")}</td></tr>` : ""}
   </table>

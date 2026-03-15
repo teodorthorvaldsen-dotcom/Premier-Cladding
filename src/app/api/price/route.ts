@@ -10,7 +10,7 @@ import { calculatePricing } from "@/lib/pricing";
 
 const MIN_LENGTH_IN = 12;
 const VALID_WIDTHS_IN = allWidths.map((w) => w.widthIn);
-const VALID_THICKNESS_MM = [4, 6] as const;
+const VALID_THICKNESS_MM = [4] as const;
 const VALID_PANEL_TYPES = ["basic", "custom"] as const;
 
 function getMaxLengthIn(thicknessMm: number): number {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const thicknessMm = Number(rawThicknessMm);
     if (!(VALID_THICKNESS_MM as readonly number[]).includes(thicknessMm)) {
       return NextResponse.json(
-        { error: "Invalid thickness. Use 4 mm or 6 mm." },
+        { error: "Invalid thickness. Use 4 mm." },
         { status: 400 }
       );
     }

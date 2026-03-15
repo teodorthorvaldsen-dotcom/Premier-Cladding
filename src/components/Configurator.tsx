@@ -14,6 +14,7 @@ import {
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
 import Link from "next/link";
 import type { PanelType } from "@/lib/pricing";
+import { useCart } from "@/context/CartContext";
 import { ColorSwatches } from "./ColorSwatches";
 import { MaterialCompositionDiagram } from "./MaterialCompositionDiagram";
 import { PanelTypePicker } from "./PanelTypePicker";
@@ -23,7 +24,7 @@ import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 
 const defaultSize: SizeSelection = {
-  widthId: "62",
+  widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
 };
@@ -67,7 +68,9 @@ export function Configurator() {
   const [pricing, setPricing] = useState<PriceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [panelDrawingFile, setPanelDrawingFile] = useState<File | null>(null);
   const router = useRouter();
+  const { addItem } = useCart();
 
   const fetchPrice = useCallback(
     async (
@@ -109,14 +112,32 @@ export function Configurator() {
 
   const color = colors.find((c) => c.id === colorId)!;
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
+  const widthLabel = `${size.widthIn}"`;
+
+  const handleAddToCart = () => {
+    if (!pricing) return;
+    const finish = finishes[0];
+    const unitPrice = pricing.total / quantity;
+    addItem({
+      widthIn: size.widthIn,
+      heightIn: size.lengthIn,
+      standardId: size.widthId,
+      colorId,
+      finishId: finish.id,
+      thicknessId,
+      quantity,
+      unitPrice,
+      areaFt2: pricing.areaFt2,
+      panelType: pricing.panelType,
+      panelTypeLabel: pricing.panelTypeLabel,
+    });
+    router.push("/cart");
+  };
 
   const handleRequestQuote = () => {
     if (!pricing) return;
     const finish = finishes[0];
     const thickness = thicknesses.find((t) => t.id === thicknessId);
-    const widthLabel = size.widthId
-      ? allWidths.find((w) => w.id === size.widthId)?.label ?? `${size.widthIn}"`
-      : `${size.widthIn}"`;
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
@@ -174,6 +195,23 @@ export function Configurator() {
             <div className="divide-y divide-gray-100 px-6 py-6 md:px-8">
               <div id="panel-type" className="pb-6 scroll-mt-24">
                 <PanelTypePicker value={panelType} onChange={setPanelType} />
+                {panelType === "custom" && (
+                  <div className="mt-4 rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
+                    <p className="text-[13px] text-gray-700">Non-square panels will need drawings.</p>
+                    <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-900 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2">
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        className="sr-only"
+                        onChange={(e) => setPanelDrawingFile(e.target.files?.[0] ?? null)}
+                      />
+                      Upload panel drawing
+                    </label>
+                    {panelDrawingFile && (
+                      <p className="mt-2 text-[12px] text-gray-600">{panelDrawingFile.name}</p>
+                    )}
+                  </div>
+                )}
               </div>
               <div id="thickness" className="py-6 scroll-mt-24">
                 <ThicknessPicker value={thicknessId} onChange={setThicknessId} />
@@ -236,7 +274,7 @@ export function Configurator() {
             )}
             <button
               type="button"
-              onClick={handleRequestQuote}
+              onClick={handleAddToCart}
               disabled={
                 loading ||
                 !!error ||
@@ -245,7 +283,20 @@ export function Configurator() {
               }
               className="w-full rounded-xl bg-gray-900 px-5 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Request Final Quote
+              Add to cart
+            </button>
+            <button
+              type="button"
+              onClick={handleRequestQuote}
+              disabled={
+                loading ||
+                !!error ||
+                !pricing ||
+                (pricing != null && pricing.total < MIN_ORDER_VALUE)
+              }
+              className="mt-3 w-full rounded-xl border border-gray-300 bg-white px-5 py-3.5 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Request final quote (single configuration)
             </button>
           </div>
         </div>

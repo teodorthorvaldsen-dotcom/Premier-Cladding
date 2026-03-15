@@ -1,7 +1,7 @@
 export type PanelType = "basic" | "custom";
 
-const PRICE_PER_SQFT_BASIC = 22;
-const PRICE_PER_SQFT_CUSTOM = 40;
+const PRICE_PER_SQFT_BASIC = 24;
+const PRICE_PER_SQFT_CUSTOM = 40; // estimate provided with final quote
 
 export interface PricingInput {
   areaFt2: number;

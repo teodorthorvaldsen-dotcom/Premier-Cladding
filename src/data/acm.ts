@@ -21,18 +21,16 @@ export const allWidths = standardWidths;
 export const CUSTOM_WIDTH_MIN_IN = 24;
 export const CUSTOM_WIDTH_MAX_IN = 62;
 
-/** Max length (in) by thickness for Alfrex FR. */
+/** Max length (in) by thickness for Alfrex FR. 4 mm: 15 ft 10 in. */
 export const maxLengthByThicknessMm: Record<number, number> = {
-  4: 300,
-  6: 196,
+  4: 190, // 15 ft 10 in
 };
 
 export const MIN_LENGTH_IN = 12;
 
-/** Alfrex FR: 4mm and 6mm only. */
+/** Alfrex FR: 4 mm only. */
 export const thicknesses = [
   { id: "4mm", label: "4 mm", multiplier: 1.12 },
-  { id: "6mm", label: "6 mm", multiplier: 1.25 },
 ] as const;
 
 /** Single standard finish (70% Kynar PVDF); multiplier 1.0 for pricing. */

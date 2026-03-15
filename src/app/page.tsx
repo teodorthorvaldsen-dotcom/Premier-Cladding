@@ -17,35 +17,35 @@ const TRUST_ITEMS = [
   },
   {
     title: "Installation",
-    description: "Experienced installation teams. Quality workmanship for ACM and metal wall panel systems.",
+    description: "We recommend installers that can bid your project.",
   },
 ];
 
 const CAPABILITIES = [
-  { title: "ACM Panels", description: "Fire-rated aluminum composite material. Cut-to-length 12 in–300 in. Configure and quote online." },
-  { title: "Metal wall systems", description: "Professional installation of metal wall panel and cladding systems. Experienced teams, quality workmanship." },
+  { title: "ACM Panels", description: "Fire-rated aluminum composite material. Configure and quote online. Nationwide." },
+  { title: "Custom Shop Drawings", description: "Inquire about purchasing shop drawings prepared by our team." },
   { title: "Nationwide", description: "Shipping across the United States. Delivery options and pricing with your quote." },
-  { title: "Installation", description: "Experienced installation teams for ACM and metal wall panel systems. Quality workmanship and project management." },
+  { title: "Installation", description: "We recommend installers that can bid your project." },
 ];
 
 const PRODUCT_HIGHLIGHTS = [
   {
     title: "ACM Panels",
-    description: "Fire-rated aluminum composite material. Cut-to-length 12 in–300 in. Configure online and receive a quote.",
+    description: "Fire-rated aluminum composite material. Configure online and receive a quote.",
     href: "/products/acm-panels",
     cta: "Configure & get estimate",
   },
   {
-    title: "Metal Wall Systems",
-    description: "Professional installation of metal wall panel and cladding systems. Our teams deliver quality workmanship. Submit drawings and comments for a consultation.",
-    href: "/products/pac-clad-panels",
-    cta: "View brochure & request consultation",
+    title: "Custom Shop Drawings",
+    description: "Inquire about purchasing shop drawings prepared by our team.",
+    href: "/custom-shop-drawings",
+    cta: "Inquire about shop drawings",
   },
   {
     title: "Installation",
-    description: "Experienced teams for ACM and metal wall panel systems. Quality workmanship, project management, and technical support.",
-    href: "/products/pac-clad-panels/consultation",
-    cta: "Request consultation",
+    description: "We recommend installers that can bid your project.",
+    href: "/consultation",
+    cta: "Recommend installers",
   },
 ];
 
@@ -73,10 +73,10 @@ export default function HomePage() {
         <div className="relative z-10 flex h-full items-center justify-center px-6 text-center">
           <div className="max-w-3xl text-white">
             <h1 className="animate-hero-fade-in text-[2.75rem] font-semibold tracking-[-0.03em] md:text-[4.25rem] lg:text-[5rem]">
-              Metal Wall Systems & Cladding
+              ACM Panels & Cladding
             </h1>
             <p className="mt-6 animate-hero-fade-in text-lg text-white/90 md:text-xl [animation-delay:0.15s]">
-              Fire-rated ACM panels and metal wall panel installation. Configure online or submit drawings for consultation. Nationwide.
+              Fire-rated ACM panels. Configure online or submit drawings for consultation. Nationwide.
             </p>
             <div className="mt-8 flex animate-hero-fade-in flex-wrap justify-center gap-4 [animation-delay:0.3s]">
               <Link
@@ -86,10 +86,10 @@ export default function HomePage() {
                 ACM Panels
               </Link>
               <Link
-                href="/products/pac-clad-panels"
+                href="/custom-shop-drawings"
                 className="rounded-lg border border-white/70 bg-white/10 px-6 py-3.5 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
               >
-                Metal Wall Systems
+                Custom Shop Drawings
               </Link>
               <Link
                 href="/projects"
@@ -129,7 +129,7 @@ export default function HomePage() {
           Products & services
         </h2>
         <p className="mt-2 text-[15px] text-gray-500">
-          Fire-rated ACM panels and metal wall panel installation. Configure online or submit drawings for consultation.
+          Fire-rated ACM panels. Configure online or submit drawings for consultation.
         </p>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {PRODUCT_HIGHLIGHTS.map((card) => (
@@ -233,7 +233,7 @@ export default function HomePage() {
             Request a consultation
           </h2>
           <p className="mt-4 text-[15px] text-gray-500">
-            Submit drawings or specifications for ACM panels or metal wall systems. Our team will review and respond.
+            Submit drawings or specifications for ACM panels. Our team will review and respond.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
@@ -243,10 +243,10 @@ export default function HomePage() {
               General consultation
             </Link>
             <Link
-              href="/products/pac-clad-panels/consultation"
+              href="/custom-shop-drawings"
               className="inline-flex items-center justify-center rounded-lg bg-gray-900 px-8 py-3.5 text-sm font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             >
-              Metal wall consultation
+              Custom shop drawings
             </Link>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function HomePage() {
             Get a quote
           </h2>
           <p className="mt-4 text-[15px] text-gray-500">
-            Configure ACM panels for an instant estimate, or submit drawings for a metal wall installation consultation.
+            Configure ACM panels for an instant estimate, or submit drawings for consultation.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
@@ -269,10 +269,10 @@ export default function HomePage() {
               ACM panel estimate
             </Link>
             <Link
-              href="/products/pac-clad-panels/consultation"
+              href="/custom-shop-drawings"
               className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-8 py-3.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             >
-              Metal wall consultation
+              Custom shop drawings
             </Link>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { useCart } from "@/context/CartContext";
 
 const NAV_LINKS = [
   { href: "/products/acm-panels", label: "ACM Panels" },
-  { href: "/products/pac-clad-panels", label: "Metal Wall Systems" },
+  { href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
   { href: "/projects", label: "Our Work" },
   { href: "/about", label: "About" },
   { href: "/consultation", label: "Consultation" },

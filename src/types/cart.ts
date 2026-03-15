@@ -9,6 +9,8 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   areaFt2: number;
+  panelType?: string;
+  panelTypeLabel?: string;
 }
 
 export function cartItemLineTotal(item: CartItem): number {

@@ -29,7 +29,7 @@ function describeItem(item: CartItem): string {
     ? finishes.find((f) => f.id === item.finishId)?.label ?? ""
     : "";
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
-  const parts = [sizeLabel, color, finishLabel, thickness].filter(Boolean);
+  const parts = [sizeLabel, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
   return parts.join(" · ");
 }
 
@@ -155,12 +155,20 @@ export default function CartPage() {
           <p className="text-lg font-semibold text-gray-900">
             Total: {formatUSD(grandTotal)}
           </p>
-          <Link
-            href="/products/acm-panels"
-            className="inline-block text-sm text-gray-600 hover:text-gray-900"
-          >
-            Continue configuring
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/products/acm-panels"
+              className="inline-block text-sm text-gray-600 hover:text-gray-900"
+            >
+              Continue configuring
+            </Link>
+            <Link
+              href="/checkout"
+              className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              Request estimate
+            </Link>
+          </div>
         </div>
       </div>
     </div>

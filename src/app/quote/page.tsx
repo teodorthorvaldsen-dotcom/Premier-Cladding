@@ -23,8 +23,21 @@ export default function QuotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"wire" | "credit">("wire");
+  const [signature, setSignature] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const ORDER_STEPS = [
+    "We receive your order.",
+    "A copy is sent to us at allcladdingsolutions@gmail.com.",
+    "Email confirmation is sent to you.",
+    "We check inventory and prepare your estimate.",
+    "We send you the finalized cost for your signature.",
+    "We order materials and ship to our shop.",
+    "Panels are fabricated.",
+    "Once complete, you have 5 business days to pay the final deposit.",
+    "Upon receipt of payment, we ship to you.",
+  ];
 
   const TERMS_URL = "/documents/All_Cladding_ACM_Panel_Pre_Estimate_Agreement.html";
 
@@ -67,12 +80,8 @@ export default function QuotePage() {
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!draft) return;
-      if (selectedFiles.length === 0) {
-        setFormError("Please upload at least one drawing (PDF, PNG, or JPG).");
-        return;
-      }
-      if (!agreedToTerms) {
-        setFormError("Please read and agree to the pre-estimate agreement to continue.");
+      if (!signature.trim()) {
+        setFormError("Please provide your electronic signature.");
         return;
       }
       setFormError(null);
@@ -88,6 +97,8 @@ export default function QuotePage() {
         projectCity: formData.get("projectCity") ?? "",
         projectState: formData.get("projectState") ?? "",
         notes: formData.get("notes") ?? "",
+        paymentMethod,
+        signature: signature.trim(),
       };
       const data = new FormData();
       data.append("payload", JSON.stringify(payload));
@@ -114,7 +125,7 @@ export default function QuotePage() {
         setSubmitting(false);
       }
     },
-    [draft, selectedFiles, agreedToTerms]
+    [draft, selectedFiles, paymentMethod, signature]
   );
 
   if (draft === undefined || (draft === null && !submitted)) {
@@ -282,6 +293,32 @@ export default function QuotePage() {
         </p>
       </section>
 
+      <section className="mb-10 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-6 md:p-8">
+        <h2 className="text-[13px] font-medium uppercase tracking-wider text-gray-500">Order process</h2>
+        <ol className="mt-4 list-decimal space-y-2 pl-4 text-[14px] text-gray-700">
+          {ORDER_STEPS.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mb-10 rounded-2xl border border-amber-200/80 bg-amber-50/50 p-6 md:p-8">
+        <h2 className="text-[13px] font-medium uppercase tracking-wider text-amber-800">Payment</h2>
+        <p className="mt-2 text-[14px] text-gray-700">
+          Once your quote is final and approved by you, a 50% deposit is required. The remainder is due upon shipping.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-4">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="radio" name="paymentMethod" value="wire" checked={paymentMethod === "wire"} onChange={() => setPaymentMethod("wire")} className="h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-400" />
+            <span className="text-[15px] font-medium text-gray-900">Wire transfer</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="radio" name="paymentMethod" value="credit" checked={paymentMethod === "credit"} onChange={() => setPaymentMethod("credit")} className="h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-400" />
+            <span className="text-[15px] font-medium text-gray-900">Credit card (3% fee)</span>
+          </label>
+        </div>
+      </section>
+
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="border-b border-gray-100 px-6 py-5 md:px-8">
           <h2 className="text-[13px] font-medium uppercase tracking-wider text-gray-500">Contact & project details</h2>
@@ -362,8 +399,8 @@ export default function QuotePage() {
           </label>
           <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-6">
             <div>
-              <span className="block text-sm font-medium text-gray-900">Upload drawings</span>
-              <p className="mt-0.5 text-xs text-gray-500">PDF, PNG, or JPG. Up to 5 files, 10MB each. At least one file required.</p>
+              <span className="block text-sm font-medium text-gray-900">Upload drawings (optional)</span>
+              <p className="mt-0.5 text-xs text-gray-500">PDF, PNG, or JPG. Up to 5 files, 10MB each.</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -406,7 +443,7 @@ export default function QuotePage() {
             <div className="mt-6 border-t border-gray-200/80 pt-6">
               <span className="block text-sm font-medium text-gray-900">Pre-estimate agreement</span>
               <p className="mt-0.5 text-xs text-gray-500">
-                Please read the agreement before submitting your quote request.
+                By signing below, you agree to the terms of the ACM Panel Pre-Estimate Agreement.
               </p>
               <a
                 href={TERMS_URL}
@@ -417,17 +454,16 @@ export default function QuotePage() {
                 Read the pre-estimate agreement
                 <span className="sr-only">(opens in new tab)</span>
               </a>
-              <label className="mt-4 flex cursor-pointer items-start gap-3">
+              <label className="mt-4 block">
+                <span className="block text-sm font-medium text-gray-900">Electronic signature</span>
+                <p className="mt-0.5 text-xs text-gray-500">Type your full legal name to sign.</p>
                 <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
-                  aria-describedby="terms-checkbox-desc"
+                  type="text"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  placeholder="Your full name"
+                  className="mt-2 block h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                 />
-                <span id="terms-checkbox-desc" className="text-[13px] text-gray-700">
-                  I have read and agree to the terms of the ACM Panel Pre-Estimate Agreement.
-                </span>
               </label>
             </div>
           </div>
@@ -441,7 +477,7 @@ export default function QuotePage() {
           </a>
           <button
             type="submit"
-            disabled={submitting || !agreedToTerms}
+            disabled={submitting || !signature.trim()}
             className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? "Submitting…" : "Submit quote request"}

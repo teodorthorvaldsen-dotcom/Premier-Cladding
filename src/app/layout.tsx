@@ -3,8 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "All Cladding Solutions | ACM Panels & Metal Wall Systems",
-  description: "Fire-rated ACM panels and metal wall panel installation. Configure ACM online, request metal wall consultation. Nationwide. Professional installation.",
+  title: "All Cladding Solutions | ACM Panels",
+  description: "Fire-rated ACM panels. Configure online or submit drawings for consultation. Nationwide.",
 };
 
 export default function RootLayout({
