@@ -268,7 +268,7 @@ export function Configurator() {
             />
             <div className="rounded-xl border border-gray-200/80 bg-gray-50/80 px-4 py-3 text-[13px] text-gray-700" role="note">
               <p className="font-medium text-gray-800">Dimensions</p>
-              <p className="mt-0.5">Width: 12–62 in. Length: 12–190 in (15 ft 10 in). Enter your dimensions in the fields above.</p>
+              <p className="mt-0.5">Minimum width: 12 in. Maximum width: 62 in. Minimum length: 12 in. Maximum length: 190 in (15 ft 10 in). Enter your dimensions in the fields above.</p>
             </div>
             <button
               type="button"
