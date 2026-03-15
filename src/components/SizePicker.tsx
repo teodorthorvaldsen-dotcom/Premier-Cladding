@@ -62,10 +62,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           <input
             id="width-input"
             type="number"
+            inputMode="numeric"
             min={MIN_LENGTH_IN}
             max={CUSTOM_WIDTH_MAX_IN}
             value={value.widthIn}
-            onChange={(e) => setWidth(Number(e.target.value))}
+            onChange={(e) => setWidth(Number(e.target.value) || 0)}
             className="mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label="Width in inches"
           />
@@ -77,10 +78,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           <input
             id="length-input"
             type="number"
+            inputMode="numeric"
             min={MIN_LENGTH_IN}
             max={maxLength}
             value={value.lengthIn}
-            onChange={(e) => setLength(Number(e.target.value))}
+            onChange={(e) => setLength(Number(e.target.value) || 0)}
             className="mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label="Length in inches"
           />
