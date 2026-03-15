@@ -75,6 +75,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">Width and length in inches. You can clear the fields and type your own dimensions.</p>
+      <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
+        Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN} in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in).
+      </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width and length">
         <div>
           <label htmlFor="width-input" className="block text-xs font-medium text-gray-700">
