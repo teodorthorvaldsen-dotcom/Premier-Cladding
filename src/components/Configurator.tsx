@@ -112,6 +112,8 @@ export function Configurator() {
   const color = colors.find((c) => c.id === colorId)!;
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
   const widthLabel = `${size.widthIn}"`;
+  const thicknessMmNumeric = Number(thicknessId.replace("mm", ""));
+  const edgeThicknessPx = Math.min(18, Math.max(4, thicknessMmNumeric / 0.5));
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -236,34 +238,84 @@ export function Configurator() {
               </h2>
               <div className="mt-4">
                 <div
-                  className="relative w-full overflow-hidden rounded-2xl border border-gray-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
+                  className="relative w-full overflow-visible rounded-2xl"
                   style={{
-                    // Use aspect ratio to roughly reflect configured panel dimensions
                     aspectRatio: `${size.widthIn} / ${size.lengthIn}`,
                   }}
                   role="img"
-                  aria-label={`Panel preview: ${color.name} (${color.code}), ${finishes[0].label}, ${thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}`}
+                  aria-label={`3D panel preview: ${size.widthIn} by ${size.lengthIn} inches, ${color.name} (${color.code}), ${finishes[0].label}, ${
+                    thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId
+                  }`}
                 >
                   <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={
-                      "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
-                        ? {
-                            backgroundImage: `url(${(color as { swatchImage: string }).swatchImage})`,
-                            backgroundColor: color.hex,
-                          }
-                        : { backgroundColor: color.hex }
-                    }
-                  />
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-2xl"
-                    style={{
-                      background: "linear-gradient(160deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.08) 35%, transparent 60%, rgba(0,0,0,0.03) 100%)",
-                    }}
-                  />
-                  <div className="absolute bottom-2 right-2 max-w-[85%] rounded-lg bg-white/80 px-2.5 py-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] backdrop-blur-md">
+                    className="relative mx-auto h-full w-full max-w-md"
+                    style={{ perspective: "1200px" }}
+                  >
+                    <div
+                      className="relative h-full w-full rounded-xl shadow-[0_18px_45px_rgba(15,23,42,0.45)]"
+                      style={{
+                        transform: "rotateX(62deg) rotateY(-32deg)",
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      {/* Front face */}
+                      <div
+                        className="absolute inset-0 rounded-xl border border-black/15 bg-cover bg-center"
+                        style={
+                          "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
+                            ? {
+                                backgroundImage: `url(${(color as { swatchImage: string }).swatchImage})`,
+                                backgroundColor: color.hex,
+                                boxShadow:
+                                  "0 0 0 1px rgba(15,23,42,0.12) inset, 0 40px 80px rgba(15,23,42,0.55)",
+                              }
+                            : {
+                                backgroundColor: color.hex,
+                                boxShadow:
+                                  "0 0 0 1px rgba(15,23,42,0.12) inset, 0 40px 80px rgba(15,23,42,0.55)",
+                              }
+                        }
+                      />
+
+                      {/* Specular highlight */}
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-xl"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.08) 42%, transparent 60%, rgba(15,23,42,0.20) 100%)",
+                          mixBlendMode: "soft-light",
+                        }}
+                      />
+
+                      {/* Right edge */}
+                      <div
+                        className="absolute right-0 top-0 h-full origin-right rounded-r-xl"
+                        style={{
+                          width: `${edgeThicknessPx}px`,
+                          background: `linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.55))`,
+                          transform: "skewY(-14deg) translateZ(-1px)",
+                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.45)",
+                        }}
+                      />
+
+                      {/* Bottom edge */}
+                      <div
+                        className="absolute bottom-0 left-0 w-full origin-bottom rounded-b-xl"
+                        style={{
+                          height: `${Math.max(4, edgeThicknessPx * 0.6)}px`,
+                          background: `linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.3))`,
+                          transform: "skewX(-16deg) translateZ(-1px)",
+                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.55)",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="absolute -bottom-6 left-0 right-0 mx-auto h-10 max-w-xs rounded-full bg-black/10 blur-2xl" />
+
+                  <div className="absolute bottom-2 right-2 max-w-[85%] rounded-lg bg-white/85 px-2.5 py-1.5 text-[10px] font-medium text-gray-700 shadow-[0_1px_3px_rgba(0,0,0,0.18)] backdrop-blur-md">
                     <p className="text-[10px] font-medium leading-snug text-gray-700">
-                      {color.name} ({color.code})
+                      {color.name} ({color.code}) · {thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}
                     </p>
                   </div>
                 </div>
