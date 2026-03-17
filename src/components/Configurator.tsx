@@ -262,39 +262,15 @@ export function Configurator() {
                   <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top_left,_#f9fafb,_#e5e7eb)]" />
                   <div className="absolute inset-[10%] rounded-xl border border-gray-300/80 bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.7),_rgba(255,255,255,0.7)_8px,_rgba(243,244,246,0.9)_8px,_rgba(243,244,246,0.9)_16px)]" />
 
-                  {/* Vertical rails behind panel */}
-                  <div className="absolute inset-y-[14%] left-[18%] w-[3px] rounded-full bg-gray-400/80 shadow-sm" />
-                  <div className="absolute inset-y-[14%] left-[50%] w-[3px] rounded-full bg-gray-400/80 shadow-sm" />
-                  <div className="absolute inset-y-[14%] right-[18%] w-[3px] rounded-full bg-gray-400/80 shadow-sm" />
-
-                  {/* Brackets tied to rails */}
-                  {[20, 46, 72].map((percent) => (
-                    <div
-                      key={percent}
-                      className="absolute left-[9%] right-[9%] h-[10px]"
-                      style={{ top: `${percent}%` }}
-                    >
-                      <div className="absolute left-[8%] h-full w-[22px] rounded-sm bg-gray-500/90 shadow-sm" />
-                      <div className="absolute left-[40%] h-full w-[22px] rounded-sm bg-gray-500/90 shadow-sm" />
-                      <div className="absolute right-[8%] h-full w-[22px] rounded-sm bg-gray-500/90 shadow-sm" />
-                    </div>
-                  ))}
-
-                  {/* Panel mounted to brackets */}
+                  {/* Panel on concrete wall */}
                   <div
-                    className="relative mx-auto h-[65%] w-[70%] translate-y-[6%]"
-                    style={{ perspective: "1200px" }}
+                    className="absolute inset-[18%] flex items-center justify-center"
                   >
                     <div
-                      className="relative h-full w-full rounded-md shadow-[0_14px_38px_rgba(15,23,42,0.35)]"
-                      style={{
-                        transform: "rotateX(64deg) rotateY(-18deg)",
-                        transformStyle: "preserve-3d",
-                      }}
+                      className="relative h-full w-full rounded-md shadow-[0_12px_22px_rgba(15,23,42,0.35)]"
                     >
-                      {/* Front face */}
                       <div
-                        className="absolute inset-0 rounded-md border border-black/10 bg-cover bg-center"
+                        className="absolute inset-0 rounded-md border border-black/15 bg-cover bg-center"
                         style={
                           "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
                             ? {
@@ -306,7 +282,7 @@ export function Configurator() {
                             : {
                                 backgroundColor: color.hex,
                                 boxShadow:
-                                  "0 0 0 1px rgba(15,23,42,0.12) inset, 0 32px 70px rgba(15,23,42,0.45)",
+                                  "0 0 0 1px rgba(15,23,42,0.16) inset, 0 24px 42px rgba(15,23,42,0.45)",
                               }
                         }
                       />
@@ -316,30 +292,8 @@ export function Configurator() {
                         className="pointer-events-none absolute inset-0 rounded-md"
                         style={{
                           background:
-                            "linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.08) 42%, transparent 60%, rgba(15,23,42,0.20) 100%)",
+                            "linear-gradient(135deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.12) 40%, transparent 65%, rgba(15,23,42,0.14) 100%)",
                           mixBlendMode: "soft-light",
-                        }}
-                      />
-
-                      {/* Right edge */}
-                      <div
-                        className="absolute right-0 top-0 h-full origin-right rounded-r-md"
-                        style={{
-                          width: `${edgeThicknessPx}px`,
-                          background: `linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.55))`,
-                          transform: "skewY(-14deg) translateZ(-1px)",
-                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.45)",
-                        }}
-                      />
-
-                      {/* Bottom edge */}
-                      <div
-                        className="absolute bottom-0 left-0 w-full origin-bottom rounded-b-md"
-                        style={{
-                          height: `${Math.max(4, edgeThicknessPx * 0.6)}px`,
-                          background: `linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.3))`,
-                          transform: "skewX(-16deg) translateZ(-1px)",
-                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.55)",
                         }}
                       />
                     </div>
@@ -365,7 +319,7 @@ export function Configurator() {
                   </div>
 
                   {/* Vertical scale (length) */}
-                  <div className="pointer-events-none absolute top-[16%] bottom-[20%] left-[4%] flex flex-col items-center justify-between">
+                  <div className="pointer-events-none absolute top-[18%] bottom-[20%] left-[10%] flex flex-col items-center justify-between">
                     <div className="relative h-full w-8">
                       <div className="absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2 bg-gray-400/70" />
                       <div className="absolute left-1/2 top-0 h-2 w-[1px] -translate-x-1/2 bg-gray-500" />
