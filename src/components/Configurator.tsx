@@ -236,7 +236,11 @@ export function Configurator() {
               </h2>
               <div className="mt-4">
                 <div
-                  className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-gray-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
+                  className="relative w-full overflow-hidden rounded-2xl border border-gray-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
+                  style={{
+                    // Use aspect ratio to roughly reflect configured panel dimensions
+                    aspectRatio: `${size.widthIn} / ${size.lengthIn}`,
+                  }}
                   role="img"
                   aria-label={`Panel preview: ${color.name} (${color.code}), ${finishes[0].label}, ${thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}`}
                 >
