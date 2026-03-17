@@ -40,129 +40,70 @@ interface ProjectExampleProps {
 }
 
 function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
-  const materials: Record<
-    string,
-    {
-      name: string;
-      color: string;
-    }
-  > = {
-    default: { name: "Default", color: "#e5e7eb" },
-    current: { name: "Current Color", color: activeHex },
-    micaGrey: { name: "Mica Grey", color: "#6b7280" },
-    marineAluminum: { name: "Marine Aluminum", color: "#bfc5c9" },
-    black: { name: "Black", color: "#111827" },
-  };
-
-  const [activeMaterial, setActiveMaterial] = useState<string>("current");
   const [panelState, setPanelState] = useState<PanelStateMap>({});
-  const [hovered, setHovered] = useState<string | null>(null);
 
+  // Panels roughly aligned to black front wall area of PNG silhouette
   const panels = [
-    // ROW 1
-    { id: "ACM1-R1-C1", x: 80, y: 80 },
-    { id: "ACM1-R1-C2", x: 180, y: 70 },
-    { id: "ACM2-R1-C3", x: 280, y: 65 },
-    { id: "ACM2-R1-C4", x: 380, y: 70 },
-    { id: "ACM2-R1-C5", x: 480, y: 80 },
-    // ROW 2
-    { id: "ACM1-R2-C1", x: 80, y: 150 },
-    { id: "ACM1-R2-C2", x: 180, y: 140 },
-    { id: "ACM2-R2-C3", x: 280, y: 135 },
-    { id: "ACM2-R2-C4", x: 380, y: 140 },
-    { id: "ACM2-R2-C5", x: 480, y: 150 },
-    // ROW 3
-    { id: "ACM1-R3-C1", x: 80, y: 220 },
-    { id: "ACM1-R3-C2", x: 180, y: 210 },
-    { id: "ACM2-R3-C3", x: 280, y: 205 },
-    { id: "ACM2-R3-C4", x: 380, y: 210 },
-    { id: "ACM2-R3-C5", x: 480, y: 220 },
+    // ROW 1 (top course)
+    { id: "ACM-R1-C1", x: 110, y: 80 },
+    { id: "ACM-R1-C2", x: 210, y: 75 },
+    { id: "ACM-R1-C3", x: 310, y: 72 },
+    { id: "ACM-R1-C4", x: 410, y: 75 },
+    { id: "ACM-R1-C5", x: 510, y: 82 },
+    // ROW 2 (middle)
+    { id: "ACM-R2-C1", x: 110, y: 145 },
+    { id: "ACM-R2-C2", x: 210, y: 140 },
+    { id: "ACM-R2-C3", x: 310, y: 137 },
+    { id: "ACM-R2-C4", x: 410, y: 140 },
+    { id: "ACM-R2-C5", x: 510, y: 148 },
+    // ROW 3 (bottom)
+    { id: "ACM-R3-C1", x: 110, y: 210 },
+    { id: "ACM-R3-C2", x: 210, y: 205 },
+    { id: "ACM-R3-C3", x: 310, y: 202 },
+    { id: "ACM-R3-C4", x: 410, y: 205 },
+    { id: "ACM-R3-C5", x: 510, y: 214 },
   ];
 
-  const PANEL_WIDTH = 100;
-  const PANEL_HEIGHT = 70;
+  const PANEL_WIDTH = 90;
+  const PANEL_HEIGHT = 62;
 
   const handleClick = (id: string) => {
     setPanelState((prev) => ({
       ...prev,
-      [id]: activeMaterial,
+      [id]: activeHex,
     }));
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(materials).map(([key, mat]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setActiveMaterial(key)}
-            className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[11px] ${
-              activeMaterial === key ? "border-gray-900 bg-gray-50" : "border-gray-300 bg-white"
-            }`}
-          >
-            <span
-              className="h-4 w-4 rounded"
-              style={{ backgroundColor: mat.color }}
-            />
-            <span>{mat.name}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="overflow-auto rounded-2xl border border-gray-200/80 bg-white p-3 shadow-inner">
-        <svg viewBox="0 0 650 320" className="h-auto w-full">
-          {/* Background shop drawing */}
+        <svg viewBox="0 0 1024 570" className="h-auto w-full">
+          {/* Background silhouette */}
           <image
-            href="/ford-building.svg"
+            href="/ford-building-panels.png"
             x="0"
             y="0"
-            width="650"
-            height="320"
+            width="1024"
+            height="570"
             preserveAspectRatio="xMidYMid meet"
-            opacity="0.35"
+            opacity="0.9"
           />
 
-          {panels.map((p) => {
-            const materialKey = panelState[p.id] ?? "current";
-            const fill = materials[materialKey]?.color ?? materials.default.color;
-
-            return (
-              <g key={p.id}>
-                <polygon
-                  points={`${p.x},${p.y} ${p.x + PANEL_WIDTH},${p.y - 10} ${p.x + PANEL_WIDTH},${p.y +
-                    PANEL_HEIGHT} ${p.x},${p.y + PANEL_HEIGHT + 10}`}
-                  fill={fill}
-                  stroke="#111827"
-                  strokeWidth="1"
-                  onClick={() => handleClick(p.id)}
-                  onMouseEnter={() => setHovered(p.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{ cursor: "pointer" }}
-                />
-                {hovered === p.id && (
-                  <text
-                    x={p.x + 10}
-                    y={p.y - 12}
-                    fontSize="10"
-                    fill="#111827"
-                    className="select-none"
-                  >
-                    {p.id}
-                  </text>
-                )}
-              </g>
-            );
-          })}
+          {panels.map((p) => (
+            <polygon
+              key={p.id}
+              points={`${p.x},${p.y} ${p.x + PANEL_WIDTH},${p.y - 12} ${p.x + PANEL_WIDTH},${p.y + PANEL_HEIGHT} ${p.x},${p.y + PANEL_HEIGHT + 12}`}
+              fill={panelState[p.id] ?? activeHex}
+              stroke="#111827"
+              strokeWidth="0.8"
+              onClick={() => handleClick(p.id)}
+              style={{ cursor: "pointer" }}
+            />
+          ))}
         </svg>
       </div>
 
-      <div className="rounded-xl bg-gray-50 p-3 text-[11px] font-mono text-gray-700">
-        <p className="mb-1 font-semibold">Configuration Output</p>
-        <pre className="whitespace-pre-wrap break-words">
-          {JSON.stringify(panelState, null, 2)}
-        </pre>
-      </div>
+      {/* Output kept minimal / hidden from UI for now */}
     </div>
   );
 }
