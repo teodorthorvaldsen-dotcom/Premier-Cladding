@@ -121,61 +121,53 @@ export function Configurator() {
 
     let frameId: number | null = null;
 
-    function initScene() {
-      // three.js is loaded from CDN and exposed on window
-      const THREE = (window as any).THREE;
-      if (!THREE) return;
+    import("three")
+      .then((THREE) => {
+        if (!projectExampleRef.current) return;
+        const target = projectExampleRef.current;
+        target.innerHTML = "";
 
-      container.innerHTML = "";
+        const rect = target.getBoundingClientRect();
+        const width = rect.width || 400;
+        const height = rect.height || 260;
 
-      const rect = container.getBoundingClientRect();
-      const width = rect.width || 400;
-      const height = rect.height || 260;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        target.appendChild(renderer.domElement);
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(width, height);
-      container.appendChild(renderer.domElement);
+        const panelsData = [
+          { w: 1.5, h: 1, x: 0, y: 0, z: 0 },
+          { w: 1.5, h: 1, x: 1.6, y: 0, z: 0 },
+        ];
 
-      const panelsData = [
-        { w: 1.5, h: 1, x: 0, y: 0, z: 0 },
-        { w: 1.5, h: 1, x: 1.6, y: 0, z: 0 },
-      ];
+        panelsData.forEach((p) => {
+          const geometry = new THREE.BoxGeometry(p.w, p.h, 0.05);
+          const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color.hex) });
+          const panel = new THREE.Mesh(geometry, material);
+          panel.position.set(p.x, p.y, p.z);
+          scene.add(panel);
+        });
 
-      panelsData.forEach((p) => {
-        const geometry = new THREE.BoxGeometry(p.w, p.h, 0.05);
-        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color.hex) });
-        const panel = new THREE.Mesh(geometry, material);
-        panel.position.set(p.x, p.y, p.z);
-        scene.add(panel);
+        camera.position.z = 3;
+
+        const animate = () => {
+          frameId = window.requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        };
+        animate();
+      })
+      .catch(() => {
+        // ignore load errors in UI
       });
-
-      camera.position.z = 3;
-
-      const animate = () => {
-        frameId = window.requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      };
-      animate();
-    }
-
-    if (!(window as any).THREE) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js";
-      script.async = true;
-      script.onload = () => initScene();
-      document.head.appendChild(script);
-    } else {
-      initScene();
-    }
 
     return () => {
       if (frameId !== null) {
         window.cancelAnimationFrame(frameId);
       }
-      if (container) {
-        container.innerHTML = "";
+      if (projectExampleRef.current) {
+        projectExampleRef.current.innerHTML = "";
       }
     };
   }, [color.hex]);
