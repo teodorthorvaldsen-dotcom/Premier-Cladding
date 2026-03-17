@@ -335,15 +335,66 @@ export function Configurator() {
               </h2>
               <div className="mt-4">
                 <div
-                  className="relative w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white"
+                  className="relative w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200"
                   style={{ aspectRatio: "4 / 3" }}
                 >
-                  <img
-                    src="/panel-detail-example.png"
-                    alt="Example ACM panel facade drawing"
-                    className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
-                  />
+                  {/* Simple perspective building massing */}
+                  <div className="absolute inset-x-[8%] bottom-[16%] top-[20%]">
+                    {/* Left volume */}
+                    <div className="absolute bottom-0 left-0 h-full w-[34%] origin-bottom-left -skew-y-6 rounded-l-xl bg-slate-300/90 shadow-[0_16px_35px_rgba(15,23,42,0.35)]" />
+                    {/* Main facade */}
+                    <div className="absolute bottom-0 left-[20%] h-[74%] w-[58%] origin-bottom-left -skew-y-3 rounded-xl bg-slate-300/95 shadow-[0_18px_40px_rgba(15,23,42,0.4)]" />
+                    {/* Right feature wall */}
+                    <div className="absolute bottom-0 right-0 h-[82%] w-[16%] origin-bottom-right -skew-y-3 rounded-r-3xl bg-slate-400/90 shadow-[0_18px_40px_rgba(15,23,42,0.45)]" />
+
+                    {/* Panel grid overlay that changes with color */}
+                    {[
+                      { top: "10%", height: "24%" },
+                      { top: "36%", height: "24%" },
+                      { top: "62%", height: "24%" },
+                    ].map((row, rowIdx) => (
+                      <div
+                        key={rowIdx}
+                        className="absolute left-[22%] w-[54%]"
+                        style={{ top: row.top, height: row.height }}
+                      >
+                        {Array.from({ length: 5 }).map((_, colIdx) => (
+                          <div
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={colIdx}
+                            className="absolute top-0 h-full w-[16%] rounded-sm border border-black/10 bg-cover bg-center transition-colors"
+                            style={{
+                              left: `${colIdx * 19}%`,
+                              backgroundColor: color.hex,
+                              boxShadow:
+                                "0 0 0 1px rgba(15,23,42,0.06) inset, 0 4px 10px rgba(15,23,42,0.20)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Ground plane */}
+                  <div className="absolute inset-x-[6%] bottom-[10%] h-[2px] rounded-full bg-slate-400/70 shadow-[0_12px_24px_rgba(15,23,42,0.45)]" />
+
+                  {/* Caption swatch showing selected color */}
+                  <div className="absolute bottom-4 left-4 flex items-center gap-3 rounded-xl bg-white/90 px-3 py-2 text-[11px] font-medium text-gray-700 shadow-[0_8px_20px_rgba(15,23,42,0.25)]">
+                    <span
+                      className="inline-block h-6 w-6 rounded-md border border-black/10 bg-cover bg-center"
+                      style={
+                        "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
+                          ? {
+                              backgroundImage: `url(${(color as { swatchImage: string }).swatchImage})`,
+                              backgroundColor: color.hex,
+                            }
+                          : { backgroundColor: color.hex }
+                      }
+                    />
+                    <span>
+                      {color.name} ({color.code})
+                    </span>
+                  </div>
                 </div>
               </div>
             </section>
