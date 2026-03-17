@@ -329,111 +329,21 @@ export function Configurator() {
                 </p>
               </div>
             </section>
-            <section
-              className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6"
-              aria-labelledby="panel-3d-heading"
-            >
-              <h2
-                id="panel-3d-heading"
-                className="text-[13px] font-medium uppercase tracking-wider text-gray-500"
-              >
-                Panel Detail
+            <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+              <h2 className="text-[13px] font-medium uppercase tracking-wider text-gray-500">
+                Project Example
               </h2>
               <div className="mt-4">
                 <div
-                  className="relative w-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-5"
-                  style={{ aspectRatio: "16 / 9" }}
+                  className="relative w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white"
+                  style={{ aspectRatio: "4 / 3" }}
                 >
-                  <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top_left,_rgba(148,163,184,0.55),_transparent_55%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.9),_transparent_60%)]" />
-                  <div
-                    className="relative mx-auto flex h-full max-w-md items-center justify-center"
-                    style={{ perspective: "1200px" }}
-                  >
-                    <div
-                      className="relative h-[72%] w-full rounded-xl shadow-[0_26px_70px_rgba(15,23,42,0.8)]"
-                      style={{
-                        transform: "rotateX(64deg) rotateY(-24deg)",
-                        transformStyle: "preserve-3d",
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 rounded-xl border border-black/20 bg-cover bg-center"
-                        style={
-                          "swatchImage" in color && typeof (color as { swatchImage?: string }).swatchImage === "string"
-                            ? {
-                                backgroundImage: `url(${(color as { swatchImage: string }).swatchImage})`,
-                                backgroundColor: color.hex,
-                                boxShadow:
-                                  "0 0 0 1px rgba(15,23,42,0.2) inset, 0 40px 90px rgba(15,23,42,0.9)",
-                              }
-                            : {
-                                backgroundColor: color.hex,
-                                boxShadow:
-                                  "0 0 0 1px rgba(15,23,42,0.2) inset, 0 40px 90px rgba(15,23,42,0.9)",
-                              }
-                        }
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0 rounded-xl"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.16) 40%, transparent 60%, rgba(15,23,42,0.5) 100%)",
-                          mixBlendMode: "soft-light",
-                        }}
-                      />
-                      <div
-                        className="absolute right-0 top-0 h-full origin-right rounded-r-xl"
-                        style={{
-                          width: `${edgeThicknessPx}px`,
-                          background: "linear-gradient(to bottom, rgba(15,23,42,0.7), rgba(15,23,42,0.9))",
-                          transform: "skewY(-14deg) translateZ(-1px)",
-                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.95)",
-                        }}
-                      />
-                      <div
-                        className="absolute bottom-0 left-0 w-full origin-bottom rounded-b-xl"
-                        style={{
-                          height: `${Math.max(4, edgeThicknessPx * 0.6)}px`,
-                          background: "linear-gradient(to right, rgba(15,23,42,0.95), rgba(15,23,42,0.75))",
-                          transform: "skewX(-16deg) translateZ(-1px)",
-                          boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.95)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="pointer-events-none absolute bottom-4 left-[16%] right-[12%]">
-                    <div className="relative h-5">
-                      <div className="absolute bottom-2 left-0 h-[1px] w-full bg-slate-300/80" />
-                      <div className="absolute bottom-1 left-0 h-2 w-[1px] bg-slate-100" />
-                      <div className="absolute bottom-1 right-0 h-2 w-[1px] bg-slate-100" />
-                      <div
-                        className="absolute bottom-2 left-1/2 h-[3px] -translate-x-1/2 rounded-full bg-slate-50"
-                        style={{ width: `${32 + widthRatio * 46}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] font-medium text-slate-100 text-center">
-                      Width: {size.widthIn.toFixed(0)} in
-                    </p>
-                  </div>
-                  <div className="pointer-events-none absolute top-[12%] bottom-[18%] left-[8%] flex flex-col items-center justify-between">
-                    <div className="relative h-full w-8">
-                      <div className="absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2 bg-slate-300/80" />
-                      <div className="absolute left-1/2 top-0 h-2 w-[1px] -translate-x-1/2 bg-slate-100" />
-                      <div className="absolute left-1/2 bottom-0 h-2 w-[1px] -translate-x-1/2 bg-slate-100" />
-                      <div
-                        className="absolute left-1/2 top-1/2 w-[3px] -translate-x-1/2 rounded-full bg-slate-50"
-                        style={{ height: `${30 + lengthRatio * 50}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] font-medium text-slate-100 text-center">
-                      Length: {size.lengthIn.toFixed(0)} in
-                    </p>
-                  </div>
-                  <div className="absolute top-3 right-3 max-w-[70%] rounded-lg bg-white/95 px-2.5 py-1.5 text-[10px] font-medium text-gray-800 shadow-[0_10px_30px_rgba(15,23,42,0.75)]">
-                    <p className="leading-snug">
-                      {color.name} ({color.code}) · {thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}
-                    </p>
-                  </div>
+                  <img
+                    src="/panel-detail-example.png"
+                    alt="Example ACM panel facade drawing"
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </section>
