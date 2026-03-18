@@ -15,18 +15,14 @@ const NAV_LINKS = [
 ] as const;
 
 const CONFIGURATOR_LINKS = [
-  { href: "#size", label: "Size" },
+  { href: "#panel-type", label: "Panel Type" },
   { href: "#thickness", label: "Thickness" },
-  { href: "#color", label: "Finish" },
-  { href: "#color", label: "Color" },
+  { href: "#size", label: "Size" },
+  { href: "#color", label: "Color/Finish" },
   { href: "#quantity", label: "Quantity" },
-  { href: "#estimate", label: "Estimate" },
+  { href: "#estimate", label: "Total" },
+  { href: "/cart", label: "Cart" },
 ] as const;
-
-function scrollToEstimate(e: React.MouseEvent) {
-  e.preventDefault();
-  document.getElementById("estimate")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
   if (href.startsWith("#")) {
@@ -71,16 +67,28 @@ export function Header() {
               className="hidden flex-1 items-center justify-center gap-5 md:flex lg:gap-8"
               aria-label="Configurator sections"
             >
-              {CONFIGURATOR_LINKS.map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={(e) => scrollToSection(e, href)}
-                  className="whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl"
-                >
-                  {label}
-                </a>
-              ))}
+              {CONFIGURATOR_LINKS.map(({ href, label }) =>
+                href.startsWith("#") ? (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={(e) => scrollToSection(e, href)}
+                    className="whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl"
+                    aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
+                  >
+                    {label}
+                    {totalCount > 0 && <span className="ml-0.5">({totalCount})</span>}
+                  </Link>
+                )
+              )}
             </nav>
           ) : (
             <nav
@@ -106,7 +114,9 @@ export function Header() {
           <div className="flex shrink-0 items-center gap-4 lg:gap-5">
             <Link
               href="/cart"
-              className="whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl"
+              className={`whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl ${
+                isConfigurator ? "md:hidden" : ""
+              }`}
               aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
             >
               Cart {totalCount > 0 && <span className="ml-0.5">({totalCount})</span>}
