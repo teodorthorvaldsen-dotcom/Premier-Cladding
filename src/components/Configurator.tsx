@@ -446,350 +446,150 @@ function buildGridPanels(
 }
 
 function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
-  const materials: Record<string, string> = {
-    default: "#d1d5db",
-    micaGrey: "#6b7280",
-    marineAluminum: "#bfc5c9",
-    charcoal: "#374151",
-    black: "#111827",
-    white: "#f8fafc",
-    fordBlue: "#2563eb",
-  };
+  const [depthInches, setDepthInches] = useState(2);
 
-  const [activeMaterial, setActiveMaterial] = useState<string>("micaGrey");
-  const [panelState, setPanelState] = useState<PanelStateMap>({});
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [showBackground, setShowBackground] = useState(true);
-  const [showOutlines, setShowOutlines] = useState(false);
+  const scene = useMemo(() => {
+    const viewW = 520;
+    const viewH = 320;
 
-  const VIEWBOX = { width: 993, height: 581 };
-
-  const materialEntries = Object.entries(materials);
-
-  const lineY = (x: number, x1: number, y1: number, x2: number, y2: number) => {
-    if (x2 === x1) return y1;
-    const t = (x - x1) / (x2 - x1);
-    return lerp(y1, y2, t);
-  };
-
-  const pt = (x: number, y: number) => `${x.toFixed(1)},${y.toFixed(1)}`;
-
-  const quad = (
-    x1: number,
-    x2: number,
-    topFn: (x: number) => number,
-    bottomFn: (x: number) => number
-  ) =>
-    [
-      pt(x1, topFn(x1)),
-      pt(x2, topFn(x2)),
-      pt(x2, bottomFn(x2)),
-      pt(x1, bottomFn(x1)),
-    ].join(" ");
-
-  const centroid = (points: string) => {
-    const pts = points.split(" ").map((p) => p.split(",").map(Number));
-    const sum = pts.reduce(
-      (acc, [x, y]) => ({ x: acc.x + x, y: acc.y + y }),
-      { x: 0, y: 0 }
-    );
-    return {
-      x: sum.x / pts.length,
-      y: sum.y / pts.length,
+    // background wall
+    const wall = {
+      x: 60,
+      y: 40,
+      width: 400,
+      height: 240,
     };
-  };
 
-  const panels = useMemo<FacadePanel[]>(() => {
-    const result: FacadePanel[] = [];
+    // base panel geometry (front face)
+    const baseA = { x: 190, y: 80 };
+    const baseB = { x: 340, y: 120 };
+    const baseC = { x: 340, y: 240 };
+    const baseD = { x: 190, y: 200 };
 
-    // main facade row lines (traced from 993x581 image)
-    const topLine = (x: number) => lineY(x, 240, 61, 884, 272);
-    const row1Line = (x: number) => lineY(x, 240, 174, 884, 316);
-    const row2Line = (x: number) => lineY(x, 240, 275, 832, 350);
-    const row3Line = (x: number) => lineY(x, 223, 378, 629, 392);
-    const row4Line = (x: number) => lineY(x, 239, 482, 629, 459);
-    const bottomLine = (x: number) => lineY(x, 240, 559, 629, 509);
+    const depthScale = depthInches / 3;
+    const offset = {
+      x: 26 * depthScale,
+      y: -12 * depthScale,
+    };
 
-    // left ACM‑1 return strip
-    const leftOuterTop = (x: number) => lineY(x, 221, 75, 240, 61);
-    const leftOuterRow1 = (x: number) => lineY(x, 221, 176, 240, 174);
-    const leftOuterRow2 = (x: number) => lineY(x, 221, 279, 240, 275);
-    const leftOuterRow3 = (x: number) => lineY(x, 221, 378, 240, 378);
-    const leftOuterRow4 = (x: number) => lineY(x, 221, 478, 239, 482);
-    const leftOuterBottom = (x: number) => lineY(x, 221, 551, 240, 559);
+    const A = baseA;
+    const B = baseB;
+    const C = baseC;
+    const D = baseD;
 
-    // right ACM‑2 vestibule visible side
-    const vestTop = (x: number) => lineY(x, 844, 259, 884, 272);
-    const vestRow1 = (x: number) => lineY(x, 844, 309, 884, 316);
-    const vestRow2 = (x: number) => lineY(x, 844, 350, 884, 377);
-    const vestRow3 = (x: number) => lineY(x, 844, 404, 884, 411);
+    const E = { x: C.x + offset.x, y: C.y + offset.y };
+    const F = { x: B.x + offset.x, y: B.y + offset.y };
+    const G = { x: A.x + offset.x, y: A.y + offset.y };
 
-    // left return strip panels
-    result.push(
-      {
-        id: "ACM1-R1-C1",
-        points: [
-          pt(221, leftOuterTop(221)),
-          pt(240, topLine(240)),
-          pt(240, row1Line(240)),
-          pt(221, leftOuterRow1(221)),
-        ].join(" "),
-      },
-      {
-        id: "ACM1-R2-C1",
-        points: [
-          pt(221, leftOuterRow1(221)),
-          pt(240, row1Line(240)),
-          pt(240, row2Line(240)),
-          pt(221, leftOuterRow2(221)),
-        ].join(" "),
-      },
-      {
-        id: "ACM1-R3-C1",
-        points: [
-          pt(221, leftOuterRow2(221)),
-          pt(240, row2Line(240)),
-          pt(240, row3Line(240)),
-          pt(221, leftOuterRow3(221)),
-        ].join(" "),
-      },
-      {
-        id: "ACM1-R4-C1",
-        points: [
-          pt(221, leftOuterRow3(221)),
-          pt(239, row4Line(239)),
-          pt(239, row4Line(239)),
-          pt(221, leftOuterRow4(221)),
-        ].join(" "),
-      },
-      {
-        id: "ACM1-R5-C1",
-        points: [
-          pt(221, leftOuterRow4(221)),
-          pt(240, row4Line(240)),
-          pt(240, bottomLine(240)),
-          pt(221, leftOuterBottom(221)),
-        ].join(" "),
-      }
-    );
+    const frontPts = `${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y} ${D.x},${D.y}`;
+    const sidePts = `${B.x},${B.y} ${C.x},${C.y} ${E.x},${E.y} ${F.x},${F.y}`;
+    const topPts = `${A.x},${A.y} ${B.x},${B.y} ${F.x},${F.y} ${G.x},${G.y}`;
 
-    // main facade upper three rows
-    const upperCuts = [240, 406, 533, 628, 700, 762, 810, 844];
+    return {
+      viewW,
+      viewH,
+      wall,
+      frontPts,
+      sidePts,
+      topPts,
+      shadowCx: (D.x + C.x) / 2 + 6,
+      shadowCy: C.y + 18,
+      shadowRx: 70,
+      shadowRy: 18,
+    };
+  }, [depthInches]);
 
-    for (let i = 0; i < upperCuts.length - 1; i += 1) {
-      result.push({
-        id: `MAIN-R1-C${i + 1}`,
-        points: quad(upperCuts[i], upperCuts[i + 1], topLine, row1Line),
-      });
-    }
+  const faceColor = activeHex;
+  const sideColor = "#4b5563";
+  const topColor = "#374151";
 
-    for (let i = 0; i < upperCuts.length - 1; i += 1) {
-      result.push({
-        id: `MAIN-R2-C${i + 1}`,
-        points: quad(upperCuts[i], upperCuts[i + 1], row1Line, row2Line),
-      });
-    }
-
-    const thirdRowCuts = [240, 406, 533, 628, 700, 762, 810];
-    for (let i = 0; i < thirdRowCuts.length - 1; i += 1) {
-      result.push({
-        id: `MAIN-R3-C${i + 1}`,
-        points: quad(thirdRowCuts[i], thirdRowCuts[i + 1], row2Line, row3Line),
-      });
-    }
-
-    // lower two rows on left wall
-    const lowerCuts = [240, 406, 533, 629];
-    for (let i = 0; i < lowerCuts.length - 1; i += 1) {
-      result.push({
-        id: `MAIN-R4-C${i + 1}`,
-        points: quad(lowerCuts[i], lowerCuts[i + 1], row3Line, row4Line),
-      });
-    }
-
-    for (let i = 0; i < lowerCuts.length - 1; i += 1) {
-      result.push({
-        id: `MAIN-R5-C${i + 1}`,
-        points: quad(lowerCuts[i], lowerCuts[i + 1], row4Line, bottomLine),
-      });
-    }
-
-    // right vestibule small red grid spaces
-    const vestCutsTop = [844, 872, 884];
-    for (let i = 0; i < vestCutsTop.length - 1; i += 1) {
-      result.push({
-        id: `VEST-R1-C${i + 1}`,
-        points: quad(vestCutsTop[i], vestCutsTop[i + 1], vestTop, vestRow1),
-      });
-    }
-
-    const vestCutsMid = [810, 844, 872, 884];
-    for (let i = 0; i < vestCutsMid.length - 1; i += 1) {
-      result.push({
-        id: `VEST-R2-C${i + 1}`,
-        points: quad(vestCutsMid[i], vestCutsMid[i + 1], row1Line, vestRow2),
-      });
-    }
-
-    const vestCutsLow = [810, 844];
-    for (let i = 0; i < vestCutsLow.length - 1; i += 1) {
-      result.push({
-        id: `VEST-R3-C${i + 1}`,
-        points: quad(vestCutsLow[i], vestCutsLow[i + 1], row2Line, vestRow3),
-      });
-    }
-
-    return result;
-  }, []);
-
-  const setPanel = (id: string) => {
-    setPanelState((prev) => ({ ...prev, [id]: activeMaterial }));
-  };
-
-  const fillAll = () => {
-    const next: PanelStateMap = {};
-    panels.forEach((panel) => {
-      next[panel.id] = activeMaterial;
-    });
-    setPanelState(next);
-  };
-
-  const resetAll = () => {
-    setPanelState({});
-  };
+  const { viewW, viewH, wall, frontPts, sidePts, topPts, shadowCx, shadowCy, shadowRx, shadowRy } =
+    scene;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {materialEntries.map(([key, color]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setActiveMaterial(key)}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium shadow-sm ${
-                activeMaterial === key
-                  ? "border-gray-900 bg-white"
-                  : "border-gray-300 bg-white"
-              }`}
-              title={key}
-            >
-              <span
-                className="h-4 w-4 rounded-full border border-gray-400"
-                style={{ background: color }}
-              />
-              <span className="text-gray-800">{key}</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={fillAll}
-            className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-black"
-          >
-            Fill all
-          </button>
-          <button
-            type="button"
-            onClick={resetAll}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowBackground((v) => !v)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
-          >
-            {showBackground ? "Hide background" : "Show background"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowOutlines((v) => !v)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
-          >
-            {showOutlines ? "Hide guides" : "Show guides"}
-          </button>
-        </div>
+      <p className="text-[13px] text-gray-600">
+        Single 3D ACM panel on a background wall. Color matches your selected panel color.
+      </p>
+      <div className="flex items-center gap-3">
+        <label className="text-[12px] font-medium text-gray-900">Depth (projection)</label>
+        <input
+          type="range"
+          min={1}
+          max={4}
+          step={0.5}
+          value={depthInches}
+          onChange={(e) => setDepthInches(Number(e.target.value))}
+          className="flex-1"
+        />
+        <span className="text-[12px] text-gray-700 w-10 text-right">{depthInches.toFixed(1)} in</span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-inner">
-        <svg
-          viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
-          className="block h-auto w-full"
-        >
-          {showBackground && (
-            <image
-              href="/building-grid-reference.png"
-              x="0"
-              y="0"
-              width={VIEWBOX.width}
-              height={VIEWBOX.height}
-              preserveAspectRatio="none"
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-slate-900/90 p-3 shadow-inner">
+        <svg viewBox={`0 0 ${viewW} ${viewH}`} className="block h-auto w-full">
+          <defs>
+            <linearGradient id="wallGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1f2937" />
+              <stop offset="55%" stopColor="#020617" />
+              <stop offset="100%" stopColor="#020617" />
+            </linearGradient>
+            <linearGradient id="panelGloss" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
+              <stop offset="55%" stopColor="rgba(255,255,255,0.08)" />
+              <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+            </linearGradient>
+          </defs>
+
+          {/* background wall */}
+          <rect
+            x={wall.x}
+            y={wall.y}
+            width={wall.width}
+            height={wall.height}
+            fill="url(#wallGrad)"
+            rx={18}
+          />
+
+          {/* subtle wall panel seams */}
+          <g stroke="rgba(15,23,42,0.7)" strokeWidth={1}>
+            <line
+              x1={wall.x + wall.width * 0.33}
+              y1={wall.y}
+              x2={wall.x + wall.width * 0.33}
+              y2={wall.y + wall.height}
             />
-          )}
+            <line
+              x1={wall.x + wall.width * 0.66}
+              y1={wall.y}
+              x2={wall.x + wall.width * 0.66}
+              y2={wall.y + wall.height}
+            />
+            <line
+              x1={wall.x}
+              y1={wall.y + wall.height * 0.4}
+              x2={wall.x + wall.width}
+              y2={wall.y + wall.height * 0.4}
+            />
+          </g>
 
-          {panels.map((panel) => {
-            const c = centroid(panel.points);
-            const fill =
-              materials[panelState[panel.id]] ?? "rgba(255,255,255,0.01)";
-            const isHovered = hovered === panel.id;
+          {/* ground shadow */}
+          <ellipse
+            cx={shadowCx}
+            cy={shadowCy}
+            rx={shadowRx}
+            ry={shadowRy}
+            fill="rgba(0,0,0,0.5)"
+            opacity={0.5}
+          />
 
-            return (
-              <g key={panel.id}>
-                <polygon
-                  points={panel.points}
-                  fill={fill}
-                  fillOpacity={panelState[panel.id] ? 0.72 : 0.01}
-                  stroke={
-                    showOutlines || isHovered ? "#111827" : "transparent"
-                  }
-                  strokeWidth={isHovered ? 2 : 1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPanel(panel.id);
-                  }}
-                  onMouseEnter={() => setHovered(panel.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{ cursor: "pointer" }}
-                />
+          {/* top and side of panel */}
+          <polygon points={topPts} fill={topColor} stroke="#020617" strokeWidth={2} />
+          <polygon points={sidePts} fill={sideColor} stroke="#020617" strokeWidth={2} />
 
-                {isHovered && (
-                  <>
-                    <circle cx={c.x} cy={c.y} r="2.5" fill="#111827" />
-                    <rect
-                      x={c.x + 8}
-                      y={c.y - 20}
-                      width={Math.max(86, panel.id.length * 7)}
-                      height="20"
-                      rx="5"
-                      fill="rgba(17,24,39,0.92)"
-                    />
-                    <text
-                      x={c.x + 14}
-                      y={c.y - 6}
-                      fontSize="11"
-                      fill="#fff"
-                      pointerEvents="none"
-                    >
-                      {panel.id}
-                    </text>
-                  </>
-                )}
-              </g>
-            );
-          })}
+          {/* front face */}
+          <polygon points={frontPts} fill={faceColor} stroke="#020617" strokeWidth={2} />
+          <polygon points={frontPts} fill="url(#panelGloss)" />
         </svg>
-      </div>
-
-      <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3">
-        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-gray-500">
-          Panel state output
-        </p>
-        <pre className="max-h-40 overflow-auto rounded-lg bg-white p-2 text-[10px] leading-snug text-gray-800">
-          {JSON.stringify(panelState, null, 2)}
-        </pre>
       </div>
     </div>
   );
