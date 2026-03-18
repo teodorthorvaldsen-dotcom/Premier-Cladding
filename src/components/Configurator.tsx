@@ -727,8 +727,8 @@ export function Configurator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-7">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-8 lg:gap-16">
+        <div className="md:col-span-7 min-w-0">
           <section className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="border-b border-gray-100 px-6 py-5 md:px-8">
               <h2 className="text-[13px] font-medium uppercase tracking-wider text-gray-500">
@@ -739,7 +739,10 @@ export function Configurator() {
               </p>
             </div>
             <div className="divide-y divide-gray-100 px-6 py-6 md:px-8">
-              <div id="panel-type" className="pb-6 scroll-mt-24">
+              <div
+                id="panel-type"
+                className="pb-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
                 <PanelTypePicker value={panelType} onChange={setPanelType} />
                 {panelType === "custom" && (
                   <div className="mt-4 rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
@@ -759,24 +762,42 @@ export function Configurator() {
                   </div>
                 )}
               </div>
-              <div id="thickness" className="py-6 scroll-mt-24">
+              <div
+                id="thickness"
+                className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
                 <ThicknessPicker value={thicknessId} onChange={setThicknessId} />
               </div>
-              <div id="size" className="py-6 scroll-mt-24">
+              <div
+                id="size"
+                className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
                 <SizePicker value={size} onChange={setSize} thicknessId={thicknessId} />
               </div>
-              <div id="color" className="py-6 scroll-mt-24">
+              <div
+                id="color"
+                className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
                 <ColorSwatches value={colorId} onChange={setColorId} />
               </div>
-              <div id="quantity" className="pt-6 scroll-mt-24">
+              <div
+                id="quantity"
+                className="pt-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
                 <QuantityPicker value={quantity} onChange={setQuantity} />
               </div>
             </div>
           </section>
         </div>
 
-        <div id="estimate" className="lg:col-span-5 scroll-mt-24">
-          <div className="lg:sticky lg:top-28 space-y-5">
+        <div
+          id="estimate"
+          className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+        >
+          <div
+            className="space-y-5 md:sticky md:top-[248px] md:max-h-[calc(100dvh-260px)] md:overflow-y-auto md:overscroll-contain md:pb-2 lg:top-[292px] lg:max-h-[calc(100dvh-304px)] lg:pb-3"
+            style={{ scrollbarGutter: "stable" }}
+          >
             <section
               className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6"
               aria-labelledby="panel-preview-heading"

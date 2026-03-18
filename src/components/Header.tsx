@@ -24,10 +24,15 @@ const CONFIGURATOR_LINKS = [
   { href: "/cart", label: "Cart" },
 ] as const;
 
-function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+/** Instant scroll on ACM configurator — normal page scroll, no smooth “slide”. */
+function scrollToSection(
+  e: React.MouseEvent<HTMLAnchorElement>,
+  href: string,
+  behavior: ScrollBehavior = "smooth"
+) {
   if (href.startsWith("#")) {
     e.preventDefault();
-    document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById(href.slice(1))?.scrollIntoView({ behavior, block: "start" });
   }
 }
 
@@ -72,7 +77,7 @@ export function Header() {
                   <a
                     key={href}
                     href={href}
-                    onClick={(e) => scrollToSection(e, href)}
+                    onClick={(e) => scrollToSection(e, href, "auto")}
                     className="whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl"
                   >
                     {label}
