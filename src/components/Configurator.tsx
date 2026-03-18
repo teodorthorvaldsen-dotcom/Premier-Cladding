@@ -28,11 +28,6 @@ const defaultSize: SizeSelection = {
   lengthIn: 96,
 };
 
-const MIN_WIDTH_IN = 12;
-const MAX_WIDTH_IN = 62;
-const MIN_LENGTH_IN = 12;
-const MAX_LENGTH_IN = 190;
-
 type PanelStateMap = Record<string, string>;
 
 interface ProjectExampleProps {
@@ -446,8 +441,6 @@ function buildGridPanels(
 }
 
 function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
-  const [depthInches, setDepthInches] = useState(2);
-
   const scene = useMemo(() => {
     const viewW = 520;
     const viewH = 320;
@@ -466,7 +459,7 @@ function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
     const baseC = { x: 340, y: 240 };
     const baseD = { x: 190, y: 200 };
 
-    const depthScale = depthInches / 3;
+    const depthScale = 2 / 3;
     const offset = {
       x: 26 * depthScale,
       y: -12 * depthScale,
@@ -497,7 +490,7 @@ function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
       shadowRx: 70,
       shadowRy: 18,
     };
-  }, [depthInches]);
+  }, []);
 
   const faceColor = activeHex;
   const sideColor = "#4b5563";
@@ -511,19 +504,6 @@ function ProjectExampleMahwahFord({ activeHex }: ProjectExampleProps) {
       <p className="text-[13px] text-gray-600">
         Single 3D ACM panel on a background wall. Color matches your selected panel color.
       </p>
-      <div className="flex items-center gap-3">
-        <label className="text-[12px] font-medium text-gray-900">Depth (projection)</label>
-        <input
-          type="range"
-          min={1}
-          max={4}
-          step={0.5}
-          value={depthInches}
-          onChange={(e) => setDepthInches(Number(e.target.value))}
-          className="flex-1"
-        />
-        <span className="text-[12px] text-gray-700 w-10 text-right">{depthInches.toFixed(1)} in</span>
-      </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-slate-900/90 p-3 shadow-inner">
         <svg viewBox={`0 0 ${viewW} ${viewH}`} className="block h-auto w-full">
@@ -679,14 +659,6 @@ export function Configurator() {
   const color = colors.find((c) => c.id === colorId)!;
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
   const widthLabel = `${size.widthIn}"`;
-  const thicknessMmNumeric = Number(thicknessId.replace("mm", ""));
-  const edgeThicknessPx = Math.min(18, Math.max(4, thicknessMmNumeric / 0.5));
-
-  const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
-  const widthRatio =
-    (clamp(size.widthIn, MIN_WIDTH_IN, MAX_WIDTH_IN) - MIN_WIDTH_IN) / (MAX_WIDTH_IN - MIN_WIDTH_IN || 1);
-  const lengthRatio =
-    (clamp(size.lengthIn, MIN_LENGTH_IN, MAX_LENGTH_IN) - MIN_LENGTH_IN) / (MAX_LENGTH_IN - MIN_LENGTH_IN || 1);
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -805,95 +777,12 @@ export function Configurator() {
 
         <div id="estimate" className="lg:col-span-5 scroll-mt-24">
           <div className="lg:sticky lg:top-28 space-y-5">
-            <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6" aria-labelledby="panel-preview-heading">
+            <section
+              className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6"
+              aria-labelledby="panel-preview-heading"
+            >
               <h2 id="panel-preview-heading" className="text-[13px] font-medium uppercase tracking-wider text-gray-500">
                 Panel Preview
-              </h2>
-              <div className="mt-4">
-                <div
-                  className="relative w-full overflow-hidden rounded-2xl"
-                  style={{
-                    aspectRatio: "4 / 3",
-                  }}
-                  role="img"
-                  aria-label={`Facade preview: ${size.widthIn} by ${size.lengthIn} inch panels in ${color.name} (${color.code}), ${finishes[0].label}, ${
-                    thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId
-                  }`}
-                >
-                  {/* Facade drawing background */}
-                  <div
-                    className="absolute inset-0 rounded-2xl border border-gray-300/70 bg-cover bg-center"
-                    style={{
-                      backgroundImage: "url('/panel-preview-facade.png')",
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                  {/* Color overlay applied to panel areas */}
-                  <div
-                    className="absolute inset-[10%] rounded-xl"
-                    style={{
-                      backgroundColor: color.hex,
-                      mixBlendMode: "multiply",
-                      opacity: 0.82,
-                    }}
-                  />
-                  {/* Soft vignette to keep edges subtle */}
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-2xl"
-                    style={{
-                      background:
-                        "radial-gradient(circle at 30% 0%, rgba(255,255,255,0.65) 0%, transparent 55%), radial-gradient(circle at 100% 120%, rgba(15,23,42,0.32) 0%, transparent 60%)",
-                    }}
-                  />
-
-                  {/* Horizontal scale (width) */}
-                  <div className="pointer-events-none absolute bottom-2 left-[18%] right-[14%]">
-                    <div className="relative h-5">
-                      <div className="absolute bottom-2 left-0 h-[1px] w-full bg-gray-400/70" />
-                      <div className="absolute bottom-1 left-0 h-2 w-[1px] bg-gray-500" />
-                      <div className="absolute bottom-1 right-0 h-2 w-[1px] bg-gray-500" />
-                      <div
-                        className="absolute bottom-2 left-1/2 h-[3px] -translate-x-1/2 rounded-full bg-gray-700"
-                        style={{ width: `${35 + widthRatio * 45}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] font-medium text-gray-700 text-center">
-                      Width: {size.widthIn.toFixed(0)} in (scaled)
-                    </p>
-                  </div>
-
-                  {/* Vertical scale (length) */}
-                  <div className="pointer-events-none absolute top-[18%] bottom-[20%] left-[10%] flex flex-col items-center justify-between">
-                    <div className="relative h-full w-8">
-                      <div className="absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2 bg-gray-400/70" />
-                      <div className="absolute left-1/2 top-0 h-2 w-[1px] -translate-x-1/2 bg-gray-500" />
-                      <div className="absolute left-1/2 bottom-0 h-2 w-[1px] -translate-x-1/2 bg-gray-500" />
-                      <div
-                        className="absolute left-1/2 top-1/2 w-[3px] -translate-x-1/2 rounded-full bg-gray-700"
-                        style={{ height: `${32 + lengthRatio * 48}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] font-medium text-gray-700 text-center">
-                      Length: {size.lengthIn.toFixed(0)} in (scaled)
-                    </p>
-                  </div>
-
-                  {/* Label chip */}
-                  <div className="absolute top-3 right-3 max-w-[70%] rounded-lg bg-white/90 px-2.5 py-1.5 text-[10px] font-medium text-gray-700 shadow-[0_1px_3px_rgba(0,0,0,0.18)] backdrop-blur-md">
-                    <p className="leading-snug">
-                      {color.name} ({color.code}) · {thicknesses.find((t) => t.id === thicknessId)?.label ?? thicknessId}
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-3 text-[13px] text-gray-600">
-                  {size.widthIn} × {size.lengthIn} in · {(pricing?.areaFt2 ?? 0).toFixed(2)} ft² per panel
-                </p>
-              </div>
-            </section>
-            <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
-              <h2 className="text-[13px] font-medium uppercase tracking-wider text-gray-500">
-                Project Example
               </h2>
               <div className="mt-4">
                 <ProjectExampleMahwahFord activeHex={color.hex} />
