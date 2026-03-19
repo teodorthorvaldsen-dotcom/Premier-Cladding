@@ -260,7 +260,6 @@ export function Configurator() {
               </h2>
               <div className="mt-2">
                 <PanelConfiguratorPhotoPreview
-                  panelColor={color.hex}
                   panelWidthIn={size.widthIn}
                   panelHeightIn={size.lengthIn}
                   panelDepthIn={previewDepthIn}
