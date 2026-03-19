@@ -55,110 +55,6 @@ export type PanelConfiguratorPhotoPreviewProps = {
   compact?: boolean;
 };
 
-function Rail({
-  y,
-  railGradId,
-  railSlotsId,
-}: {
-  y: number;
-  railGradId: string;
-  railSlotsId: string;
-}) {
-  return (
-    <g opacity={0.96}>
-      <rect x="-40" y={y - 10} width="1480" height="20" fill={`url(#${railGradId})`} />
-      <rect
-        x="-40"
-        y={y - 3}
-        width="1480"
-        height="6"
-        fill={`url(#${railSlotsId})`}
-        opacity={0.8}
-      />
-      <line
-        x1="-40"
-        y1={y - 10}
-        x2="1440"
-        y2={y - 10}
-        stroke="rgba(255,255,255,0.5)"
-        strokeWidth="1.4"
-      />
-      <line
-        x1="-40"
-        y1={y + 10}
-        x2="1440"
-        y2={y + 10}
-        stroke="rgba(100,110,120,0.28)"
-        strokeWidth="1.4"
-      />
-    </g>
-  );
-}
-
-function Fastener({
-  x,
-  y,
-  side,
-  screwColor,
-  fastenerGradId,
-}: {
-  x: number;
-  y: number;
-  side: "left" | "right";
-  screwColor: string;
-  fastenerGradId: string;
-}) {
-  const right = side === "right";
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <rect
-        x="0"
-        y="0"
-        width="52"
-        height="62"
-        rx="4"
-        fill={`url(#${fastenerGradId})`}
-        stroke="rgba(80,88,96,0.3)"
-        strokeWidth="1.2"
-      />
-      <circle cx="13" cy="15" r="4" fill={screwColor} opacity={0.72} />
-      <circle cx="39" cy="47" r="4" fill={screwColor} opacity={0.72} />
-      {right ? (
-        <g transform="translate(42,13)">
-          <path
-            d="M0 0 L0 36 L-11 36 L-11 27 L-6 23 L-6 10 L-11 6 L-11 0 Z"
-            fill="#cfd5db"
-            stroke="rgba(70,78,86,0.45)"
-            strokeWidth="1"
-          />
-          <path
-            d="M15 7 L0 7 L0 12 L9 12 L9 27 L0 27 L0 32 L15 32 Z"
-            fill="#aeb5bd"
-            stroke="rgba(70,78,86,0.35)"
-            strokeWidth="1"
-          />
-        </g>
-      ) : (
-        <g transform="translate(9,13)">
-          <path
-            d="M15 0 L15 36 L26 36 L26 27 L21 23 L21 10 L26 6 L26 0 Z"
-            fill="#cfd5db"
-            stroke="rgba(70,78,86,0.45)"
-            strokeWidth="1"
-          />
-          <path
-            d="M0 7 L15 7 L15 12 L6 12 L6 27 L15 27 L15 32 L0 32 Z"
-            fill="#aeb5bd"
-            stroke="rgba(70,78,86,0.35)"
-            strokeWidth="1"
-          />
-        </g>
-      )}
-      <line x1="2" y1="2" x2="50" y2="2" stroke="rgba(255,255,255,0.62)" strokeWidth="1.2" />
-    </g>
-  );
-}
-
 export function PanelConfiguratorPhotoPreview({
   panelColor,
   panelWidthIn,
@@ -255,14 +151,9 @@ export function PanelConfiguratorPhotoPreview({
     };
   }, [panelWidthIn, panelHeightIn, panelDepthIn]);
 
-  const wallGradId = `wallGrad-${uid}`;
-  const railGradId = `railGrad-${uid}`;
   const panelFaceGradId = `panelFaceGrad-${uid}`;
   const panelTopGradId = `panelTopGrad-${uid}`;
   const panelSideGradId = `panelSideGrad-${uid}`;
-  const fastenerGradId = `fastenerGrad-${uid}`;
-  const wallTextureId = `wallTexture-${uid}`;
-  const railSlotsId = `railSlots-${uid}`;
   const panelShadowId = `panelShadow-${uid}`;
 
   return (
@@ -289,14 +180,6 @@ export function PanelConfiguratorPhotoPreview({
           aria-label={`ACM panel preview ${panelWidthIn} by ${panelHeightIn} inches`}
         >
           <defs>
-            <linearGradient id={wallGradId} x1="0%" y1="0%" x2="1" y2="1">
-              <stop offset="0%" stopColor={colors.wallA} />
-              <stop offset="100%" stopColor={colors.wallB} />
-            </linearGradient>
-            <linearGradient id={railGradId} x1="0%" y1="0%" x2="0%" y2="1">
-              <stop offset="0%" stopColor={colors.railA} />
-              <stop offset="100%" stopColor={colors.railB} />
-            </linearGradient>
             <linearGradient id={panelFaceGradId} x1="0%" y1="0%" x2="1" y2="1">
               <stop offset="0%" stopColor={lightenColor(colors.front, 8)} />
               <stop offset="100%" stopColor={shadeColor(colors.front, -8)} />
@@ -309,35 +192,19 @@ export function PanelConfiguratorPhotoPreview({
               <stop offset="0%" stopColor={lightenColor(colors.side, 6)} />
               <stop offset="100%" stopColor={shadeColor(colors.side, -12)} />
             </linearGradient>
-            <linearGradient id={fastenerGradId} x1="0%" y1="0%" x2="1" y2="1">
-              <stop offset="0%" stopColor={colors.fastenerA} />
-              <stop offset="100%" stopColor={colors.fastenerB} />
-            </linearGradient>
-            <pattern id={wallTextureId} width="16" height="16" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="5" r="0.75" fill="rgba(0,0,0,0.03)" />
-              <circle cx="11" cy="8" r="0.55" fill="rgba(0,0,0,0.025)" />
-              <circle cx="8" cy="13" r="0.5" fill="rgba(255,255,255,0.2)" />
-            </pattern>
-            <pattern id={railSlotsId} width="34" height="14" patternUnits="userSpaceOnUse">
-              <ellipse cx="17" cy="7" rx="3" ry="1.35" fill={colors.railSlot} />
-            </pattern>
             <filter id={panelShadowId} x="-30%" y="-30%" width="180%" height="180%">
               <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="rgba(0,0,0,0.14)" />
             </filter>
           </defs>
 
-          <rect x="0" y="0" width={scene.viewW} height={scene.viewH} fill={`url(#${wallGradId})`} />
-          <rect
-            x="0"
-            y="0"
+          <image
+            href="/panel-preview-grid.png"
+            x={0}
+            y={0}
             width={scene.viewW}
             height={scene.viewH}
-            fill={`url(#${wallTextureId})`}
-            opacity={0.9}
+            preserveAspectRatio="none"
           />
-
-          <Rail y={scene.topRailY} railGradId={railGradId} railSlotsId={railSlotsId} />
-          <Rail y={scene.bottomRailY} railGradId={railGradId} railSlotsId={railSlotsId} />
 
           <g filter={`url(#${panelShadowId})`}>
             <polygon
@@ -349,35 +216,6 @@ export function PanelConfiguratorPhotoPreview({
               ])}
               fill="rgba(0,0,0,0.09)"
               opacity={0.16}
-            />
-
-            <Fastener
-              x={scene.leftFastenerX}
-              y={scene.leftTopFastenerY}
-              side="left"
-              screwColor={colors.screw}
-              fastenerGradId={fastenerGradId}
-            />
-            <Fastener
-              x={scene.leftFastenerX}
-              y={scene.leftBottomFastenerY}
-              side="left"
-              screwColor={colors.screw}
-              fastenerGradId={fastenerGradId}
-            />
-            <Fastener
-              x={scene.rightFastenerX}
-              y={scene.rightTopFastenerY}
-              side="right"
-              screwColor={colors.screw}
-              fastenerGradId={fastenerGradId}
-            />
-            <Fastener
-              x={scene.rightFastenerX}
-              y={scene.rightBottomFastenerY}
-              side="right"
-              screwColor={colors.screw}
-              fastenerGradId={fastenerGradId}
             />
 
             <polygon
