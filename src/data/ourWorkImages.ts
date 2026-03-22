@@ -1,4 +1,4 @@
-/** Gallery images shown on the About page (formerly the Our Work page). */
+/** Gallery images previously shown on the Our Work page; now displayed on About. */
 export const OUR_WORK_IMAGES = [
   "/images/our-work/our-work-1.png",
   "/images/our-work/our-work-2.png",
