@@ -1,21 +1,9 @@
 import Image from "next/image";
-
-const OUR_WORK_IMAGES = [
-  "/images/our-work/our-work-1.png",
-  "/images/our-work/our-work-2.png",
-  "/images/our-work/our-work-3.png",
-  "/images/our-work/our-work-4.png",
-  "/images/our-work/our-work-5.png",
-  "/images/our-work/our-work-6.png",
-  "/images/our-work/our-work-7.png",
-  "/images/our-work/our-work-8.png",
-  "/images/our-work/our-work-9.png",
-  "/images/our-work/our-work-10.png",
-];
+import { OUR_WORK_IMAGES } from "@/data/ourWorkImages";
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+    <div className="px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           About All Cladding Solutions
@@ -74,7 +62,9 @@ export default function AboutPage() {
         </section>
 
         <section className="mt-16 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-8">
-          <h2 className="text-[15px] font-medium text-gray-900">Why All Cladding Solutions</h2>
+          <h2 className="text-[15px] font-medium text-gray-900">
+            Why All Cladding Solutions
+          </h2>
           <ul className="mt-6 space-y-4">
             <li className="flex gap-3">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
@@ -104,16 +94,17 @@ export default function AboutPage() {
         </section>
       </div>
 
-      <section className="mt-16" aria-labelledby="our-work-heading">
+      <section
+        id="our-work"
+        className="mx-auto mt-16 max-w-6xl scroll-mt-28"
+        aria-labelledby="our-work-heading"
+      >
         <h2
           id="our-work-heading"
           className="text-[13px] font-medium uppercase tracking-wider text-gray-500"
         >
-          Our work
+          Our Work
         </h2>
-        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-gray-600">
-          A selection of recent fabrication and installation work.
-        </p>
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8">
           {OUR_WORK_IMAGES.map((src) => (
             <div

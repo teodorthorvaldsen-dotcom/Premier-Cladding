@@ -25,7 +25,7 @@ export default async function ProjectPage({ params }: Props) {
 
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <Link
-          href="/about"
+          href="/about#our-work"
           className="text-[13px] font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset rounded"
         >
           ← Back to About

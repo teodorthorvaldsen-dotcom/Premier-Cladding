@@ -8,7 +8,7 @@ A Next.js web application for configuring and requesting quotes for fire-rated A
 - **Real-time Pricing**: Automatic price calculation with volume discounts
 - **Quote Requests**: Submit quote requests with drawings and project details
 - **Consultation**: Upload plans for panel consultation and recommendations
-- **Project Gallery**: View featured ACM panel projects
+- **Our Work gallery**: Featured project photos on the About page
 
 ## Tech Stack
 

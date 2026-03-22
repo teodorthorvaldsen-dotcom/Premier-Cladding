@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Former "Our Work" index — gallery now lives on /about. */
+/** Former Our Work gallery — now lives on /about (#our-work). */
 export default function ProjectsIndexRedirect() {
   redirect("/about");
 }
