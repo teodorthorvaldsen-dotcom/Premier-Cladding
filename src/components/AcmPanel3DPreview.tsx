@@ -11,6 +11,8 @@ export interface AcmPanel3DPreviewProps {
   /** Visual depth in inches (may be scaled from real thickness for readability). */
   panelDepthIn: number;
   panelColorHex: string;
+  /** Wood-grain (or other) swatch image used on the panel faces when present. */
+  panelSwatchImage?: string;
 }
 
 export function AcmPanel3DPreview({
@@ -18,6 +20,7 @@ export function AcmPanel3DPreview({
   panelHeightIn,
   panelDepthIn,
   panelColorHex,
+  panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * 6;
@@ -43,37 +46,91 @@ export function AcmPanel3DPreview({
     [panelColorHex]
   );
 
-  const wrapStyle: CSSProperties = {
-    ...staticStyles.panel3dWrap,
-    width: scaled.faceW,
-    height: scaled.faceH,
-  };
+  const { wrapStyle, topStyle, sideStyle, frontStyle } = useMemo(() => {
+    const wrap: CSSProperties = {
+      ...staticStyles.panel3dWrap,
+      width: scaled.faceW,
+      height: scaled.faceH,
+    };
 
-  const topStyle: CSSProperties = {
-    ...staticStyles.panelTop,
-    width: scaled.faceW,
-    height: scaled.depth,
-    background: topColor,
-    borderColor,
-    transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
-  };
+    if (panelSwatchImage) {
+      const url = `url(${panelSwatchImage})`;
+      return {
+        wrapStyle: wrap,
+        topStyle: {
+          ...staticStyles.panelTop,
+          width: scaled.faceW,
+          height: scaled.depth,
+          borderColor,
+          transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
+          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4)), ${url}`,
+          backgroundSize: "cover, cover",
+          backgroundPosition: "center, center",
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+        sideStyle: {
+          ...staticStyles.panelSide,
+          width: scaled.depth,
+          height: scaled.faceH,
+          borderColor,
+          transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
+          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38)), ${url}`,
+          backgroundSize: "cover, cover",
+          backgroundPosition: "center, center",
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+        frontStyle: {
+          ...staticStyles.panelFront,
+          width: scaled.faceW,
+          height: scaled.faceH,
+          borderColor,
+          backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.14) 0%, transparent 38%, rgba(0,0,0,0.18) 100%), ${url}`,
+          backgroundSize: "cover, cover",
+          backgroundPosition: "center, center",
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+      };
+    }
 
-  const sideStyle: CSSProperties = {
-    ...staticStyles.panelSide,
-    width: scaled.depth,
-    height: scaled.faceH,
-    background: sideColor,
+    return {
+      wrapStyle: wrap,
+      topStyle: {
+        ...staticStyles.panelTop,
+        width: scaled.faceW,
+        height: scaled.depth,
+        background: topColor,
+        borderColor,
+        transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
+      } satisfies CSSProperties,
+      sideStyle: {
+        ...staticStyles.panelSide,
+        width: scaled.depth,
+        height: scaled.faceH,
+        background: sideColor,
+        borderColor,
+        transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
+      } satisfies CSSProperties,
+      frontStyle: {
+        ...staticStyles.panelFront,
+        width: scaled.faceW,
+        height: scaled.faceH,
+        background: `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
+        borderColor,
+      } satisfies CSSProperties,
+    };
+  }, [
+    scaled.depth,
+    scaled.faceH,
+    scaled.faceW,
     borderColor,
-    transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
-  };
+    frontColor,
+    panelColorHex,
+    panelSwatchImage,
+    sideColor,
+    topColor,
+  ]);
 
-  const frontStyle: CSSProperties = {
-    ...staticStyles.panelFront,
-    width: scaled.faceW,
-    height: scaled.faceH,
-    background: `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
-    borderColor,
-  };
+  const depthLabel = Number.isFinite(panelDepthIn) ? panelDepthIn.toFixed(2) : String(panelDepthIn);
 
   return (
     <section
@@ -111,7 +168,7 @@ export function AcmPanel3DPreview({
       </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[13px] font-medium text-gray-500">
-        Scaled preview: {panelWidthIn}&quot; × {panelHeightIn}&quot; × {panelDepthIn}&quot; deep (illustrative)
+        Scaled preview: {panelWidthIn}&quot; × {panelHeightIn}&quot; × {depthLabel}&quot; deep (illustrative)
       </p>
     </section>
   );
