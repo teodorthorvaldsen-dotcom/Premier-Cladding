@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 
 const NAV_LINKS = [
-  { href: "/products/acm-panels", label: "ACM Panels" },
-  { href: "/products/acm-panels", label: "Installment Kits" },
-  { href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
-  { href: "/about", label: "About" },
-  { href: "/consultation", label: "Consultation" },
-  { href: "/contact", label: "Contact" },
+  { id: "acm-panels", href: "/products/acm-panels", label: "ACM Panels" },
+  { id: "installment-kits", href: "/products/acm-panels", label: "Installment Kits" },
+  { id: "custom-shop-drawings", href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
+  { id: "about", href: "/about", label: "About" },
+  { id: "consultation", href: "/consultation", label: "Consultation" },
+  { id: "contact", href: "/contact", label: "Contact" },
 ] as const;
 
 const CONFIGURATOR_LINKS = [
@@ -100,9 +100,9 @@ export function Header() {
               className="hidden flex-1 items-center justify-center gap-5 md:flex lg:gap-8"
               aria-label="Main"
             >
-              {NAV_LINKS.map(({ href, label }) => (
+              {NAV_LINKS.map(({ id, href, label }) => (
                 <Link
-                  key={href}
+                  key={id}
                   href={href}
                   className={`whitespace-nowrap rounded-lg px-4 py-3 text-lg font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset lg:text-xl ${
                     pathname === href
