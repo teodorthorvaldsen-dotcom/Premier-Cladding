@@ -11,6 +11,8 @@ export interface AcmPanel3DPreviewProps {
   /** Visual depth in inches (may be scaled from real thickness for readability). */
   panelDepthIn: number;
   panelColorHex: string;
+  /** Display name for the selected finish (e.g. from swatch data). */
+  panelColorName: string;
   /** Wood-grain (or other) swatch image used on the panel faces when present. */
   panelSwatchImage?: string;
 }
@@ -20,6 +22,7 @@ export function AcmPanel3DPreview({
   panelHeightIn,
   panelDepthIn,
   panelColorHex,
+  panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
   const scaled = useMemo(() => {
@@ -130,8 +133,6 @@ export function AcmPanel3DPreview({
     topColor,
   ]);
 
-  const depthLabel = Number.isFinite(panelDepthIn) ? panelDepthIn.toFixed(2) : String(panelDepthIn);
-
   return (
     <section
       className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
@@ -165,7 +166,7 @@ export function AcmPanel3DPreview({
       </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[13px] font-medium text-gray-500">
-        {panelWidthIn}&quot; × {panelHeightIn}&quot; × {depthLabel}&quot; deep
+        {panelWidthIn}&quot; × {panelHeightIn}&quot; · {panelColorName}
       </p>
     </section>
   );

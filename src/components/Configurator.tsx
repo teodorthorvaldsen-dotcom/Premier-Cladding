@@ -257,6 +257,7 @@ export function Configurator() {
               panelHeightIn={size.lengthIn}
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
+              panelColorName={color.name}
               panelSwatchImage={"swatchImage" in color ? color.swatchImage : undefined}
             />
             <PriceSummary
