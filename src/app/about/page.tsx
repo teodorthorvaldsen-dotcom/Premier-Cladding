@@ -49,41 +49,42 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
-      </section>
 
-      <div className="mx-auto mt-16 max-w-3xl">
-        <section className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-8">
-          <h2 className="text-[15px] font-medium text-gray-900">
-            Why All Cladding Solutions
-          </h2>
-          <ul className="mt-6 space-y-4">
-            <li className="flex gap-3">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
-              <span className="text-[15px] leading-relaxed text-gray-700">
-                Fire-rated ACM that meets building codes for exterior facades and rain screens
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
-              <span className="text-[15px] leading-relaxed text-gray-700">
-                Availability and lead times confirmed with your final quote based on project size, finish selection, and delivery location
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
-              <span className="text-[15px] leading-relaxed text-gray-700">
-                Cut-to-length and fabrication support so you get exactly what you need
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
-              <span className="text-[15px] leading-relaxed text-gray-700">
-                Simple configuration and quote process with responsive follow-up
-              </span>
-            </li>
-          </ul>
-        </section>
-      </div>
+        <div className="mx-auto mt-16 max-w-3xl">
+          <section className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-8">
+            <h2 className="text-[15px] font-medium text-gray-900">
+              Why All Cladding Solutions
+            </h2>
+            <ul className="mt-6 space-y-4">
+              <li className="flex gap-3">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
+                <span className="text-[15px] leading-relaxed text-gray-700">
+                  Fire-rated ACM that meets building codes for exterior facades and rain screens
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
+                <span className="text-[15px] leading-relaxed text-gray-700">
+                  Availability and lead times confirmed with your final quote based on project size,
+                  finish selection, and delivery location
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
+                <span className="text-[15px] leading-relaxed text-gray-700">
+                  Cut-to-length and fabrication support so you get exactly what you need
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-900" aria-hidden />
+                <span className="text-[15px] leading-relaxed text-gray-700">
+                  Simple configuration and quote process with responsive follow-up
+                </span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </section>
     </div>
   );
 }
