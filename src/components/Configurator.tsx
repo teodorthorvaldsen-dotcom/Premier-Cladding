@@ -21,6 +21,7 @@ import { PriceSummary } from "./PriceSummary";
 import { QuantityPicker } from "./QuantityPicker";
 import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
+import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -112,6 +113,9 @@ export function Configurator() {
   const color = colors.find((c) => c.id === colorId)!;
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
   const widthLabel = `${size.widthIn}"`;
+  const thicknessMm = Number(thicknessId.replace("mm", ""));
+  /** Illustrative depth so thin ACM reads clearly in the 3D preview (not sheet metal thickness). */
+  const previewDepthIn = Math.min(3, Math.max(0.5, (thicknessMm / 25.4) * 1.45 + 0.4));
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -248,6 +252,12 @@ export function Configurator() {
           className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div className="space-y-3 md:sticky md:top-[236px] lg:top-[276px] lg:space-y-4">
+            <AcmPanel3DPreview
+              panelWidthIn={size.widthIn}
+              panelHeightIn={size.lengthIn}
+              panelDepthIn={previewDepthIn}
+              panelColorHex={color.swatchHex}
+            />
             <PriceSummary
               pricing={pricing}
               loading={loading}
