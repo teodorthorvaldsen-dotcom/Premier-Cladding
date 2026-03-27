@@ -12,6 +12,8 @@ const NAV_LINKS = [
   { id: "about", href: "/about", label: "About" },
   { id: "consultation", href: "/consultation", label: "Consultation" },
   { id: "contact", href: "/contact", label: "Contact" },
+  { id: "stock-material", href: "/stock-material", label: "Stock Material" },
+  { id: "installment-videos", href: "/installment-videos", label: "Installment Videos" },
 ] as const;
 
 const CONFIGURATOR_LINKS = [
