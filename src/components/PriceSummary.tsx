@@ -62,20 +62,22 @@ export function PriceSummary({
             Updating price…
           </p>
         )}
-        <div className={compact ? "mb-3" : "mb-6"}>
-          <p
-            className={
-              compact
-                ? "text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl"
-                : "text-[28px] font-semibold tabular-nums tracking-tight text-gray-900"
-            }
-          >
-            {formatUSD(pricing.pricePerSqFt)}{" "}
-            <span className={compact ? "text-sm font-medium text-gray-600" : "text-base font-medium text-gray-600"}>
-              / sq ft
-            </span>
-          </p>
-        </div>
+        {pricing.panelType !== "custom" && (
+          <div className={compact ? "mb-3" : "mb-6"}>
+            <p
+              className={
+                compact
+                  ? "text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl"
+                  : "text-[28px] font-semibold tabular-nums tracking-tight text-gray-900"
+              }
+            >
+              {formatUSD(pricing.pricePerSqFt)}{" "}
+              <span className={compact ? "text-sm font-medium text-gray-600" : "text-base font-medium text-gray-600"}>
+                / sq ft
+              </span>
+            </p>
+          </div>
+        )}
         <dl className={compact ? "space-y-2 text-[13px]" : "space-y-3.5 text-[15px]"}>
           <div className="flex justify-between gap-2">
             <dt className="shrink-0 text-gray-600">Panel type</dt>
