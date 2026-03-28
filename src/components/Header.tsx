@@ -52,11 +52,11 @@ export function Header() {
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-white/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-gray-200/60 bg-[#f9fafb]">
         <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col items-stretch gap-4 px-4 py-6 sm:px-6 sm:py-7 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-10 lg:py-8">
           <Link
             href="/"
-            className="relative flex shrink-0 items-center justify-center rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white lg:justify-start"
+            className="relative flex shrink-0 items-center justify-center bg-transparent focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f9fafb] lg:justify-start"
             aria-label="All Cladding Solutions home"
           >
             <Image
@@ -64,7 +64,7 @@ export function Header() {
               alt="All Cladding Solutions"
               width={840}
               height={216}
-              className="h-[10.5rem] w-auto object-contain object-left sm:h-48 md:h-[13rem] lg:h-56 xl:h-64"
+              className="h-[10.5rem] w-auto object-contain object-left mix-blend-multiply sm:h-48 md:h-[13rem] lg:h-56 xl:h-64"
               priority
               unoptimized
             />
