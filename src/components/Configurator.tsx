@@ -22,7 +22,6 @@ import { QuantityPicker } from "./QuantityPicker";
 import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
-import { AcmFinishDetails } from "./AcmFinishDetails";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -181,10 +180,7 @@ export function Configurator() {
           ACM Panel Configurator
         </h1>
         <p className="mt-2 text-[15px] text-gray-500">
-          Configure <span className="font-medium text-gray-700">Alfrex FR</span> metal composite panels. Colors
-          and series follow{" "}
-          <span className="whitespace-nowrap">Alfrex F-01 Standard Product Finishes</span>. Pricing updates
-          automatically.
+          Configure your panels. Pricing updates automatically.
         </p>
       </div>
 
@@ -240,9 +236,6 @@ export function Configurator() {
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
                 <ColorSwatches value={colorId} onChange={setColorId} />
-                <div className="mt-8">
-                  <AcmFinishDetails color={color} />
-                </div>
               </div>
               <div
                 id="quantity"
@@ -285,37 +278,6 @@ export function Configurator() {
         </div>
       </div>
 
-      <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="finish-plates-heading">
-        <h2
-          id="finish-plates-heading"
-          className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl"
-        >
-          Official finish plates (PDF)
-        </h2>
-        <p className="mt-2 max-w-3xl text-[15px] text-gray-500">
-          The viewer below is the same Alfrex document used for this page: printed swatch images, series
-          layout, custom-color program, and full warranty context. Use it with physical samples for
-          approval.
-        </p>
-        <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200/80 bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <iframe
-            title="Alfrex F-01 Standard Product Finishes PDF"
-            src="/documents/F-01-Alfrex-Standard-Product-Finishes.pdf"
-            className="h-[min(70vh,720px)] w-full min-h-[480px]"
-          />
-        </div>
-        <p className="mt-4 text-[13px] text-gray-500">
-          <Link
-            href="/documents/F-01-Alfrex-Standard-Product-Finishes.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-gray-800 underline decoration-gray-300 underline-offset-2 hover:text-gray-950"
-          >
-            Open or download F-01 (new tab)
-          </Link>
-        </p>
-      </section>
-
       <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="material-composition-heading">
         <h2 id="material-composition-heading" className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           Material Composition
@@ -346,17 +308,13 @@ export function Configurator() {
             <span className="mt-2 inline-block text-[13px] text-gray-500 group-hover:text-gray-700">View PDF →</span>
           </Link>
           <Link
-            href="/documents/F-01-Alfrex-Standard-Product-Finishes.pdf"
+            href="/resources/alfrex-standard-finishes-catalog"
             target="_blank"
             rel="noopener noreferrer"
             className="group rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-colors hover:border-gray-300/80 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            <h3 className="text-[15px] font-medium text-gray-900 group-hover:text-gray-800">
-              Alfrex F-01 — Standard Product Finishes
-            </h3>
-            <span className="mt-2 inline-block text-[13px] text-gray-500 group-hover:text-gray-700">
-              View PDF (hosted) →
-            </span>
+            <h3 className="text-[15px] font-medium text-gray-900 group-hover:text-gray-800">Alfrex Standard Finishes Catalog</h3>
+            <span className="mt-2 inline-block text-[13px] text-gray-500 group-hover:text-gray-700">View PDF →</span>
           </Link>
           <Link
             href="/resources/installation-guidelines"
