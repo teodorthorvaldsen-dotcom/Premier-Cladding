@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   allWidths,
@@ -16,6 +17,14 @@ function formatUSD(n: number): string {
     currency: "USD",
     minimumFractionDigits: 2,
   }).format(n);
+}
+
+function swatchImageSrc(color: (typeof colors)[number] | undefined): string | null {
+  if (!color) return null;
+  if ("swatchImage" in color && typeof (color as { swatchImage?: unknown }).swatchImage === "string") {
+    return (color as { swatchImage: string }).swatchImage;
+  }
+  return null;
 }
 
 function describeItem(item: CartItem): string {
@@ -43,16 +52,22 @@ function CartLine({
   onQuantityChange: (qty: number) => void;
 }) {
   const color = colors.find((c) => c.id === item.colorId);
+  const imageSrc = swatchImageSrc(color);
   const lineTotal = cartItemLineTotal(item);
 
   return (
     <li className="flex flex-col gap-4 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div
-          className="h-10 w-10 shrink-0 rounded border border-gray-300"
-          style={{ backgroundColor: color?.swatchHex ?? "#ccc" }}
+          className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-gray-300 bg-gray-100"
           aria-hidden
-        />
+        >
+          {imageSrc ? (
+            <Image src={imageSrc} alt="" fill className="object-cover" sizes="40px" />
+          ) : (
+            <div className="h-full w-full" style={{ backgroundColor: color?.swatchHex ?? "#ccc" }} />
+          )}
+        </div>
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-900">{describeItem(item)}</p>
           <p className="text-xs text-gray-500">
