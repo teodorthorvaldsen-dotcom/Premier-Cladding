@@ -174,8 +174,8 @@ export function ColorSwatches({
 
       <div className="mt-8 space-y-10" role="region" aria-label="Panel color series">
         <section>
-          <SeriesHeader title="Order color swatches" />
-          <p className="mt-2 text-[11px] leading-relaxed text-gray-500 sm:text-xs">
+          <h3 className="text-sm font-medium text-gray-900">Order color swatches</h3>
+          <p className="mt-0.5 text-[13px] text-gray-500">
             Request physical finish samples to review color and appearance under your lighting before you order panels.{" "}
             <Link
               href="/contact"
