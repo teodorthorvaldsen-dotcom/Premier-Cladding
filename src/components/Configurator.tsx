@@ -262,16 +262,7 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
-              panelSwatchTexture={
-                "textureSprite" in color && color.textureSprite ? color.textureSprite : undefined
-              }
-              panelSwatchImage={
-                "textureSprite" in color && color.textureSprite
-                  ? undefined
-                  : "swatchImage" in color && typeof color.swatchImage === "string"
-                    ? color.swatchImage
-                    : undefined
-              }
+              panelSwatchImage={"swatchImage" in color ? color.swatchImage : undefined}
             />
             <PriceSummary
               pricing={pricing}

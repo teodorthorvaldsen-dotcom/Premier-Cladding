@@ -65,8 +65,6 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     const isSelected = value === c.id;
     const hex = c.swatchHex ?? "#ccc";
     const swatchImage = (c as unknown as { swatchImage?: string }).swatchImage;
-    const textureSprite = (c as unknown as { textureSprite?: { sheet: string; bgSize: string; bgPosition: string } })
-      .textureSprite;
 
     return (
       <div key={c.id} className="group relative flex justify-center">
@@ -82,32 +80,17 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
               : "ring-1 ring-gray-200/80 ring-inset hover:ring-gray-300"
           }`}
         >
-          {textureSprite ? (
-            <span
-              className="absolute inset-0"
-              style={{
-                backgroundColor: hex,
-                backgroundImage: `url(${textureSprite.sheet})`,
-                backgroundSize: textureSprite.bgSize,
-                backgroundPosition: textureSprite.bgPosition,
-                backgroundRepeat: "no-repeat",
-              }}
+          <span className="absolute inset-0" style={{ backgroundColor: hex }} />
+          {typeof swatchImage === "string" && (
+            <Image
+              src={swatchImage}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="56px"
+              draggable={false}
+              aria-hidden
             />
-          ) : (
-            <>
-              <span className="absolute inset-0" style={{ backgroundColor: hex }} />
-              {typeof swatchImage === "string" && (
-                <Image
-                  src={swatchImage}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="56px"
-                  draggable={false}
-                  aria-hidden
-                />
-              )}
-            </>
           )}
 
           {isSelected && (
@@ -143,8 +126,8 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Color &amp; finish</label>
       <p className="mt-0.5 text-[13px] text-gray-500">
-        Alfrex FR finishes grouped per standard literature. Micas, metallics, metal prints, and wood grains
-        are <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
+        Alfrex FR finishes grouped per standard literature. Micas, metallics, metal series, and wood prints are{" "}
+        <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
       </p>
 
       <div role="group" aria-label="Panel color" className="mt-6 space-y-8">
@@ -217,13 +200,13 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
 
         <div
           id="wood-series-swatches"
-          className="rounded-xl border border-gray-100 bg-amber-50/25 px-3 py-4 sm:px-4"
+          className="rounded-xl border border-gray-100 bg-amber-50/20 px-3 py-4 sm:px-4"
         >
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">Wood Series</h3>
-            <span className="text-[11px] text-gray-500">20 yr · AAMA 2605 · Directional grain</span>
+            <span className="text-[11px] text-gray-500">20 yr · AAMA 2605 · Directional</span>
           </div>
-          <div className="grid gap-2 sm:gap-3 [grid-template-columns:repeat(3,max-content)] max-sm:[grid-template-columns:repeat(3,max-content)]">
+          <div className="grid gap-2 sm:gap-3 [grid-template-columns:repeat(3,max-content)] max-sm:[grid-template-columns:repeat(2,max-content)]">
             {woodSeries.map(renderSwatch)}
           </div>
         </div>
