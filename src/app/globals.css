@@ -6,9 +6,20 @@
   /* Slightly larger root (~18px at typical 16px browser default) for readability across the site */
   html {
     font-size: 112.5%;
+    /* Prevent iOS from inflating small text columns in landscape */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-[#f9fafb] text-gray-900 antialiased;
+  }
+  /* Inputs below ~16px trigger unwanted zoom on iPhone focus */
+  @media (max-width: 639px) {
+    input,
+    textarea,
+    select {
+      font-size: max(1rem, 100%);
+    }
   }
 }
 

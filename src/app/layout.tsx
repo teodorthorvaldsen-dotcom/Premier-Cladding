@@ -5,11 +5,18 @@ import "./globals.css";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f9fafb",
 };
 
 export const metadata: Metadata = {
   title: "All Cladding Solutions | ACM Panels",
   description: "Fire-rated ACM panels. Configure online or submit drawings for consultation. Nationwide.",
+  appleWebApp: {
+    capable: true,
+    title: "All Cladding Solutions",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({

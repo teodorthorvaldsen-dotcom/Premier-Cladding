@@ -56,7 +56,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative h-[85vh] w-full overflow-hidden">
+      <section className="relative min-h-[22rem] h-[85svh] max-h-[960px] w-full overflow-hidden md:h-[85vh] md:max-h-none">
         <Image
           src="/images/hero.jpg"
           alt="Modern architectural facade with ACM panels"
