@@ -809,7 +809,19 @@ export const colors = [
     availability: mto,
     leadTimeDaysRange: [10, 21] as [number, number],
   },
-  { id: "custom-color-match", name: "Custom color match", code: "Custom (MOQ)", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#9CA3AF", rgbApprox: "Per sample / Pantone", adderPerFt2: 0, availability: mto, leadTimeDaysRange: [14, 28] as [number, number] },
+  {
+    id: "custom-color-match",
+    name: "Custom color match",
+    code: "Custom (MOQ)",
+    category: "Solid" as ColorCategory,
+    series: "Solids" as ColorSeries,
+    swatchHex: "#9CA3AF",
+    swatchImage: "/images/acm/custom-color-match.png",
+    rgbApprox: "Per sample / Pantone",
+    adderPerFt2: 0,
+    availability: mto,
+    leadTimeDaysRange: [14, 28] as [number, number],
+  },
 ] as const;
 
 export type WidthId = (typeof allWidths)[number]["id"];
