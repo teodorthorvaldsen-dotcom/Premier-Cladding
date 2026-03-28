@@ -14,6 +14,8 @@ interface CartQuotePayload {
     areaFt2: number;
     panelType?: string;
     panelTypeLabel?: string;
+    customColorReference?: string;
+    customColorSpecFileName?: string;
   }>;
   fullName: string;
   company: string;
@@ -47,15 +49,25 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
-    .map(
-      (i) =>
-        `<tr>
-          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee;">${i.widthIn}" × ${i.heightIn} in</td>
-          <td style="padding: 6px 12px; border-bottom: 1px solid #eee;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
-          <td style="padding: 6px 12px; border-bottom: 1px solid #eee;">${i.quantity}</td>
-          <td style="padding: 6px 12px; border-bottom: 1px solid #eee;">${formatUSD(i.unitPrice * i.quantity)}</td>
-        </tr>`
-    )
+    .map((i) => {
+      const extra =
+        i.customColorReference || i.customColorSpecFileName
+          ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
+              ${i.customColorReference ? `<div>Color reference: ${escapeHtml(i.customColorReference)}</div>` : ""}
+              ${
+                i.customColorSpecFileName
+                  ? `<div>Spec PDF (name only): ${escapeHtml(i.customColorSpecFileName)} — request file via follow-up if needed</div>`
+                  : ""
+              }
+            </div>`
+          : "";
+      return `<tr>
+          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${i.widthIn}" × ${i.heightIn} in${extra}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(i.unitPrice * i.quantity)}</td>
+        </tr>`;
+    })
     .join("");
   return `
 <!DOCTYPE html>

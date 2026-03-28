@@ -62,6 +62,21 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
+    ${
+      c.customColorReference
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Color reference</td><td>${escapeHtml(c.customColorReference)}</td></tr>`
+        : ""
+    }
+    ${
+      c.customColorSpecAttachment
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Custom color PDF</td><td>${escapeHtml(c.customColorSpecAttachment.fileName)} (attached)</td></tr>`
+        : ""
+    }
+    ${
+      c.customColorSpecOversizeFileName
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Custom color PDF</td><td>Large file — please confirm customer re-attached: ${escapeHtml(c.customColorSpecOversizeFileName)}</td></tr>`
+        : ""
+    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Finish</td><td>${escapeHtml(c.finishLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantity</td><td>${c.quantity} panels</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Total sq ft</td><td>${c.totalSqFt.toFixed(2)} ft²</td></tr>
@@ -93,6 +108,21 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
+    ${
+      c.customColorReference
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Color reference</td><td>${escapeHtml(c.customColorReference)}</td></tr>`
+        : ""
+    }
+    ${
+      c.customColorSpecAttachment
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Custom color PDF</td><td>${escapeHtml(c.customColorSpecAttachment.fileName)} (attached)</td></tr>`
+        : ""
+    }
+    ${
+      c.customColorSpecOversizeFileName
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Custom color PDF</td><td>Large file (${escapeHtml(c.customColorSpecOversizeFileName)}) — please add it under Drawings on the quote form if you have not already.</td></tr>`
+        : ""
+    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Finish</td><td>${escapeHtml(c.finishLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantity</td><td>${c.quantity} panels</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Total sq ft</td><td>${c.totalSqFt.toFixed(2)} ft²</td></tr>

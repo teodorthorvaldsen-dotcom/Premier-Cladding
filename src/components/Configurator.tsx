@@ -40,6 +40,27 @@ export interface PriceResult {
 }
 
 const DEBOUNCE_MS = 300;
+/** PDFs up to this size are embedded in the quote draft for submission; larger files use the filename + quote-form reminder only. */
+const MAX_CUSTOM_SPEC_EMBED_BYTES = 1024 * 1024;
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const s = reader.result as string;
+      const i = s.indexOf(",");
+      resolve(i >= 0 ? s.slice(i + 1) : s);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function isPdfFile(file: File): boolean {
+  return (
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+  );
+}
 
 function buildPriceBody(
   size: SizeSelection,
@@ -70,8 +91,19 @@ export function Configurator() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panelDrawingFile, setPanelDrawingFile] = useState<File | null>(null);
+  const [customColorReference, setCustomColorReference] = useState("");
+  const [customColorSpecFile, setCustomColorSpecFile] = useState<File | null>(
+    null
+  );
   const router = useRouter();
   const { addItem } = useCart();
+
+  useEffect(() => {
+    if (colorId !== "custom-color-match") {
+      setCustomColorReference("");
+      setCustomColorSpecFile(null);
+    }
+  }, [colorId]);
 
   const fetchPrice = useCallback(
     async (
@@ -134,14 +166,43 @@ export function Configurator() {
       areaFt2: pricing.areaFt2,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
+      ...(colorId === "custom-color-match"
+        ? {
+            customColorReference: customColorReference.trim() || undefined,
+            customColorSpecFileName: customColorSpecFile?.name,
+          }
+        : {}),
     });
     router.push("/cart");
   };
 
-  const handleRequestQuote = () => {
+  const handleRequestQuote = async () => {
     if (!pricing) return;
     const finish = finishes[0];
     const thickness = thicknesses.find((t) => t.id === thicknessId);
+
+    let customColorSpecAttachment: QuoteDraft["customColorSpecAttachment"];
+    let customColorSpecOversizeFileName: string | undefined;
+    if (colorId === "custom-color-match" && customColorSpecFile) {
+      if (
+        customColorSpecFile.size <= MAX_CUSTOM_SPEC_EMBED_BYTES &&
+        isPdfFile(customColorSpecFile)
+      ) {
+        try {
+          const dataBase64 = await readFileAsBase64(customColorSpecFile);
+          customColorSpecAttachment = {
+            fileName: customColorSpecFile.name,
+            dataBase64,
+            mimeType: "application/pdf",
+          };
+        } catch {
+          // Omit attachment; user can upload again on the quote form
+        }
+      } else {
+        customColorSpecOversizeFileName = customColorSpecFile.name;
+      }
+    }
+
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
@@ -167,6 +228,13 @@ export function Configurator() {
       productKind: "acm",
       productLabel: "ACM Panels",
       returnUrl: "/products/acm-panels",
+      ...(colorId === "custom-color-match" && customColorReference.trim()
+        ? { customColorReference: customColorReference.trim() }
+        : {}),
+      ...(customColorSpecAttachment ? { customColorSpecAttachment } : {}),
+      ...(customColorSpecOversizeFileName
+        ? { customColorSpecOversizeFileName }
+        : {}),
     };
     if (typeof window !== "undefined") {
       sessionStorage.setItem(QUOTE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
@@ -236,7 +304,14 @@ export function Configurator() {
                 id="color"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
-                <ColorSwatches value={colorId} onChange={setColorId} />
+                <ColorSwatches
+                  value={colorId}
+                  onChange={setColorId}
+                  customColorReference={customColorReference}
+                  onCustomColorReferenceChange={setCustomColorReference}
+                  customColorSpecFile={customColorSpecFile}
+                  onCustomColorSpecFileChange={setCustomColorSpecFile}
+                />
               </div>
               <div
                 id="quantity"

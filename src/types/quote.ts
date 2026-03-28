@@ -34,6 +34,17 @@ export interface QuoteDraft {
   /** Optional URL to send the user back to the originating configurator. */
   returnUrl?: string;
 
+  /** Custom color: paint code, Pantone, or other reference (ACM custom match). */
+  customColorReference?: string;
+  /** PDF embedded from configurator when under size limit (1 MB) for quote submission. */
+  customColorSpecAttachment?: {
+    fileName: string;
+    dataBase64: string;
+    mimeType: string;
+  };
+  /** If user attached a PDF larger than the embed limit, filename only — user should re-attach on the quote form. */
+  customColorSpecOversizeFileName?: string;
+
   /**
    * Optional fields specific to metal wall panel system quotes.
    * These are populated by the Metal Wall Panel Configurator.

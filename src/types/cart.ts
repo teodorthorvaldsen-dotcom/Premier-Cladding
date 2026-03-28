@@ -11,6 +11,10 @@ export interface CartItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
+  /** Set when color is custom match: manufacturer code, Pantone, or other reference. */
+  customColorReference?: string;
+  /** Original filename if user attached a PDF (file is not stored in the cart). */
+  customColorSpecFileName?: string;
 }
 
 export function cartItemLineTotal(item: CartItem): number {

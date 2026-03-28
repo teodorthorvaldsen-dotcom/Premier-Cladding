@@ -8,6 +8,17 @@ const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
 const ALLOWED_TYPES = ["application/pdf", "image/png", "image/jpeg"];
 
+function fileFromCustomSpec(
+  att: NonNullable<QuoteDraft["customColorSpecAttachment"]>
+): File {
+  const binary = atob(att.dataBase64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], att.fileName, {
+    type: att.mimeType || "application/pdf",
+  });
+}
+
 function formatUSD(n: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -88,8 +99,16 @@ export default function QuotePage() {
       setSubmitting(true);
       const form = e.currentTarget;
       const formData = new FormData(form);
+      const safeConfig: QuoteDraft = { ...draft };
+      if (safeConfig.customColorSpecAttachment) {
+        safeConfig.customColorSpecAttachment = {
+          fileName: safeConfig.customColorSpecAttachment.fileName,
+          mimeType: safeConfig.customColorSpecAttachment.mimeType,
+          dataBase64: "",
+        };
+      }
       const payload = {
-        config: draft,
+        config: safeConfig,
         fullName: formData.get("fullName") ?? "",
         company: formData.get("company") ?? "",
         email: formData.get("email") ?? "",
@@ -102,7 +121,16 @@ export default function QuotePage() {
       };
       const data = new FormData();
       data.append("payload", JSON.stringify(payload));
-      for (const f of selectedFiles) {
+      const drawingFiles: File[] = [];
+      if (draft.customColorSpecAttachment) {
+        try {
+          drawingFiles.push(fileFromCustomSpec(draft.customColorSpecAttachment));
+        } catch {
+          /* invalid base64 */
+        }
+      }
+      for (const f of selectedFiles) drawingFiles.push(f);
+      for (const f of drawingFiles.slice(0, MAX_FILES)) {
         data.append("drawings", f);
       }
       try {
@@ -197,6 +225,22 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Color</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.colorName} ({draft.colorCode})</dd>
               </div>
+              {draft.customColorReference ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-gray-500">Color reference</dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap font-medium text-gray-900">
+                    {draft.customColorReference}
+                  </dd>
+                </div>
+              ) : null}
+              {draft.customColorSpecAttachment ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-gray-500">Custom color PDF</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">
+                    {draft.customColorSpecAttachment.fileName} (submitted with request)
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-gray-500">Quantity</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.quantity} panels</dd>
@@ -291,6 +335,13 @@ export default function QuotePage() {
         <p className="mt-4 border-t border-gray-100 pt-4 text-[12px] text-gray-500">
           <span className="font-medium text-gray-600">Disclaimer:</span> Estimated costs are for reference only and are subject to change. Final pricing and lead times will be confirmed in your written quote.
         </p>
+        {!isMetal && draft.customColorSpecOversizeFileName ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-[13px] text-amber-950">
+            <span className="font-medium">Large PDF:</span>{" "}
+            <span className="break-all">{draft.customColorSpecOversizeFileName}</span> was not pre-attached
+            (over 1 MB). Please upload it under drawings below so we receive your full specification.
+          </div>
+        ) : null}
       </section>
 
       <section className="mb-10 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-6 md:p-8">

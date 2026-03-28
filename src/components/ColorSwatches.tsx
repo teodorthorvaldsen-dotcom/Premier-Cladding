@@ -17,6 +17,10 @@ import {
 interface ColorSwatchesProps {
   value: ColorId;
   onChange: (id: ColorId) => void;
+  customColorReference: string;
+  onCustomColorReferenceChange: (value: string) => void;
+  customColorSpecFile: File | null;
+  onCustomColorSpecFileChange: (file: File | null) => void;
 }
 
 type ColorRow = (typeof colors)[number];
@@ -148,7 +152,14 @@ function SeriesHeader({ title, subtitle }: { title: string; subtitle?: string })
   );
 }
 
-export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
+export function ColorSwatches({
+  value,
+  onChange,
+  customColorReference,
+  onCustomColorReferenceChange,
+  customColorSpecFile,
+  onCustomColorSpecFileChange,
+}: ColorSwatchesProps) {
   const selectedColor = colors.find((c) => c.id === value);
 
   return (
@@ -236,6 +247,77 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
           <div className="mt-4">
             <SwatchGrid colorIds={["custom-color-match"]} maxCols={1} value={value} onChange={onChange} />
           </div>
+          {value === "custom-color-match" && (
+            <div className="mt-5 max-w-lg space-y-4 rounded-xl border border-gray-200/90 bg-gray-50/80 p-4 sm:p-5">
+              <div>
+                <label htmlFor="custom-color-reference" className="block text-[13px] font-medium text-gray-900">
+                  Paint code or color reference
+                </label>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  Manufacturer paint code, Pantone number, or other standard reference (optional but helpful).
+                </p>
+                <textarea
+                  id="custom-color-reference"
+                  value={customColorReference}
+                  onChange={(e) => onCustomColorReferenceChange(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="e.g. Pantone 18-1033 TCX, Sherwin-Williams SW 6258, RAL 7016…"
+                  className="mt-2 w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                />
+              </div>
+              <div>
+                <span className="block text-[13px] font-medium text-gray-900">Color specification (PDF)</span>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  Upload a cutsheet or submittal if you have one (PDF only).
+                </p>
+                <label className="mt-2 flex cursor-pointer flex-col gap-2 sm:flex-row sm:items-center">
+                  <span className="inline-flex w-fit rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2">
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        if (!f) {
+                          onCustomColorSpecFileChange(null);
+                          e.target.value = "";
+                          return;
+                        }
+                        const ok =
+                          f.type === "application/pdf" ||
+                          f.name.toLowerCase().endsWith(".pdf");
+                        if (!ok) {
+                          onCustomColorSpecFileChange(null);
+                          e.target.value = "";
+                          return;
+                        }
+                        onCustomColorSpecFileChange(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    Choose PDF
+                  </span>
+                  {customColorSpecFile ? (
+                    <span className="flex min-w-0 flex-1 items-center gap-2 text-[12px] text-gray-600">
+                      <span className="truncate" title={customColorSpecFile.name}>
+                        {customColorSpecFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onCustomColorSpecFileChange(null)}
+                        className="shrink-0 text-red-600 hover:text-red-700 focus:outline-none focus:underline"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-gray-400">No file selected</span>
+                  )}
+                </label>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 

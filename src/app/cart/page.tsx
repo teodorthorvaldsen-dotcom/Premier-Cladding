@@ -58,6 +58,22 @@ function CartLine({
           <p className="text-xs text-gray-500">
             {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
           </p>
+          {(item.customColorReference || item.customColorSpecFileName) && (
+            <div className="mt-2 rounded-lg bg-gray-50 px-2 py-1.5 text-[11px] text-gray-600">
+              {item.customColorReference ? (
+                <p>
+                  <span className="font-medium text-gray-700">Color reference:</span>{" "}
+                  <span className="whitespace-pre-wrap">{item.customColorReference}</span>
+                </p>
+              ) : null}
+              {item.customColorSpecFileName ? (
+                <p className={item.customColorReference ? "mt-1" : ""}>
+                  <span className="font-medium text-gray-700">Spec PDF:</span>{" "}
+                  {item.customColorSpecFileName}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-3 sm:gap-4">
