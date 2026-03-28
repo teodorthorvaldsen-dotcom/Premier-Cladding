@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { colors, twoCoatSolidColorIds, type ColorId } from "@/data/acm";
+import {
+  colors,
+  twoCoatSolidColorIds,
+  vividSolidColorIds,
+  twoCoatMicaColorIds,
+  type ColorId,
+} from "@/data/acm";
 
 interface ColorSwatchesProps {
   value: ColorId;
@@ -9,6 +15,8 @@ interface ColorSwatchesProps {
 }
 
 const twoCoatOrder = new Map<string, number>(twoCoatSolidColorIds.map((id, i) => [id, i]));
+const vividOrder = new Map<string, number>(vividSolidColorIds.map((id, i) => [id, i]));
+const micaOrder = new Map<string, number>(twoCoatMicaColorIds.map((id, i) => [id, i]));
 
 export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
   const selectedColor = colors.find((c) => c.id === value);
@@ -17,7 +25,20 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     .filter((c) => twoCoatOrder.has(c.id))
     .sort((a, b) => (twoCoatOrder.get(a.id) ?? 0) - (twoCoatOrder.get(b.id) ?? 0));
 
-  const otherColors = colors.filter((c) => !twoCoatOrder.has(c.id));
+  const vividSolids = [...colors]
+    .filter((c) => vividOrder.has(c.id))
+    .sort((a, b) => (vividOrder.get(a.id) ?? 0) - (vividOrder.get(b.id) ?? 0));
+
+  const twoCoatMicas = [...colors]
+    .filter((c) => micaOrder.has(c.id))
+    .sort((a, b) => (micaOrder.get(a.id) ?? 0) - (micaOrder.get(b.id) ?? 0));
+
+  const catalogIds = new Set<string>([
+    ...twoCoatSolidColorIds,
+    ...vividSolidColorIds,
+    ...twoCoatMicaColorIds,
+  ]);
+  const otherColors = colors.filter((c) => !catalogIds.has(c.id));
 
   const renderSwatch = (c: (typeof colors)[number]) => {
     const isSelected = value === c.id;
@@ -71,7 +92,7 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
         </button>
 
         <span
-          className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-800/90 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-sm backdrop-blur-sm transition group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 max-w-[240px] -translate-x-1/2 rounded-lg bg-gray-800/90 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-sm backdrop-blur-sm transition group-hover:opacity-100 group-focus-within:opacity-100"
           role="tooltip"
         >
           {c.name} ({c.code})
@@ -84,8 +105,8 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Color &amp; finish</label>
       <p className="mt-0.5 text-[13px] text-gray-500">
-        Select a finish. <span className="font-medium text-gray-700">2 Coat Solids</span> are standard stock with
-        matching <span className="whitespace-nowrap">0.040″</span> sheet per Alfrex.
+        Alfrex FR finishes grouped per standard literature. Mica finishes are{" "}
+        <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
       </p>
 
       <div role="group" aria-label="Panel color" className="mt-6 space-y-8">
@@ -95,11 +116,33 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
         >
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">2 Coat Solids</h3>
-            <span className="text-[11px] text-gray-500">
-              30 yr warranty · AAMA 2605 · In stock
-            </span>
+            <span className="text-[11px] text-gray-500">30 yr · AAMA 2605 · In stock</span>
           </div>
           <div className="grid grid-cols-5 gap-2 sm:gap-3">{twoCoatSolids.map(renderSwatch)}</div>
+        </div>
+
+        <div
+          id="vivid-solids-swatches"
+          className="rounded-xl border border-gray-100 bg-violet-50/30 px-3 py-4 sm:px-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">
+              Vivid Solids<span className="text-[10px] font-normal text-gray-400">*</span>
+            </h3>
+            <span className="text-[11px] text-gray-500">20 yr limited · AAMA 2605 · In stock</span>
+          </div>
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">{vividSolids.map(renderSwatch)}</div>
+        </div>
+
+        <div
+          id="two-coat-micas-swatches"
+          className="rounded-xl border border-gray-100 bg-slate-50/40 px-3 py-4 sm:px-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">2 Coat Micas</h3>
+            <span className="text-[11px] text-gray-500">30 yr limited · AAMA 2605 · Directional</span>
+          </div>
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">{twoCoatMicas.map(renderSwatch)}</div>
         </div>
 
         <div>
@@ -113,8 +156,7 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
       </div>
 
       <p className="mt-4 text-[11px] leading-relaxed text-gray-400">
-        Digital swatches are approximate. Final color may vary by screen and production run — use the finish chart
-        below and physical samples for approval.
+        Digital swatches are approximate. Use the finish charts on this page and physical samples for approval.
       </p>
 
       {selectedColor && (

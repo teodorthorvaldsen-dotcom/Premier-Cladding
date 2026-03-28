@@ -112,6 +112,31 @@ export const twoCoatSolidColorIds = [
 
 export type TwoCoatSolidColorId = (typeof twoCoatSolidColorIds)[number];
 
+/** Vivid Solids — catalog row order (JY-7110 … JY-7150). */
+export const vividSolidColorIds = [
+  "signal-blue",
+  "harmony-blue",
+  "vibrant-red",
+  "patriot-red",
+  "ron-red",
+] as const;
+
+/** 2 Coat Micas — catalog grid order per Alfrex F-01. */
+export const twoCoatMicaColorIds = [
+  "anodic-clear-mica",
+  "exotic-silver-mica",
+  "silversmith",
+  "gray-silver-mica",
+  "pewter-mica",
+  "mzg-gray-mica",
+  "champagne-mica",
+  "medium-bronze-mica",
+  "driftwood-mica",
+  "copper-penny-mica",
+  "hazelnut-mica",
+  "new-age-dark-bronze-mica",
+] as const;
+
 /** Alfrex standard finishes: id, name, code, category, series, swatchHex, swatchImage (for textures). */
 export const colors = [
   { id: "classic-white", name: "Classic White", code: "JY-5195", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#EDEEEF", rgbApprox: "237 238 239", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
@@ -130,13 +155,23 @@ export const colors = [
   { id: "bronze", name: "Bronze", code: "JY-6180", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#57524D", rgbApprox: "87 82 77", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "black", name: "Black", code: "JY-6220", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#4B4C4E", rgbApprox: "75 76 78", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "midnight-black", name: "Midnight Black", code: "JY-6230", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#444544", rgbApprox: "68 69 68", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "red", name: "Red", code: "JY-5210", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#B42D32", rgbApprox: "180 45 50", adderPerFt2: 0.4, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "navy", name: "Navy", code: "JY-5215", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#283C5A", rgbApprox: "40 60 90", adderPerFt2: 0.4, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "slate-blue", name: "Slate Blue", code: "JY-5218", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#465F7D", rgbApprox: "70 95 125", adderPerFt2: 0.35, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "forest-green", name: "Forest Green", code: "JY-5220", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#37553C", rgbApprox: "55 85 60", adderPerFt2: 0.4, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "silver-mica", name: "Silver Mica", code: "JY-5301", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#C3C3C3", rgbApprox: "195 195 195", adderPerFt2: 0.35, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "pearl-mica", name: "Pearl Mica", code: "JY-5302", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#E6E4DC", rgbApprox: "230 228 220", adderPerFt2: 0.4, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "anthracite-mica", name: "Anthracite Mica", code: "JY-5305", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#4B4B4E", rgbApprox: "75 75 78", adderPerFt2: 0.35, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
+  { id: "signal-blue", name: "Signal Blue", code: "JY-7110", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#44608E", rgbApprox: "68 96 142", adderPerFt2: 0.2, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "harmony-blue", name: "Harmony Blue", code: "JY-7115", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#4B5B95", rgbApprox: "75 91 149", adderPerFt2: 0.2, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "vibrant-red", name: "Vibrant Red", code: "JY-7120", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#8A2429", rgbApprox: "138 36 41", adderPerFt2: 0.25, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "patriot-red", name: "Patriot Red", code: "JY-7140", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#A41F19", rgbApprox: "164 31 25", adderPerFt2: 0.25, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "ron-red", name: "RON Red", code: "JY-7150", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#AB0400", rgbApprox: "171 4 0", adderPerFt2: 0.25, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "anodic-clear-mica", name: "Anodic Clear Mica", code: "JY-2510", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#D1D2D4", rgbApprox: "209 210 212", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "exotic-silver-mica", name: "Exotic Silver Mica", code: "JY-2520", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#D3CDD8", rgbApprox: "211 205 216", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "silversmith", name: "Silversmith", code: "JY-2515", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#CBCDCC", rgbApprox: "203 205 204", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "gray-silver-mica", name: "Gray Silver Mica", code: "JY-2530", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#8B8D8B", rgbApprox: "139 141 139", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "pewter-mica", name: "Pewter Mica", code: "JY-2540", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#7A7E82", rgbApprox: "122 126 130", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "mzg-gray-mica", name: "MZG Gray Mica", code: "JY-2535", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#808282", rgbApprox: "128 130 130", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "champagne-mica", name: "Champagne Mica", code: "JY-2550", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#C9C5BF", rgbApprox: "201 197 191", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "medium-bronze-mica", name: "Medium Bronze Mica", code: "JY-2560", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#B1A392", rgbApprox: "177 163 146", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "driftwood-mica", name: "Driftwood Mica", code: "JY-2555", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#8A867F", rgbApprox: "138 134 127", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "copper-penny-mica", name: "Copper Penny Mica", code: "JY-2570", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#C0926C", rgbApprox: "192 146 108", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "hazelnut-mica", name: "Hazelnut Mica", code: "JY-2575", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#8E755C", rgbApprox: "142 117 92", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "new-age-dark-bronze-mica", name: "New Age Dark Bronze Mica", code: "JY-2580", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#62615B", rgbApprox: "98 97 91", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "champagne-metallic", name: "Champagne Metallic", code: "JY-5401", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#C8B9A5", rgbApprox: "200 185 165", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
   { id: "graphite-metallic", name: "Graphite Metallic", code: "JY-5403", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#5F5F5F", rgbApprox: "95 95 95", adderPerFt2: 0.45, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
   { id: "natural-zinc", name: "Natural Zinc", code: "JY-5501", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#A5A5A0", rgbApprox: "165 165 160", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
