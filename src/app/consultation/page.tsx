@@ -105,10 +105,10 @@ export default function ConsultationPage() {
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="mb-12">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          Panel Consultation
+          Cladding Consultation
         </h1>
         <p className="mt-2 text-[15px] text-gray-500">
-          Upload plans and request a consultation. Our team will review and respond with panel recommendations.
+          Upload plans and request a consultation. Our team, composed of general contractors and structural engineers, will look over your request and get back to you as soon as possible.
         </p>
       </div>
 
