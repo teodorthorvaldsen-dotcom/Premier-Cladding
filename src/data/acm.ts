@@ -137,6 +137,24 @@ export const twoCoatMicaColorIds = [
   "new-age-dark-bronze-mica",
 ] as const;
 
+/** 3 Coat Metallics — two-row catalog order (JY-3510 … JY-3560). */
+export const threeCoatMetallicColorIds = [
+  "bright-silver-metallic",
+  "champagne-metallic",
+  "pex-pewter-metallic",
+  "jlr-gray-metallic",
+  "anthracite-silver-metallic",
+  "graphite-metallic",
+] as const;
+
+/** Metal Series — single-row order (Alfrex JY-M110 … JY-M140). */
+export const metalSeriesColorIds = [
+  "faux-zinc-lite",
+  "faux-zinc",
+  "faux-zinc-graphite",
+  "tile-corten",
+] as const;
+
 /** Alfrex standard finishes: id, name, code, category, series, swatchHex, swatchImage (for textures). */
 export const colors = [
   { id: "classic-white", name: "Classic White", code: "JY-5195", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#EDEEEF", rgbApprox: "237 238 239", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
@@ -172,10 +190,16 @@ export const colors = [
   { id: "copper-penny-mica", name: "Copper Penny Mica", code: "JY-2570", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#C0926C", rgbApprox: "192 146 108", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "hazelnut-mica", name: "Hazelnut Mica", code: "JY-2575", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#8E755C", rgbApprox: "142 117 92", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "new-age-dark-bronze-mica", name: "New Age Dark Bronze Mica", code: "JY-2580", category: "Mica" as ColorCategory, series: "Micas" as ColorSeries, swatchHex: "#62615B", rgbApprox: "98 97 91", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "champagne-metallic", name: "Champagne Metallic", code: "JY-5401", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#C8B9A5", rgbApprox: "200 185 165", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "graphite-metallic", name: "Graphite Metallic", code: "JY-5403", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#5F5F5F", rgbApprox: "95 95 95", adderPerFt2: 0.45, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "natural-zinc", name: "Natural Zinc", code: "JY-5501", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#A5A5A0", rgbApprox: "165 165 160", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "brushed-aluminum", name: "Brushed Aluminum", code: "JY-5502", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#B4B4B2", rgbApprox: "180 180 178", adderPerFt2: 0.45, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
+  { id: "bright-silver-metallic", name: "Bright Silver Metallic", code: "JY-3510", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#D7D7D8", rgbApprox: "215 215 216", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "champagne-metallic", name: "Champagne Metallic", code: "JY-3520", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#BFC0C0", rgbApprox: "191 192 192", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "pex-pewter-metallic", name: "PEX Pewter Metallic", code: "JY-3540", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#ADACAA", rgbApprox: "173 172 170", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "jlr-gray-metallic", name: "JLR Gray Metallic", code: "JY-3550", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#878583", rgbApprox: "135 133 131", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "anthracite-silver-metallic", name: "Anthracite Silver Metallic", code: "JY-3560", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#53585B", rgbApprox: "83 88 91", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "graphite-metallic", name: "Graphite Metallic", code: "JY-3530", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#565758", rgbApprox: "86 87 88", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "faux-zinc-lite", name: "Faux Zinc Lite", code: "JY-M130", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#B8BCBE", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "faux-zinc", name: "Faux Zinc", code: "JY-M120", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#8A8D8F", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "faux-zinc-graphite", name: "Faux Zinc Graphite", code: "JY-M110", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#4F5254", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
+  { id: "tile-corten", name: "Tile Corten", code: "JY-M140", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#965A3C", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "walnut", name: "Walnut", code: "JY-5601", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#5F4637", swatchImage: "/images/swatches/walnut.png", rgbApprox: "95 70 55", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
   { id: "teak", name: "Teak", code: "JY-5602", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#785A41", swatchImage: "/images/swatches/teak.png", rgbApprox: "120 90 65", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
   { id: "prismatic-silver", name: "Prismatic Silver", code: "JY-5701", category: "Specialty" as ColorCategory, series: "Specialty" as ColorSeries, swatchHex: "#C8C8C8", rgbApprox: "200 200 200", adderPerFt2: 0.55, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },

@@ -6,6 +6,8 @@ import {
   twoCoatSolidColorIds,
   vividSolidColorIds,
   twoCoatMicaColorIds,
+  threeCoatMetallicColorIds,
+  metalSeriesColorIds,
   type ColorId,
 } from "@/data/acm";
 
@@ -17,6 +19,8 @@ interface ColorSwatchesProps {
 const twoCoatOrder = new Map<string, number>(twoCoatSolidColorIds.map((id, i) => [id, i]));
 const vividOrder = new Map<string, number>(vividSolidColorIds.map((id, i) => [id, i]));
 const micaOrder = new Map<string, number>(twoCoatMicaColorIds.map((id, i) => [id, i]));
+const metallicOrder = new Map<string, number>(threeCoatMetallicColorIds.map((id, i) => [id, i]));
+const metalSeriesOrder = new Map<string, number>(metalSeriesColorIds.map((id, i) => [id, i]));
 
 export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
   const selectedColor = colors.find((c) => c.id === value);
@@ -33,10 +37,20 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     .filter((c) => micaOrder.has(c.id))
     .sort((a, b) => (micaOrder.get(a.id) ?? 0) - (micaOrder.get(b.id) ?? 0));
 
+  const threeCoatMetallics = [...colors]
+    .filter((c) => metallicOrder.has(c.id))
+    .sort((a, b) => (metallicOrder.get(a.id) ?? 0) - (metallicOrder.get(b.id) ?? 0));
+
+  const metalSeries = [...colors]
+    .filter((c) => metalSeriesOrder.has(c.id))
+    .sort((a, b) => (metalSeriesOrder.get(a.id) ?? 0) - (metalSeriesOrder.get(b.id) ?? 0));
+
   const catalogIds = new Set<string>([
     ...twoCoatSolidColorIds,
     ...vividSolidColorIds,
     ...twoCoatMicaColorIds,
+    ...threeCoatMetallicColorIds,
+    ...metalSeriesColorIds,
   ]);
   const otherColors = colors.filter((c) => !catalogIds.has(c.id));
 
@@ -105,7 +119,7 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Color &amp; finish</label>
       <p className="mt-0.5 text-[13px] text-gray-500">
-        Alfrex FR finishes grouped per standard literature. Mica finishes are{" "}
+        Alfrex FR finishes grouped per standard literature. Micas and metallics are{" "}
         <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
       </p>
 
@@ -143,6 +157,30 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
             <span className="text-[11px] text-gray-500">30 yr limited · AAMA 2605 · Directional</span>
           </div>
           <div className="grid grid-cols-5 gap-2 sm:gap-3">{twoCoatMicas.map(renderSwatch)}</div>
+        </div>
+
+        <div
+          id="three-coat-metallics-swatches"
+          className="rounded-xl border border-gray-100 bg-zinc-50/50 px-3 py-4 sm:px-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">3 Coat Metallics</h3>
+            <span className="text-[11px] text-gray-500">30 yr · AAMA 2605 · Directional</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {threeCoatMetallics.map(renderSwatch)}
+          </div>
+        </div>
+
+        <div
+          id="metal-series-swatches"
+          className="rounded-xl border border-gray-100 bg-stone-50/40 px-3 py-4 sm:px-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">Metal Series</h3>
+            <span className="text-[11px] text-gray-500">20 yr · AAMA 2605 · Directional</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2 sm:gap-3">{metalSeries.map(renderSwatch)}</div>
         </div>
 
         <div>
