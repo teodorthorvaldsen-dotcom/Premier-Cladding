@@ -25,6 +25,7 @@ import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { TwoCoatSolidsShowcase } from "./TwoCoatSolidsShowcase";
 import { VividSolidsAndMicasShowcase } from "./VividSolidsAndMicasShowcase";
 import { MetallicsAndMetalSeriesShowcase } from "./MetallicsAndMetalSeriesShowcase";
+import { MetalAndWoodSeriesShowcase } from "./MetalAndWoodSeriesShowcase";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -261,7 +262,16 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
-              panelSwatchImage={"swatchImage" in color ? color.swatchImage : undefined}
+              panelSwatchTexture={
+                "textureSprite" in color && color.textureSprite ? color.textureSprite : undefined
+              }
+              panelSwatchImage={
+                "textureSprite" in color && color.textureSprite
+                  ? undefined
+                  : "swatchImage" in color && typeof color.swatchImage === "string"
+                    ? color.swatchImage
+                    : undefined
+              }
             />
             <PriceSummary
               pricing={pricing}
@@ -286,6 +296,8 @@ export function Configurator() {
       <VividSolidsAndMicasShowcase />
 
       <MetallicsAndMetalSeriesShowcase />
+
+      <MetalAndWoodSeriesShowcase />
 
       <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="material-composition-heading">
         <h2 id="material-composition-heading" className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">

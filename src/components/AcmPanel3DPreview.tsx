@@ -5,6 +5,12 @@ import { useMemo, type CSSProperties } from "react";
 const PREVIEW_W = 520;
 const PREVIEW_H = 360;
 
+export interface PanelSwatchTexture {
+  sheet: string;
+  bgSize: string;
+  bgPosition: string;
+}
+
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
@@ -15,6 +21,8 @@ export interface AcmPanel3DPreviewProps {
   panelColorName: string;
   /** Wood-grain (or other) swatch image used on the panel faces when present. */
   panelSwatchImage?: string;
+  /** Cropped region from a catalog sprite (metal / wood prints) — overrides flat hex when set. */
+  panelSwatchTexture?: PanelSwatchTexture;
 }
 
 export function AcmPanel3DPreview({
@@ -24,6 +32,7 @@ export function AcmPanel3DPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
+  panelSwatchTexture,
 }: AcmPanel3DPreviewProps) {
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * 6;
@@ -55,6 +64,46 @@ export function AcmPanel3DPreview({
       width: scaled.faceW,
       height: scaled.faceH,
     };
+
+    if (panelSwatchTexture) {
+      const url = `url(${panelSwatchTexture.sheet})`;
+      const { bgSize, bgPosition } = panelSwatchTexture;
+      return {
+        wrapStyle: wrap,
+        topStyle: {
+          ...staticStyles.panelTop,
+          width: scaled.faceW,
+          height: scaled.depth,
+          borderColor,
+          transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
+          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4)), ${url}`,
+          backgroundSize: `cover, ${bgSize}`,
+          backgroundPosition: `center, ${bgPosition}`,
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+        sideStyle: {
+          ...staticStyles.panelSide,
+          width: scaled.depth,
+          height: scaled.faceH,
+          borderColor,
+          transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
+          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38)), ${url}`,
+          backgroundSize: `cover, ${bgSize}`,
+          backgroundPosition: `center, ${bgPosition}`,
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+        frontStyle: {
+          ...staticStyles.panelFront,
+          width: scaled.faceW,
+          height: scaled.faceH,
+          borderColor,
+          backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.14) 0%, transparent 38%, rgba(0,0,0,0.18) 100%), ${url}`,
+          backgroundSize: `cover, ${bgSize}`,
+          backgroundPosition: `center, ${bgPosition}`,
+          backgroundRepeat: "no-repeat, no-repeat",
+        } satisfies CSSProperties,
+      };
+    }
 
     if (panelSwatchImage) {
       const url = `url(${panelSwatchImage})`;
@@ -129,6 +178,7 @@ export function AcmPanel3DPreview({
     frontColor,
     panelColorHex,
     panelSwatchImage,
+    panelSwatchTexture,
     sideColor,
     topColor,
   ]);

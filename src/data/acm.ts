@@ -155,6 +155,18 @@ export const metalSeriesColorIds = [
   "tile-corten",
 ] as const;
 
+/** Wood Series — catalog row order (JY-W120 … JY-W150). */
+export const woodSeriesColorIds = ["teak", "golden-oak", "dark-walnut"] as const;
+
+/** Sprite sheet for Metal + Wood printed textures (configurator swatches + 3D preview). */
+export const ALFREX_METAL_WOOD_TEXTURE_SHEET = "/images/acm/alfrex-metal-and-wood-series.png" as const;
+
+export type SwatchTextureSprite = {
+  sheet: string;
+  bgSize: string;
+  bgPosition: string;
+};
+
 /** Alfrex standard finishes: id, name, code, category, series, swatchHex, swatchImage (for textures). */
 export const colors = [
   { id: "classic-white", name: "Classic White", code: "JY-5195", category: "Solid" as ColorCategory, series: "Solids" as ColorSeries, swatchHex: "#EDEEEF", rgbApprox: "237 238 239", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
@@ -196,12 +208,13 @@ export const colors = [
   { id: "jlr-gray-metallic", name: "JLR Gray Metallic", code: "JY-3550", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#878583", rgbApprox: "135 133 131", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "anthracite-silver-metallic", name: "Anthracite Silver Metallic", code: "JY-3560", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#53585B", rgbApprox: "83 88 91", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
   { id: "graphite-metallic", name: "Graphite Metallic", code: "JY-3530", category: "Metallic" as ColorCategory, series: "Metallics" as ColorSeries, swatchHex: "#565758", rgbApprox: "86 87 88", adderPerFt2: 1, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "faux-zinc-lite", name: "Faux Zinc Lite", code: "JY-M130", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#B8BCBE", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "faux-zinc", name: "Faux Zinc", code: "JY-M120", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#8A8D8F", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "faux-zinc-graphite", name: "Faux Zinc Graphite", code: "JY-M110", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#4F5254", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "tile-corten", name: "Tile Corten", code: "JY-M140", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#965A3C", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number] },
-  { id: "walnut", name: "Walnut", code: "JY-5601", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#5F4637", swatchImage: "/images/swatches/walnut.png", rgbApprox: "95 70 55", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
-  { id: "teak", name: "Teak", code: "JY-5602", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#785A41", swatchImage: "/images/swatches/teak.png", rgbApprox: "120 90 65", adderPerFt2: 0.5, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
+  { id: "faux-zinc-lite", name: "Faux Zinc Lite", code: "JY-M130", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#B8BCBE", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "500% auto", bgPosition: "10% 43%" } },
+  { id: "faux-zinc", name: "Faux Zinc", code: "JY-M120", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#8A8D8F", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "500% auto", bgPosition: "36% 43%" } },
+  { id: "faux-zinc-graphite", name: "Faux Zinc Graphite", code: "JY-M110", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#4F5254", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "500% auto", bgPosition: "62% 43%" } },
+  { id: "tile-corten", name: "Tile Corten", code: "JY-M140", category: "Metal" as ColorCategory, series: "Metal" as ColorSeries, swatchHex: "#965A3C", rgbApprox: "approx. print", adderPerFt2: 0, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "500% auto", bgPosition: "88% 43%" } },
+  { id: "teak", name: "Teak", code: "JY-W120", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#B8833D", rgbApprox: "approx. print", adderPerFt2: 1.5, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "340% auto", bgPosition: "23% 71%" } },
+  { id: "golden-oak", name: "Golden Oak", code: "JY-W140", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#8B6239", rgbApprox: "approx. print", adderPerFt2: 1.5, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "340% auto", bgPosition: "51% 71%" } },
+  { id: "dark-walnut", name: "Dark Walnut", code: "JY-W150", category: "Wood" as ColorCategory, series: "Wood" as ColorSeries, swatchHex: "#3D2A1F", rgbApprox: "approx. print", adderPerFt2: 1.5, availability: "In Stock" as Availability, leadTimeDaysRange: [2, 5] as [number, number], textureSprite: { sheet: ALFREX_METAL_WOOD_TEXTURE_SHEET, bgSize: "340% auto", bgPosition: "78% 71%" } },
   { id: "prismatic-silver", name: "Prismatic Silver", code: "JY-5701", category: "Specialty" as ColorCategory, series: "Specialty" as ColorSeries, swatchHex: "#C8C8C8", rgbApprox: "200 200 200", adderPerFt2: 0.55, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
   { id: "prismatic-gold", name: "Prismatic Gold", code: "JY-5702", category: "Specialty" as ColorCategory, series: "Specialty" as ColorSeries, swatchHex: "#BEAA82", rgbApprox: "190 170 130", adderPerFt2: 0.55, availability: "Made to Order" as Availability, leadTimeDaysRange: [7, 14] as [number, number] },
 ] as const;

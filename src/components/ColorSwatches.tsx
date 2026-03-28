@@ -8,6 +8,7 @@ import {
   twoCoatMicaColorIds,
   threeCoatMetallicColorIds,
   metalSeriesColorIds,
+  woodSeriesColorIds,
   type ColorId,
 } from "@/data/acm";
 
@@ -21,6 +22,7 @@ const vividOrder = new Map<string, number>(vividSolidColorIds.map((id, i) => [id
 const micaOrder = new Map<string, number>(twoCoatMicaColorIds.map((id, i) => [id, i]));
 const metallicOrder = new Map<string, number>(threeCoatMetallicColorIds.map((id, i) => [id, i]));
 const metalSeriesOrder = new Map<string, number>(metalSeriesColorIds.map((id, i) => [id, i]));
+const woodSeriesOrder = new Map<string, number>(woodSeriesColorIds.map((id, i) => [id, i]));
 
 export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
   const selectedColor = colors.find((c) => c.id === value);
@@ -45,12 +47,17 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     .filter((c) => metalSeriesOrder.has(c.id))
     .sort((a, b) => (metalSeriesOrder.get(a.id) ?? 0) - (metalSeriesOrder.get(b.id) ?? 0));
 
+  const woodSeries = [...colors]
+    .filter((c) => woodSeriesOrder.has(c.id))
+    .sort((a, b) => (woodSeriesOrder.get(a.id) ?? 0) - (woodSeriesOrder.get(b.id) ?? 0));
+
   const catalogIds = new Set<string>([
     ...twoCoatSolidColorIds,
     ...vividSolidColorIds,
     ...twoCoatMicaColorIds,
     ...threeCoatMetallicColorIds,
     ...metalSeriesColorIds,
+    ...woodSeriesColorIds,
   ]);
   const otherColors = colors.filter((c) => !catalogIds.has(c.id));
 
@@ -58,6 +65,8 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     const isSelected = value === c.id;
     const hex = c.swatchHex ?? "#ccc";
     const swatchImage = (c as unknown as { swatchImage?: string }).swatchImage;
+    const textureSprite = (c as unknown as { textureSprite?: { sheet: string; bgSize: string; bgPosition: string } })
+      .textureSprite;
 
     return (
       <div key={c.id} className="group relative flex justify-center">
@@ -73,17 +82,32 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
               : "ring-1 ring-gray-200/80 ring-inset hover:ring-gray-300"
           }`}
         >
-          <span className="absolute inset-0" style={{ backgroundColor: hex }} />
-          {typeof swatchImage === "string" && (
-            <Image
-              src={swatchImage}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="56px"
-              draggable={false}
-              aria-hidden
+          {textureSprite ? (
+            <span
+              className="absolute inset-0"
+              style={{
+                backgroundColor: hex,
+                backgroundImage: `url(${textureSprite.sheet})`,
+                backgroundSize: textureSprite.bgSize,
+                backgroundPosition: textureSprite.bgPosition,
+                backgroundRepeat: "no-repeat",
+              }}
             />
+          ) : (
+            <>
+              <span className="absolute inset-0" style={{ backgroundColor: hex }} />
+              {typeof swatchImage === "string" && (
+                <Image
+                  src={swatchImage}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="56px"
+                  draggable={false}
+                  aria-hidden
+                />
+              )}
+            </>
           )}
 
           {isSelected && (
@@ -119,8 +143,8 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Color &amp; finish</label>
       <p className="mt-0.5 text-[13px] text-gray-500">
-        Alfrex FR finishes grouped per standard literature. Micas and metallics are{" "}
-        <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
+        Alfrex FR finishes grouped per standard literature. Micas, metallics, metal prints, and wood grains
+        are <span className="font-medium text-gray-700">directional</span> — keep film arrows aligned on site.
       </p>
 
       <div role="group" aria-label="Panel color" className="mt-6 space-y-8">
@@ -188,6 +212,19 @@ export function ColorSwatches({ value, onChange }: ColorSwatchesProps) {
           </div>
           <div className="grid gap-2 sm:gap-3 [grid-template-columns:repeat(4,max-content)] max-sm:[grid-template-columns:repeat(2,max-content)]">
             {metalSeries.map(renderSwatch)}
+          </div>
+        </div>
+
+        <div
+          id="wood-series-swatches"
+          className="rounded-xl border border-gray-100 bg-amber-50/25 px-3 py-4 sm:px-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-gray-800">Wood Series</h3>
+            <span className="text-[11px] text-gray-500">20 yr · AAMA 2605 · Directional grain</span>
+          </div>
+          <div className="grid gap-2 sm:gap-3 [grid-template-columns:repeat(3,max-content)] max-sm:[grid-template-columns:repeat(3,max-content)]">
+            {woodSeries.map(renderSwatch)}
           </div>
         </div>
 
