@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { id: "custom-shop-drawings", href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
   { id: "consultation", href: "/consultation", label: "Consultation" },
   { id: "about", href: "/about", label: "About" },
+  { id: "portal", href: "/portal", label: "Orders" },
   { id: "cart", href: "/cart", label: "Cart" },
 ] as const;
 
@@ -101,19 +102,23 @@ export function Header() {
               className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
               aria-label="Main"
             >
-              {NAV_LINKS.map(({ id, href, label }) => (
-                <Link
-                  key={id}
-                  href={href}
-                  className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
-                    pathname === href
-                      ? "text-gray-900"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  {label}
-                </Link>
-              ))}
+              {NAV_LINKS.map(({ id, href, label }) => {
+                const active =
+                  pathname === href || (id === "portal" && pathname.startsWith("/portal"));
+                return (
+                  <Link
+                    key={id}
+                    href={href}
+                    className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+                      active
+                        ? "text-gray-900"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
             </nav>
           )}
 

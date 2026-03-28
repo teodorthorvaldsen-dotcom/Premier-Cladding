@@ -51,6 +51,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"wire" | "credit">("wire");
   const [signature, setSignature] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const subtotal = items.reduce((sum, i) => sum + cartItemLineTotal(i), 0);
   const totalSqFt = items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
@@ -97,6 +98,7 @@ export default function CheckoutPage() {
         if (!res.ok) {
           throw new Error(typeof data?.error === "string" ? data.error : "Failed to submit.");
         }
+        setOrderId(typeof data?.orderId === "string" ? data.orderId : null);
         setSubmitted(true);
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "Something went wrong.");
@@ -129,6 +131,19 @@ export default function CheckoutPage() {
         <p className="mt-3 text-base text-gray-600">
           We have received your request. You will receive a confirmation email shortly. We will review and send your finalized quote for signature.
         </p>
+        {orderId && (
+          <p className="mt-4 text-sm text-gray-600">
+            Order reference:{" "}
+            <span className="font-mono font-medium text-gray-900" translate="no">
+              {orderId}
+            </span>
+            . Track status anytime in the{" "}
+            <Link href="/portal" className="font-medium text-gray-900 underline hover:text-gray-700">
+              order portal
+            </Link>{" "}
+            (sign in with this email).
+          </p>
+        )}
         <Link
           href="/products/acm-panels"
           className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"

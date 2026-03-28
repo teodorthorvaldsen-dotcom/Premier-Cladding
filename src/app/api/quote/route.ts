@@ -1,7 +1,10 @@
+import { randomUUID } from "crypto";
 import { writeFile, mkdir, appendFile } from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { appendOrder } from "@/lib/portal/orders-store";
+import type { PortalOrder } from "@/types/portal";
 import type { QuoteDraft } from "@/types/quote";
 
 const QUOTES_JSONL_PATH = path.join(process.cwd(), "data", "quotes.jsonl");
@@ -300,7 +303,35 @@ export async function POST(request: NextRequest) {
     await mkdir(dataDir, { recursive: true });
     await appendFile(QUOTES_JSONL_PATH, JSON.stringify(record) + "\n");
 
-    return NextResponse.json({ ok: true });
+    const portalOrder: PortalOrder = {
+      id: randomUUID(),
+      createdAt: new Date().toISOString(),
+      source: "quote_configurator",
+      status: "submitted",
+      customerEmail: payload.email.trim(),
+      fullName: payload.fullName,
+      company: payload.company ?? "",
+      phone: payload.phone ?? "",
+      projectCity: payload.projectCity ?? "",
+      projectState: payload.projectState ?? "",
+      notes: payload.notes ?? "",
+      summary: `Configurator · ${payload.config.quantity} panel(s) · ${formatUSD(payload.config.estimatedTotal)}`,
+      subtotalUsd: payload.config.estimatedTotal,
+      lineCount: payload.config.quantity,
+      detail: {
+        config: payload.config,
+        paymentMethod: payload.paymentMethod,
+        signature: payload.signature,
+        uploadedFilenames: payload.uploadedFilenames ?? [],
+      },
+    };
+    try {
+      await appendOrder(portalOrder);
+    } catch (persistErr) {
+      console.error("[Quote portal persist]", persistErr);
+    }
+
+    return NextResponse.json({ ok: true, orderId: portalOrder.id });
   } catch (e) {
     console.error("[Quote API error]", e);
     return NextResponse.json(

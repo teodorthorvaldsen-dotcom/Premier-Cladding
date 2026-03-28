@@ -1,5 +1,8 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { appendOrder } from "@/lib/portal/orders-store";
+import type { PortalOrder } from "@/types/portal";
 
 interface CartQuotePayload {
   items: Array<{
@@ -188,7 +191,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ ok: true });
+    const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+    const totalLineQty = payload.items.reduce((sum, i) => sum + i.quantity, 0);
+    const order: PortalOrder = {
+      id: randomUUID(),
+      createdAt: new Date().toISOString(),
+      source: "cart_checkout",
+      status: "submitted",
+      customerEmail: payload.email.trim(),
+      fullName: payload.fullName,
+      company: payload.company,
+      phone: payload.phone,
+      projectCity: payload.projectCity,
+      projectState: payload.projectState,
+      notes: payload.notes,
+      summary: `${payload.items.length} line item(s) · ${formatUSD(subtotal)}`,
+      subtotalUsd: subtotal,
+      lineCount: totalLineQty,
+      detail: payload,
+    };
+    try {
+      await appendOrder(order);
+    } catch (persistErr) {
+      console.error("[Cart quote portal persist]", persistErr);
+    }
+
+    return NextResponse.json({ ok: true, orderId: order.id });
   } catch (e) {
     console.error("[Cart quote API error]", e);
     return NextResponse.json(

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
@@ -31,6 +32,7 @@ export default function QuotePage() {
   const router = useRouter();
   const [draft, setDraft] = useState<QuoteDraft | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -143,9 +145,11 @@ export default function QuotePage() {
           const message = typeof json?.error === "string" ? json.error : "Failed to submit quote request.";
           throw new Error(message);
         }
+        const json = await res.json().catch(() => ({}));
         if (typeof window !== "undefined") {
           sessionStorage.removeItem(QUOTE_DRAFT_STORAGE_KEY);
         }
+        setOrderId(typeof json?.orderId === "string" ? json.orderId : null);
         setSubmitted(true);
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "Something went wrong.");
@@ -171,6 +175,19 @@ export default function QuotePage() {
         <p className="mt-3 text-base text-gray-600">
           Our team will review your request and respond within 1 business day.
         </p>
+        {orderId && (
+          <p className="mt-4 text-sm text-gray-600">
+            Order reference:{" "}
+            <span className="font-mono font-medium text-gray-900" translate="no">
+              {orderId}
+            </span>
+            . Track status in the{" "}
+            <Link href="/portal" className="font-medium text-gray-900 underline hover:text-gray-700">
+              order portal
+            </Link>
+            .
+          </p>
+        )}
         <a
           href="/products/acm-panels"
           className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
