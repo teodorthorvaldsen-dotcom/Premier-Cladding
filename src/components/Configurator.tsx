@@ -21,6 +21,7 @@ import { QuantityPicker } from "./QuantityPicker";
 import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
+import { BendDevelopmentSection } from "./BendDevelopmentSection";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
 
 const defaultSize: SizeSelection = {
@@ -359,6 +360,18 @@ export function Configurator() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div
+        id="bend-development"
+        className="mt-14 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+      >
+        <BendDevelopmentSection
+          key={thicknessId}
+          panelColorHex={color.swatchHex}
+          panelWidthIn={size.widthIn}
+          thicknessInches={metalThicknessIn}
+        />
       </div>
 
       <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="material-composition-heading">
