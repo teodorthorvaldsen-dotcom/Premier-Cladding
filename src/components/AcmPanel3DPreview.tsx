@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useLayoutEffect, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Center, Edges, Environment, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
@@ -15,6 +15,22 @@ const INCH_TO_WORLD = 0.05;
 /** Lighting tuned so swatches read like the CSS flat preview (diffuse-dominant, not gray IBL). */
 const PREVIEW_KEY_LIGHT = "#fff7f2";
 const PREVIEW_FILL_LIGHT = "#ffffff";
+
+/** Default orbit direction (same framing as before); distance is fixed at closest zoom. */
+const PREVIEW_ORBIT_VIEW_DIR = new THREE.Vector3(0.92, 0.72, 0.95).normalize();
+
+function StickyOrbitCamera({ radius }: { radius: number }) {
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls);
+  useLayoutEffect(() => {
+    const p = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(radius);
+    camera.position.set(p.x, p.y, p.z);
+    camera.updateProjectionMatrix();
+    const upd = (controls as { update?: () => void } | null)?.update;
+    upd?.();
+  }, [radius, camera, controls]);
+  return null;
+}
 
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
@@ -216,14 +232,16 @@ function PreviewScene({
     maxWorld = Math.max(maxWorld, Math.abs(px) + ax / 2, Math.abs(py) + ay / 2, Math.abs(p.position[2]) + p.args[2] / 2);
   }
   const camDistance = Math.max(7, maxWorld * 4.2);
-  const zoomMin = camDistance * 0.58;
-  const zoomMax = camDistance * 1.02;
+  /** Closest orbit distance — preview stays here (no zoom). */
+  const orbitRadius = camDistance * 0.58;
+  const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(orbitRadius);
+  const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
 
   return (
     <Canvas
       dpr={[1, 2]}
       camera={{
-        position: [camDistance * 0.92, camDistance * 0.72, camDistance * 0.95],
+        position: cameraPosition,
         fov: 38,
         near: 0.1,
         far: camDistance * 25,
@@ -237,6 +255,7 @@ function PreviewScene({
         outputColorSpace: THREE.SRGBColorSpace,
       }}
     >
+      <StickyOrbitCamera radius={orbitRadius} />
       <color attach="background" args={["#f4f5f7"]} />
       <hemisphereLight color="#ffffff" groundColor="#ebe6e1" intensity={0.48} />
       <ambientLight intensity={0.32} color="#fefefe" />
@@ -253,13 +272,13 @@ function PreviewScene({
       <OrbitControls
         makeDefault
         enablePan={false}
+        enableZoom={false}
         target={[0, 0, 0]}
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.78}
-        zoomSpeed={0.65}
-        minDistance={zoomMin}
-        maxDistance={zoomMax}
+        minDistance={orbitRadius}
+        maxDistance={orbitRadius}
         minPolarAngle={0.38 * Math.PI}
         maxPolarAngle={0.58 * Math.PI}
       />
@@ -340,7 +359,7 @@ export function AcmPanel3DPreview({
         {caption}
       </p>
       <p className="mt-2 text-center text-xs text-gray-400">
-        Drag to orbit around center · scroll for limited zoom
+        Drag to rotate the view (zoom is fixed).
       </p>
     </section>
   );
