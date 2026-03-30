@@ -288,7 +288,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
         <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Folds along length</p>
+            <p className="text-xs font-medium text-gray-800">Folds along length (X axis)</p>
             <button
               type="button"
               onClick={addBend}
@@ -375,7 +375,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
         <div className="rounded-xl border border-gray-200/80 bg-violet-50/40 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Folds along width (Y hinge)</p>
+            <p className="text-xs font-medium text-gray-800">Folds along width (Y axis)</p>
             <button
               type="button"
               onClick={addBendW}
