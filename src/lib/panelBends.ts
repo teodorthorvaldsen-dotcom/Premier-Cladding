@@ -1,27 +1,10 @@
 import type { CartItem } from "@/types/cart";
-import type { BendReferenceAlong, PanelBendSpec } from "@/types/panelBend";
+import type { PanelBendSpec } from "@/types/panelBend";
 
 /** Minimum clear distance from any fold line to the end of the panel along length (inches). */
 export const PANEL_BEND_MIN_LEG_IN = 0.5;
 
-export type { BendReferenceAlong, PanelBendSpec };
-
-/** Position of the fold line from the start of the dimension (0″ end), in inches — used by the 3D path. */
-export function canonicalBendPosition(b: PanelBendSpec, extentIn: number): number {
-  const L = extentIn;
-  const d = b.inchesFromEdge;
-  if (b.referenceAlong === "fromEnd") return L - d;
-  return d;
-}
-
-function roundInches(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-export function displayInchesForReference(canonicalFromStart: number, ref: BendReferenceAlong, extentIn: number): number {
-  if (ref === "fromEnd") return roundInches(extentIn - canonicalFromStart);
-  return roundInches(canonicalFromStart);
-}
+export type { PanelBendSpec };
 
 const MAX_BENDS_CAP = 20;
 
@@ -57,43 +40,35 @@ export function normalizePanelBends(raw: PanelBendSpec[], alongDimensionIn: numb
   const hi = Math.max(lo, L - lo);
   if (hi <= lo || raw.length === 0) return [];
 
-  type Item = { ref: BendReferenceAlong; p: number; angleDeg: number };
+  const sorted = [...raw]
+    .map((b) => ({
+      inchesFromEdge: Math.round(b.inchesFromEdge * 100) / 100,
+      angleDeg: clampAngleDeg(b.angleDeg),
+    }))
+    .sort((a, b) => a.inchesFromEdge - b.inchesFromEdge);
 
-  const items: Item[] = [...raw]
-    .map((b) => {
-      const ref: BendReferenceAlong = b.referenceAlong === "fromEnd" ? "fromEnd" : "fromStart";
-      let p = roundInches(b.inchesFromEdge);
-      if (ref === "fromEnd") p = roundInches(L - p);
-      return { ref, p, angleDeg: clampAngleDeg(b.angleDeg) };
-    })
-    .sort((a, b) => a.p - b.p);
-
-  const out: Item[] = [];
+  const out: PanelBendSpec[] = [];
   let prevEdge = 0;
 
-  for (const b of items) {
-    let pos = b.p;
+  for (const b of sorted) {
+    let pos = b.inchesFromEdge;
     pos = Math.max(pos, prevEdge + lo);
     pos = Math.min(pos, hi);
     if (L - pos < lo - 1e-9) break;
-    if (out.length > 0 && Math.abs(pos - out[out.length - 1].p) < 1e-6) {
-      out[out.length - 1] = { ref: b.ref, p: pos, angleDeg: b.angleDeg };
+    if (out.length > 0 && Math.abs(pos - out[out.length - 1].inchesFromEdge) < 1e-6) {
+      out[out.length - 1] = { inchesFromEdge: pos, angleDeg: b.angleDeg };
       prevEdge = pos;
       continue;
     }
-    out.push({ ref: b.ref, p: pos, angleDeg: b.angleDeg });
+    out.push({ inchesFromEdge: pos, angleDeg: b.angleDeg });
     prevEdge = pos;
   }
 
-  while (out.length > 0 && L - out[out.length - 1].p < lo - 1e-9) {
+  while (out.length > 0 && L - out[out.length - 1].inchesFromEdge < lo - 1e-9) {
     out.pop();
   }
 
-  return out.map((o) => ({
-    referenceAlong: o.ref,
-    inchesFromEdge: displayInchesForReference(o.p, o.ref, L),
-    angleDeg: o.angleDeg,
-  }));
+  return out;
 }
 
 /** @deprecated Use normalizePanelBends(raw, widthIn) for width-axis folds (same math, different extent). */
@@ -109,7 +84,7 @@ export function suggestNextBendInchesFromEdge(existing: PanelBendSpec[], alongDi
   const hi = Math.max(lo, L - lo);
   if (hi <= lo) return L / 2;
 
-  const breakpoints = [0, ...normalized.map((b) => canonicalBendPosition(b, L)), L];
+  const breakpoints = [0, ...normalized.map((b) => b.inchesFromEdge), L];
   let bestMid = L / 2;
   let bestGap = 0;
   for (let i = 0; i < breakpoints.length - 1; i++) {
@@ -128,16 +103,9 @@ export function suggestNextBendInchesAlongWidth(existing: PanelBendSpec[], width
   return suggestNextBendInchesFromEdge(existing, widthIn);
 }
 
-function refLabel(b: PanelBendSpec): string {
-  return b.referenceAlong === "fromEnd" ? "end" : "start";
-}
-
 export function formatPanelBendsSummary(bends: PanelBendSpec[]): string {
   if (!bends.length) return "";
-  const parts = bends.map((b) => {
-    const a = Number.isInteger(b.angleDeg) ? String(b.angleDeg) : b.angleDeg.toFixed(1);
-    return `${b.inchesFromEdge}" from ${refLabel(b)} @ ${a}°`;
-  });
+  const parts = bends.map((b) => `${b.inchesFromEdge}" @ ${Number.isInteger(b.angleDeg) ? b.angleDeg : b.angleDeg.toFixed(1)}°`);
   return `${bends.length} fold${bends.length === 1 ? "" : "s"}: ${parts.join(" · ")}`;
 }
 
@@ -155,7 +123,7 @@ export function panelBendsFromLegacy(
     typeof bendInchesFromEdge === "number" && !Number.isNaN(bendInchesFromEdge)
       ? bendInchesFromEdge
       : 0;
-  return [{ inchesFromEdge: inches, angleDeg: bendAngleDeg, referenceAlong: "fromStart" }];
+  return [{ inchesFromEdge: inches, angleDeg: bendAngleDeg }];
 }
 
 export function getPanelBendsFromCartItem(item: CartItem): PanelBendSpec[] {
