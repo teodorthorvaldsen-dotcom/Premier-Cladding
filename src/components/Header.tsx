@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
 const NAV_LINKS = [
@@ -17,32 +17,9 @@ const NAV_LINKS = [
   { id: "cart", href: "/cart", label: "Cart" },
 ] as const;
 
-const CONFIGURATOR_LINKS = [
-  { href: "#panel-type", label: "Panel Type" },
-  { href: "#thickness", label: "Thickness" },
-  { href: "#size", label: "Size" },
-  { href: "#color", label: "Color/Finish" },
-  { href: "#quantity", label: "Quantity" },
-  { href: "#estimate", label: "Total" },
-  { href: "/cart", label: "Cart" },
-] as const;
-
-/** Instant scroll on ACM configurator — normal page scroll, no smooth “slide”. */
-function scrollToSection(
-  e: React.MouseEvent<HTMLAnchorElement>,
-  href: string,
-  behavior: ScrollBehavior = "smooth"
-) {
-  if (href.startsWith("#")) {
-    e.preventDefault();
-    document.getElementById(href.slice(1))?.scrollIntoView({ behavior, block: "start" });
-  }
-}
-
 export function Header() {
   const pathname = usePathname();
   const { totalCount } = useCart();
-  const isConfigurator = pathname === "/products/acm-panels";
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
 
@@ -58,19 +35,6 @@ export function Header() {
       document.body.style.overflow = prev;
     };
   }, [mobileOpen]);
-
-  const goToConfiguratorSection = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, href: string, behavior: ScrollBehavior = "auto") => {
-      if (!href.startsWith("#")) return;
-      e.preventDefault();
-      setMobileOpen(false);
-      const id = href.slice(1);
-      requestAnimationFrame(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
-      });
-    },
-    []
-  );
 
   const shellClass =
     "border-b border-gray-200/60 bg-[#f9fafb] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]";
@@ -134,56 +98,27 @@ export function Header() {
               </div>
             </div>
 
-            {isConfigurator ? (
-              <nav
-                className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
-                aria-label="Configurator sections"
-              >
-                {CONFIGURATOR_LINKS.map(({ href, label }) =>
-                  href.startsWith("#") ? (
-                    <a
-                      key={href}
-                      href={href}
-                      onClick={(e) => scrollToSection(e, href, "auto")}
-                      className="max-w-[8.5rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:max-w-[9rem] md:px-4 md:py-3 md:text-lg lg:text-lg xl:text-xl"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="max-w-[8.5rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:max-w-[9rem] md:px-4 md:py-3 md:text-lg lg:text-lg xl:text-xl"
-                      aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
-                    >
-                      {label}
-                    </Link>
-                  )
-                )}
-              </nav>
-            ) : (
-              <nav
-                className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
-                aria-label="Main"
-              >
-                {NAV_LINKS.map(({ id, href, label }) => {
-                  const active = pathname === href;
-                  return (
-                    <Link
-                      key={id}
-                      href={href}
-                      className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
-                        active
-                          ? "text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      }`}
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
+            <nav
+              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
+              aria-label="Main"
+            >
+              {NAV_LINKS.map(({ id, href, label }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={id}
+                    href={href}
+                    className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+                      active
+                        ? "text-gray-900"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
 
             {/* Mobile navigation panel */}
             <nav
@@ -193,43 +128,8 @@ export function Header() {
               }`}
               aria-label="Mobile navigation"
             >
-              {isConfigurator ? (
-                <>
-                  <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    On this page
-                  </p>
-                  <ul className="space-y-1">
-                    {CONFIGURATOR_LINKS.map(({ href, label }) => (
-                      <li key={href}>
-                        {href.startsWith("#") ? (
-                          <a
-                            href={href}
-                            className="block touch-manipulation rounded-lg px-3 py-3 text-left text-base font-bold leading-snug text-gray-800 break-words active:bg-gray-100"
-                            onClick={(e) => goToConfiguratorSection(e, href, "smooth")}
-                          >
-                            {label}
-                          </a>
-                        ) : (
-                          <Link
-                            href={href}
-                            className="block rounded-lg px-3 py-3 text-left text-base font-bold leading-snug text-gray-800 active:bg-gray-100"
-                            onClick={() => setMobileOpen(false)}
-                            aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
-                          >
-                            {label}
-                            {href === "/cart" && totalCount > 0 ? ` (${totalCount})` : ""}
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-4 border-t border-gray-200 px-1 pb-2 pt-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Site menu
-                  </p>
-                </>
-              ) : null}
               <ul className="space-y-1">
-                {(isConfigurator ? NAV_LINKS.filter((l) => l.id !== "cart") : NAV_LINKS).map(
+                {NAV_LINKS.map(
                   ({ id, href, label }) => {
                     const active = pathname === href;
                     return (
