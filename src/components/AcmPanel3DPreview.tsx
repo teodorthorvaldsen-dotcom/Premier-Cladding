@@ -136,8 +136,6 @@ function FoldedPanelMesh({
           key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}`}
           position={p.position}
           rotation={p.rotation}
-          castShadow
-          receiveShadow
         >
           <boxGeometry args={p.args} />
           {mapUrl ? (
@@ -175,21 +173,28 @@ function PreviewScene({
 }) {
   const maxWorld = inchesToWorld(Math.max(widthIn, heightIn, 12));
   const camDistance = Math.max(7, maxWorld * 4.2);
+  /** Tight zoom band around default framing */
+  const zoomMin = camDistance * 0.58;
+  const zoomMax = camDistance * 1.02;
 
   return (
     <Canvas
-      shadows
       dpr={[1, 2]}
-      camera={{ position: [camDistance, camDistance * 0.75, camDistance * 1.05], fov: 38 }}
+      camera={{
+        position: [camDistance * 0.92, camDistance * 0.72, camDistance * 0.95],
+        fov: 38,
+        near: 0.1,
+        far: camDistance * 25,
+      }}
       style={{ width: "100%", height: "100%", display: "block" }}
       gl={{ antialias: true }}
     >
       <color attach="background" args={["#f4f5f7"]} />
-      <ambientLight intensity={0.72} />
-      <directionalLight castShadow position={[10, 14, 8]} intensity={1.15} shadow-mapSize={[2048, 2048]} />
+      <ambientLight intensity={0.85} />
+      <directionalLight position={[8, 12, 6]} intensity={1} />
 
       <Suspense fallback={null}>
-        <Center>
+        <Center precise>
           <FoldedPanelMesh
             widthIn={widthIn}
             heightIn={heightIn}
@@ -203,12 +208,19 @@ function PreviewScene({
         </Center>
       </Suspense>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -maxWorld * 1.8, 0]} receiveShadow>
-        <planeGeometry args={[maxWorld * 14, maxWorld * 14]} />
-        <shadowMaterial opacity={0.22} />
-      </mesh>
-
-      <OrbitControls enablePan={false} minDistance={camDistance * 0.35} maxDistance={camDistance * 2.2} />
+      <OrbitControls
+        makeDefault
+        enablePan={false}
+        target={[0, 0, 0]}
+        enableDamping
+        dampingFactor={0.08}
+        rotateSpeed={0.78}
+        zoomSpeed={0.65}
+        minDistance={zoomMin}
+        maxDistance={zoomMax}
+        minPolarAngle={0.38 * Math.PI}
+        maxPolarAngle={0.58 * Math.PI}
+      />
     </Canvas>
   );
 }
@@ -283,7 +295,7 @@ export function AcmPanel3DPreview({
         {caption}
       </p>
       <p className="mt-2 text-center text-xs text-gray-400">
-        Drag to rotate · scroll to zoom
+        Drag to orbit around center · scroll for limited zoom
       </p>
     </section>
   );
