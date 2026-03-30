@@ -28,6 +28,7 @@ const defaultSize: SizeSelection = {
   widthIn: 62,
   lengthIn: 96,
   bendAngleDeg: 0,
+  bendMirrored: false,
 };
 
 export interface PriceResult {
@@ -207,7 +208,12 @@ export function Configurator() {
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
-      ...(size.bendAngleDeg > 0 ? { bendAngleDeg: size.bendAngleDeg } : {}),
+      ...(size.bendAngleDeg > 0
+        ? {
+            bendAngleDeg: size.bendAngleDeg,
+            ...(size.bendMirrored ? { bendMirrored: true } : {}),
+          }
+        : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -334,6 +340,7 @@ export function Configurator() {
           >
             <AcmPanel3DPreview
               bendAngleDeg={size.bendAngleDeg}
+              bendMirrored={size.bendMirrored}
               metalThicknessIn={metalThicknessIn}
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}

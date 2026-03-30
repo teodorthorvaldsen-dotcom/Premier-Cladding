@@ -15,6 +15,8 @@ export interface SizeSelection {
   lengthIn: number;
   /** Bend angle in degrees (0–180); bent preview uses two legs of half lengthIn (fold at center). */
   bendAngleDeg: number;
+  /** Flip bent preview left/right (horizontal mirror). */
+  bendMirrored: boolean;
 }
 
 interface SizePickerProps {
@@ -58,6 +60,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     if (raw === "" || Number.isNaN(num)) {
       const w = CUSTOM_WIDTH_MIN_IN;
       onChange({
+        ...value,
         widthId: "custom",
         widthIn: w,
         lengthIn: clampLength(value.lengthIn),
@@ -67,6 +70,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     }
     const w = clampWidth(num);
     onChange({
+      ...value,
       widthId: "custom",
       widthIn: w,
       lengthIn: clampLength(value.lengthIn),
@@ -194,6 +198,20 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
               90° fold
             </button>
           </div>
+          <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+            <input
+              id="bend-mirror-input"
+              type="checkbox"
+              checked={value.bendMirrored}
+              disabled={value.bendAngleDeg < 0.5}
+              onChange={(e) => onChange({ ...value, bendMirrored: e.target.checked })}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400 disabled:opacity-40"
+            />
+            <span className="text-xs text-gray-600">
+              <span className="font-medium text-gray-800">Mirror bend</span> — flip the bent preview
+              left/right (only affects 3D preview when angle {">"} 0).
+            </span>
+          </label>
         </div>
       </div>
     </div>

@@ -5,6 +5,8 @@ export interface QuoteDraft {
   lengthIn: number;
   /** Optional bend angle (degrees); informational for bent panel previews. */
   bendAngleDeg?: number;
+  /** Bent preview mirrored left/right when true. */
+  bendMirrored?: boolean;
   widthId: string | null;
   thicknessId: string;
   colorId: string;

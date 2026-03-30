@@ -22,6 +22,8 @@ export interface AcmPanel3DPreviewProps {
   bendAngleDeg?: number;
   /** Nominal metal / composite thickness in inches for neutral-axis bend allowance. */
   metalThicknessIn?: number;
+  /** Horizontal mirror of bent geometry (left/right flip). */
+  bendMirrored?: boolean;
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
@@ -32,6 +34,7 @@ export function AcmPanel3DPreview({
   panelHeightIn,
   panelDepthIn,
   bendAngleDeg = 0,
+  bendMirrored = false,
   metalThicknessIn = 0.16,
   panelColorHex,
   panelColorName,
@@ -144,8 +147,9 @@ export function AcmPanel3DPreview({
     const base = `${panelWidthIn}" × ${panelHeightIn}"`;
     if (!useBend) return `${base} · ${panelColorName}`;
     const ba = baIn >= 0.001 ? ` · BA ≈ ${baIn.toFixed(3)}"` : "";
-    return `${base} · ${Math.round(bendAngle)}° bend (½ length each leg)${ba} · ${panelColorName}`;
-  }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn]);
+    const mir = bendMirrored ? " · mirrored" : "";
+    return `${base} · ${Math.round(bendAngle)}° bend (½ length each leg)${ba}${mir} · ${panelColorName}`;
+  }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn, bendMirrored]);
 
   return (
     <section
@@ -189,8 +193,9 @@ export function AcmPanel3DPreview({
             <div
               style={{
                 transformStyle: "preserve-3d",
-                transform:
-                  "rotateX(52deg) rotateY(12deg) rotateZ(-38deg) translateY(10px)",
+                transform: `rotateX(52deg) rotateY(12deg) rotateZ(-38deg) translateY(10px)${
+                  bendMirrored ? " scaleX(-1)" : ""
+                }`,
                 filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
                 position: "relative",
               }}
