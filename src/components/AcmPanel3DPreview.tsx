@@ -292,7 +292,7 @@ function BendChain({
           bottom: "100%",
           left: 0,
           position: "absolute",
-          transform: `rotateX(${-dThetaDeg}deg)`,
+          transform: `rotateX(${dThetaDeg}deg)`,
           transformOrigin: "50% 100% 0",
           transformStyle: "preserve-3d",
           width: faceW,
