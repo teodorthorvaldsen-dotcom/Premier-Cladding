@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CUSTOM_WIDTH_MAX_IN,
   CUSTOM_WIDTH_MIN_IN,
@@ -12,13 +12,42 @@ import type { ThicknessId } from "@/data/acm";
 /** Bend line direction: X = hinge parallel to width (splits length into two legs); Y = hinge parallel to length (splits width). */
 export type BendAxis = "x" | "y";
 
+/** Minimum clear distance from fold to each end along the split dimension (inches). */
+const MIN_LEG_IN = 0.5;
+
 export interface SizeSelection {
   widthId: string | null;
   widthIn: number;
   lengthIn: number;
   bendAxis: BendAxis;
+  /**
+   * Inches from the reference edge to the fold line, measured along the dimension that is split.
+   * X bend → along length (first leg below the fold in the preview). Y bend → along width (first leg left of the fold).
+   */
+  bendInchesFromEdge: number;
   /** Included angle between the two legs (0–180°). 90° = right-angle L. 0° or 180° shows as flat in the preview. */
   bendAngleDeg: number;
+}
+
+/** Keep fold position so both legs stay at least MIN_LEG_IN. */
+export function clampBendInchesFromEdge(
+  raw: number,
+  axis: BendAxis,
+  widthIn: number,
+  lengthIn: number
+): number {
+  const along = axis === "x" ? lengthIn : widthIn;
+  const n = Math.round(raw * 100) / 100;
+  if (Number.isNaN(n)) return midpointBendInches(axis, widthIn, lengthIn);
+  const lo = MIN_LEG_IN;
+  const hi = Math.max(lo, along - MIN_LEG_IN);
+  if (hi <= lo) return Math.round((along / 2) * 100) / 100;
+  return Math.min(hi, Math.max(lo, n));
+}
+
+function midpointBendInches(axis: BendAxis, widthIn: number, lengthIn: number): number {
+  const along = axis === "x" ? lengthIn : widthIn;
+  return clampBendInchesFromEdge(along / 2, axis, widthIn, lengthIn);
 }
 
 interface SizePickerProps {
@@ -43,6 +72,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [bendAngleStr, setBendAngleStr] = useState(() => String(value.bendAngleDeg));
+  const [bendInchesStr, setBendInchesStr] = useState(() => String(value.bendInchesFromEdge));
+
+  useEffect(() => {
+    setBendInchesStr(String(value.bendInchesFromEdge));
+  }, [value.bendInchesFromEdge]);
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
@@ -61,23 +95,27 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     const num = Number(raw);
     if (raw === "" || Number.isNaN(num)) {
       const w = CUSTOM_WIDTH_MIN_IN;
+      const len = clampLength(value.lengthIn);
       onChange({
         ...value,
         widthId: "custom",
         widthIn: w,
-        lengthIn: clampLength(value.lengthIn),
+        lengthIn: len,
         bendAxis: value.bendAxis,
+        bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.bendAxis, w, len),
         bendAngleDeg: clampBendAngle(value.bendAngleDeg),
       });
       return;
     }
     const w = clampWidth(num);
+    const len = clampLength(value.lengthIn);
     onChange({
       ...value,
       widthId: "custom",
       widthIn: w,
-      lengthIn: clampLength(value.lengthIn),
+      lengthIn: len,
       bendAxis: value.bendAxis,
+      bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.bendAxis, w, len),
       bendAngleDeg: clampBendAngle(value.bendAngleDeg),
     });
   };
@@ -86,18 +124,22 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     setLengthStr(raw);
     const num = Number(raw);
     if (raw === "" || Number.isNaN(num)) {
+      const len = MIN_LENGTH_IN;
       onChange({
         ...value,
-        lengthIn: MIN_LENGTH_IN,
+        lengthIn: len,
         bendAxis: value.bendAxis,
+        bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.bendAxis, value.widthIn, len),
         bendAngleDeg: clampBendAngle(value.bendAngleDeg),
       });
       return;
     }
+    const len = clampLength(num);
     onChange({
       ...value,
-      lengthIn: clampLength(num),
+      lengthIn: len,
       bendAxis: value.bendAxis,
+      bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.bendAxis, value.widthIn, len),
       bendAngleDeg: clampBendAngle(value.bendAngleDeg),
     });
   };
@@ -110,14 +152,33 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         ...value,
         bendAngleDeg: 0,
         bendAxis: value.bendAxis,
+        bendInchesFromEdge: value.bendInchesFromEdge,
       });
       return;
     }
     onChange({
       ...value,
       bendAxis: value.bendAxis,
+      bendInchesFromEdge: value.bendInchesFromEdge,
       bendAngleDeg: clampBendAngle(num),
     });
+  };
+
+  const handleBendInchesChange = (raw: string) => {
+    setBendInchesStr(raw);
+  };
+
+  const commitBendInches = () => {
+    const num = Number(bendInchesStr);
+    const next =
+      bendInchesStr.trim() === "" || Number.isNaN(num)
+        ? midpointBendInches(value.bendAxis, value.widthIn, value.lengthIn)
+        : clampBendInchesFromEdge(num, value.bendAxis, value.widthIn, value.lengthIn);
+    if (next !== value.bendInchesFromEdge) {
+      onChange({ ...value, bendInchesFromEdge: next });
+    } else {
+      setBendInchesStr(String(next));
+    }
   };
 
   return (
@@ -171,8 +232,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         <fieldset className="min-w-0">
           <legend className="block text-xs font-medium text-gray-700">Bend axis</legend>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            X: hinge parallel to width (each leg uses half the length). Y: hinge parallel to length (each leg uses half the
-            width).
+            X: hinge parallel to width — fold position is measured along length. Y: hinge parallel to length — fold
+            position along width.
           </p>
           <div className="mt-2 flex flex-wrap gap-3">
             {(
@@ -195,7 +256,18 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                   type="radio"
                   name="bend-axis"
                   checked={value.bendAxis === v}
-                  onChange={() => onChange({ ...value, bendAxis: v })}
+                  onChange={() =>
+                    onChange({
+                      ...value,
+                      bendAxis: v,
+                      bendInchesFromEdge: clampBendInchesFromEdge(
+                        value.bendInchesFromEdge,
+                        v,
+                        value.widthIn,
+                        value.lengthIn
+                      ),
+                    })
+                  }
                   className="h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-400"
                 />
                 {label}
@@ -203,6 +275,28 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             ))}
           </div>
         </fieldset>
+        <div>
+          <label htmlFor="bend-inches-input" className="block text-xs font-medium text-gray-700">
+            Inches to fold from edge (in)
+          </label>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            Distance from the reference edge to the bend line, along the length if axis is X or along the width if axis is
+            Y. Must leave at least {MIN_LEG_IN} in on each side. Preview uses this for leg lengths.
+          </p>
+          <input
+            id="bend-inches-input"
+            type="number"
+            inputMode="decimal"
+            min={MIN_LEG_IN}
+            max={value.bendAxis === "x" ? value.lengthIn - MIN_LEG_IN : value.widthIn - MIN_LEG_IN}
+            step={0.01}
+            value={bendInchesStr}
+            onChange={(e) => handleBendInchesChange(e.target.value)}
+            onBlur={commitBendInches}
+            className="mt-1.5 block h-11 w-36 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            aria-label="Inches from edge to bend fold"
+          />
+        </div>
         <div>
           <label htmlFor="bend-angle-input" className="block text-xs font-medium text-gray-700">
             Bend angle (°)

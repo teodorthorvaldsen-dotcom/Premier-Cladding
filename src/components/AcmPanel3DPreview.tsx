@@ -22,6 +22,11 @@ export interface AcmPanel3DPreviewProps {
   bendAxis?: PanelBendAxis;
   /** Included angle between the two legs (0–180°). Outside ~1–179° shows an L in 3D. */
   bendAngleDeg?: number;
+  /**
+   * Inches from reference edge to fold along the split dimension (length for X, width for Y).
+   * Defaults to half the panel when omitted.
+   */
+  bendInchesFromEdge?: number;
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
@@ -33,6 +38,7 @@ export function AcmPanel3DPreview({
   panelDepthIn,
   bendAxis = "x",
   bendAngleDeg = 0,
+  bendInchesFromEdge: bendInchesFromEdgeProp,
   panelColorHex,
   panelColorName,
   panelSwatchImage,
@@ -44,24 +50,31 @@ export function AcmPanel3DPreview({
     const isBent = bendAngleDeg > 0.5 && bendAngleDeg < 179.5;
     const foldRad = ((180 - bendAngleDeg) * Math.PI) / 180;
 
+    const splitAlongIn = bendAxis === "x" ? panelHeightIn : panelWidthIn;
+    const bendIn =
+      bendInchesFromEdgeProp !== undefined ? bendInchesFromEdgeProp : splitAlongIn / 2;
+    const leg1Ratio = Math.min(0.999, Math.max(0.001, bendIn / splitAlongIn));
+
     let spanW = baseW + depthPx + 40;
     let spanH = baseH + depthPx + 40;
 
     if (isBent) {
       if (bendAxis === "x") {
-        const half = baseH / 2;
+        const h1 = baseH * leg1Ratio;
+        const h2 = baseH * (1 - leg1Ratio);
         spanH =
-          half +
-          Math.abs(half * Math.cos(foldRad)) +
+          h1 +
+          Math.abs(h2 * Math.cos(foldRad)) +
           Math.abs(depthPx * Math.sin(foldRad)) +
           depthPx +
           48;
         spanW = baseW + depthPx + 40;
       } else {
-        const half = baseW / 2;
+        const w1 = baseW * leg1Ratio;
+        const w2 = baseW * (1 - leg1Ratio);
         spanW =
-          half +
-          Math.abs(half * Math.cos(foldRad)) +
+          w1 +
+          Math.abs(w2 * Math.cos(foldRad)) +
           Math.abs(depthPx * Math.sin(foldRad)) +
           depthPx +
           48;
@@ -80,8 +93,16 @@ export function AcmPanel3DPreview({
       isBent,
       /** Rotation from coplanar: 180° − interior bend angle. */
       foldDeg: 180 - bendAngleDeg,
+      leg1Ratio,
     };
-  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendAngleDeg, bendAxis]);
+  }, [
+    panelWidthIn,
+    panelHeightIn,
+    panelDepthIn,
+    bendAngleDeg,
+    bendAxis,
+    bendInchesFromEdgeProp,
+  ]);
 
   const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
@@ -99,7 +120,11 @@ export function AcmPanel3DPreview({
   const caption = (() => {
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
     if (scaled.isBent) {
-      return `L-bend ${bendAngleDeg}° · axis ${bendAxis.toUpperCase()} · ${size} · ${panelColorName}`;
+      const foldIn =
+        bendInchesFromEdgeProp !== undefined
+          ? bendInchesFromEdgeProp
+          : (bendAxis === "x" ? panelHeightIn : panelWidthIn) / 2;
+      return `L-bend ${bendAngleDeg}° · fold ${foldIn}" from edge · axis ${bendAxis.toUpperCase()} · ${size} · ${panelColorName}`;
     }
     return `${size} · ${panelColorName}`;
   })();
@@ -137,6 +162,7 @@ export function AcmPanel3DPreview({
               depth={scaled.depth}
               foldDeg={scaled.foldDeg}
               axis={bendAxis}
+              leg1Ratio={scaled.leg1Ratio}
               panelColorHex={panelColorHex}
               panelSwatchImage={panelSwatchImage}
             />
@@ -168,6 +194,7 @@ function BentLAssembly({
   depth,
   foldDeg,
   axis,
+  leg1Ratio,
   panelColorHex,
   panelSwatchImage,
 }: {
@@ -176,13 +203,15 @@ function BentLAssembly({
   depth: number;
   foldDeg: number;
   axis: PanelBendAxis;
+  /** Share of the split dimension for the first leg (below the fold for X, left for Y). */
+  leg1Ratio: number;
   panelColorHex: string;
   panelSwatchImage?: string;
 }) {
-  const h1 = faceH / 2;
-  const h2 = faceH / 2;
-  const w1 = faceW / 2;
-  const w2 = faceW / 2;
+  const h1 = axis === "x" ? faceH * leg1Ratio : faceH;
+  const h2 = axis === "x" ? faceH * (1 - leg1Ratio) : faceH;
+  const w1 = axis === "y" ? faceW * leg1Ratio : faceW;
+  const w2 = axis === "y" ? faceW * (1 - leg1Ratio) : faceW;
 
   return (
     <div style={staticStyles.previewCenterInner}>

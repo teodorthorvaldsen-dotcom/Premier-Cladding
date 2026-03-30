@@ -7,6 +7,8 @@ export interface QuoteDraft {
   bendAngleDeg?: number;
   /** Bend line: X = along width (splits length); Y = along length (splits width). */
   bendAxis?: "x" | "y";
+  /** Inches from reference edge to fold along the split dimension. */
+  bendInchesFromEdge?: number;
   widthId: string | null;
   thicknessId: string;
   colorId: string;

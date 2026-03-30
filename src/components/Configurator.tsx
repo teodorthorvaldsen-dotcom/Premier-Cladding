@@ -28,6 +28,7 @@ const defaultSize: SizeSelection = {
   widthIn: 62,
   lengthIn: 96,
   bendAxis: "x",
+  bendInchesFromEdge: 48,
   bendAngleDeg: 0,
 };
 
@@ -169,7 +170,11 @@ export function Configurator() {
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
       ...(size.bendAngleDeg > 0
-        ? { bendAxis: size.bendAxis, bendAngleDeg: size.bendAngleDeg }
+        ? {
+            bendAxis: size.bendAxis,
+            bendAngleDeg: size.bendAngleDeg,
+            bendInchesFromEdge: size.bendInchesFromEdge,
+          }
         : {}),
       ...(colorId === "custom-color-match"
         ? {
@@ -212,7 +217,11 @@ export function Configurator() {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
       ...(size.bendAngleDeg > 0
-        ? { bendAngleDeg: size.bendAngleDeg, bendAxis: size.bendAxis }
+        ? {
+            bendAngleDeg: size.bendAngleDeg,
+            bendAxis: size.bendAxis,
+            bendInchesFromEdge: size.bendInchesFromEdge,
+          }
         : {}),
       widthId: size.widthId,
       thicknessId,
@@ -344,6 +353,7 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               bendAxis={size.bendAxis}
               bendAngleDeg={size.bendAngleDeg}
+              bendInchesFromEdge={size.bendInchesFromEdge}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
               panelSwatchImage={

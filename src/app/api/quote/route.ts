@@ -153,7 +153,11 @@ function bendReferenceRowsHtml(c: QuoteDraft): string {
     c.bendAxis === "x" || c.bendAxis === "y"
       ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend axis</td><td>${escapeHtml(c.bendAxis.toUpperCase())}</td></tr>`
       : "";
-  return `${axisRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
+  const foldRow =
+    typeof c.bendInchesFromEdge === "number"
+      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Inches to fold from edge</td><td>${c.bendInchesFromEdge} in</td></tr>`
+      : "";
+  return `${axisRow}${foldRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
 }
 
 function validatePayload(body: unknown): body is QuotePayload {

@@ -223,6 +223,12 @@ export default function QuotePage() {
                       </dd>
                     </div>
                   ) : null}
+                  {typeof draft.bendInchesFromEdge === "number" ? (
+                    <div>
+                      <dt className="text-gray-500">Inches to fold from edge</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{draft.bendInchesFromEdge} in</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt className="text-gray-500">Bend angle (reference)</dt>
                     <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAngleDeg}°</dd>
