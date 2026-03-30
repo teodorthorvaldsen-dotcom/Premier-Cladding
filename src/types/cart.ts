@@ -15,6 +15,9 @@ export interface CartItem {
   customColorReference?: string;
   /** Original filename if user attached a PDF (file is not stored in the cart). */
   customColorSpecFileName?: string;
+  /** Optional 90° return depths (in) from ACM configurator 3D preview. */
+  rightReturnIn?: number;
+  topReturnIn?: number;
 }
 
 export function cartItemLineTotal(item: CartItem): number {

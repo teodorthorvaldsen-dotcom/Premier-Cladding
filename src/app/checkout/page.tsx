@@ -40,6 +40,12 @@ function describeItem(item: CartItem): string {
   const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const parts = [sizeLabel, color, thickness, item.panelTypeLabel].filter(Boolean);
+  if (item.rightReturnIn != null || item.topReturnIn != null) {
+    const r: string[] = [];
+    if (item.rightReturnIn != null) r.push(`right return ${item.rightReturnIn}"`);
+    if (item.topReturnIn != null) r.push(`top return ${item.topReturnIn}"`);
+    parts.push(r.join(", "));
+  }
   return parts.join(" · ");
 }
 

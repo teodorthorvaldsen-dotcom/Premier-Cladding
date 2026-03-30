@@ -213,6 +213,18 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Length</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
+              {typeof draft.rightReturnIn === "number" ? (
+                <div>
+                  <dt className="text-gray-500">Right return</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.rightReturnIn} in</dd>
+                </div>
+              ) : null}
+              {typeof draft.topReturnIn === "number" ? (
+                <div>
+                  <dt className="text-gray-500">Top return</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.topReturnIn} in</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-gray-500">Thickness</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.thicknessLabel}</dd>

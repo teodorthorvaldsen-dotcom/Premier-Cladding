@@ -3,6 +3,9 @@ export interface QuoteDraft {
   /** Common fields used by the ACM configurator (kept for backwards compatibility). */
   widthIn: number;
   lengthIn: number;
+  /** Optional folded return depths (in) from configurator. */
+  rightReturnIn?: number;
+  topReturnIn?: number;
   widthId: string | null;
   thicknessId: string;
   colorId: string;

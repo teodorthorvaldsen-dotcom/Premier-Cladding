@@ -16,6 +16,8 @@ interface CartQuotePayload {
     panelTypeLabel?: string;
     customColorReference?: string;
     customColorSpecFileName?: string;
+    rightReturnIn?: number;
+    topReturnIn?: number;
   }>;
   fullName: string;
   company: string;
@@ -50,9 +52,16 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
     .map((i) => {
+      const returnNote =
+        typeof i.rightReturnIn === "number" || typeof i.topReturnIn === "number"
+          ? `<div>Returns (90°): ${typeof i.rightReturnIn === "number" ? `right ${i.rightReturnIn}"` : ""}${
+              typeof i.rightReturnIn === "number" && typeof i.topReturnIn === "number" ? "; " : ""
+            }${typeof i.topReturnIn === "number" ? `top ${i.topReturnIn}"` : ""}</div>`
+          : "";
       const extra =
-        i.customColorReference || i.customColorSpecFileName
+        i.customColorReference || i.customColorSpecFileName || returnNote
           ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
+              ${returnNote}
               ${i.customColorReference ? `<div>Color reference: ${escapeHtml(i.customColorReference)}</div>` : ""}
               ${
                 i.customColorSpecFileName
