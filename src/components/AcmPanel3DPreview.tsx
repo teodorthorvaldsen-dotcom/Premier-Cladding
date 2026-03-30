@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties } from "react";
 import {
   bendAllowanceFromAngleInches,
   defaultInsideBendRadiusInches,
@@ -76,38 +76,20 @@ export function AcmPanel3DPreview({
     const L2 = L1;
     const depthPx = panelDepthIn * DEPTH_MULT;
     const thetaRad = (bendAngle * Math.PI) / 180;
-    const rnIn = insideRIn + 0.33 * metalThicknessIn;
-    const arcLen = thetaRad * rnIn * FLAT_LEN_SCALE;
-
-    const n = Math.max(6, Math.min(24, Math.round(bendAngle / 5)));
-    const chunkH = arcLen / n;
-    const dThetaDeg = bendAngle / n;
-
-    const armReach = L1 + L2 + arcLen;
-    const span = baseW + depthPx + 48;
-    const totalH = armReach + depthPx * 0.85 + 36;
+    const reach = L1 + L2 * (Math.abs(Math.sin(thetaRad)) + Math.abs(Math.cos(thetaRad)) * 0.35);
+    const span = baseW + depthPx * 1.35 + 56;
+    const totalH = reach + depthPx * 1.15 + 44;
     const scaleX = (PREVIEW_W - 80) / span;
     const scaleY = (PREVIEW_H - 80) / totalH;
-    const scale = Math.min(scaleX, scaleY, 1) * 0.92;
+    const scale = Math.min(scaleX, scaleY, 1) * 0.9;
 
     return {
       faceW: baseW * scale,
       faceH1: L1 * scale,
       faceH2: L2 * scale,
-      chunkH: Math.max(chunkH * scale, 4),
-      depth: Math.max(depthPx * scale, 6),
-      n,
-      dThetaDeg,
+      depth: Math.max(depthPx * scale * 1.32, 10),
     };
-  }, [
-    useBend,
-    panelWidthIn,
-    panelHeightIn,
-    panelDepthIn,
-    bendAngle,
-    insideRIn,
-    metalThicknessIn,
-  ]);
+  }, [useBend, panelWidthIn, panelHeightIn, panelDepthIn, bendAngle]);
 
   const flatStyles = useMemo(
     () =>
@@ -131,15 +113,15 @@ export function AcmPanel3DPreview({
 
   const bentStyles = useMemo(() => {
     if (!bentLayout) return null;
-    const { faceW, faceH1, chunkH, depth } = bentLayout;
+    const { faceW, faceH1, faceH2, depth } = bentLayout;
     return buildFaceStyles(
       faceW,
-      Math.max(faceH1, chunkH),
+      Math.max(faceH1, faceH2),
       depth,
       panelColorHex,
       shades,
       panelSwatchImage,
-      { wrapShadow: false }
+      { solidBlock: true, wrapShadow: false }
     );
   }, [bentLayout, panelColorHex, panelSwatchImage, shades]);
 
@@ -186,18 +168,18 @@ export function AcmPanel3DPreview({
           <div
             style={{
               ...staticStyles.previewCenter,
-              perspective: "950px",
-              perspectiveOrigin: "50% 42%",
+              perspective: "1100px",
+              perspectiveOrigin: "48% 44%",
             }}
           >
             <div
               style={{
                 transformStyle: "preserve-3d",
-                /** Isometric view tuned so a 90° bend reads as a letter L (vertical stem + horizontal foot). */
-                transform: `rotateX(46deg) rotateY(-14deg) rotateZ(-32deg) translateY(16px)${
+                /** View similar to solid L-block: foot reads toward the viewer, stem vertical. */
+                transform: `rotateX(40deg) rotateY(-22deg) rotateZ(-30deg) translateY(14px)${
                   bendMirrored ? " scaleX(-1)" : ""
                 }`,
-                filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
+                filter: "drop-shadow(0 28px 48px rgba(0,0,0,0.18))",
                 position: "relative",
               }}
             >
@@ -220,34 +202,24 @@ export function AcmPanel3DPreview({
                   showInnerBorder={!panelSwatchImage}
                   styles={bentStyles}
                 />
+                {/* Single sharp hinge (solid L / mitered block) — second leg rotates by full bend angle. */}
                 <div
                   style={{
-                    height: 0,
                     left: 0,
                     position: "absolute",
                     top: 0,
-                    transform: `translateY(-${bentLayout.chunkH}px)`,
+                    transform: `rotateX(${bendAngleDeg}deg)`,
+                    transformOrigin: "50% 0 0",
                     transformStyle: "preserve-3d",
                     width: bentLayout.faceW,
                   }}
                 >
-                  <BendChain
-                    chunkH={bentLayout.chunkH}
-                    dThetaDeg={bentLayout.dThetaDeg}
+                  <ExtrudedLeg
                     depth={bentLayout.depth}
+                    faceH={bentLayout.faceH2}
                     faceW={bentLayout.faceW}
-                    n={bentLayout.n}
                     showInnerBorder={!panelSwatchImage}
                     styles={bentStyles}
-                    tail={
-                      <ExtrudedLeg
-                        depth={bentLayout.depth}
-                        faceH={bentLayout.faceH2}
-                        faceW={bentLayout.faceW}
-                        showInnerBorder={!panelSwatchImage}
-                        styles={bentStyles}
-                      />
-                    }
                   />
                 </div>
               </div>
@@ -260,68 +232,6 @@ export function AcmPanel3DPreview({
         {caption}
       </p>
     </section>
-  );
-}
-
-function BendChain({
-  n,
-  chunkH,
-  dThetaDeg,
-  faceW,
-  depth,
-  styles,
-  showInnerBorder,
-  tail,
-}: {
-  n: number;
-  chunkH: number;
-  dThetaDeg: number;
-  faceW: number;
-  depth: number;
-  styles: FaceStyles;
-  showInnerBorder: boolean;
-  tail: ReactNode;
-}) {
-  if (n <= 0) return <>{tail}</>;
-  return (
-    <div
-      style={{
-        height: chunkH,
-        position: "relative",
-        transformStyle: "preserve-3d",
-        width: faceW,
-      }}
-    >
-      <ExtrudedLeg
-        depth={depth}
-        faceH={chunkH}
-        faceW={faceW}
-        showInnerBorder={showInnerBorder}
-        styles={styles}
-      />
-      <div
-        style={{
-          bottom: "100%",
-          left: 0,
-          position: "absolute",
-          transform: `rotateX(${dThetaDeg}deg)`,
-          transformOrigin: "50% 100% 0",
-          transformStyle: "preserve-3d",
-          width: faceW,
-        }}
-      >
-        <BendChain
-          chunkH={chunkH}
-          dThetaDeg={dThetaDeg}
-          depth={depth}
-          faceW={faceW}
-          n={n - 1}
-          showInnerBorder={showInnerBorder}
-          styles={styles}
-          tail={tail}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -364,10 +274,12 @@ function buildFaceStyles(
   panelColorHex: string,
   shades: ReturnType<typeof createPanelShades>,
   panelSwatchImage?: string,
-  opts?: { wrapShadow?: boolean }
+  opts?: { wrapShadow?: boolean; solidBlock?: boolean }
 ): FaceStyles {
   const { frontColor, sideColor, topColor, borderColor } = shades;
   const wrapShadow = opts?.wrapShadow !== false;
+  const solid = opts?.solidBlock === true;
+  const rad = solid ? 5 : 2;
 
   const wrap: CSSProperties = {
     position: "relative",
@@ -379,6 +291,11 @@ function buildFaceStyles(
 
   if (panelSwatchImage) {
     const url = `url(${panelSwatchImage})`;
+    const gTop = solid ? "linear-gradient(165deg, rgba(255,255,255,0.2), rgba(0,0,0,0.32))" : "linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4))";
+    const gSide = solid ? "linear-gradient(200deg, rgba(255,255,255,0.06), rgba(0,0,0,0.42))" : "linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38))";
+    const gFront = solid
+      ? `linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 35%, rgba(0,0,0,0.15) 100%), ${url}`
+      : `linear-gradient(145deg, rgba(255,255,255,0.12) 0%, transparent 40%, rgba(0,0,0,0.06) 100%), ${url}`;
     return {
       wrapStyle: wrap,
       topStyle: {
@@ -386,8 +303,9 @@ function buildFaceStyles(
         width: faceW,
         height: depth,
         borderColor,
+        borderRadius: `${rad}px ${rad}px 0 0`,
         transform: `translateY(-${depth}px) skewX(-45deg)`,
-        backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4)), ${url}`,
+        backgroundImage: `${gTop}, ${url}`,
         backgroundSize: "cover, cover",
         backgroundPosition: "center, center",
         backgroundRepeat: "no-repeat, no-repeat",
@@ -397,8 +315,9 @@ function buildFaceStyles(
         width: depth,
         height: faceH,
         borderColor,
+        borderRadius: `0 ${rad}px ${rad}px 0`,
         transform: `translateX(${faceW}px) skewY(-45deg)`,
-        backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38)), ${url}`,
+        backgroundImage: `${gSide}, ${url}`,
         backgroundSize: "cover, cover",
         backgroundPosition: "center, center",
         backgroundRepeat: "no-repeat, no-repeat",
@@ -408,7 +327,8 @@ function buildFaceStyles(
         width: faceW,
         height: faceH,
         borderColor,
-        backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.12) 0%, transparent 40%, rgba(0,0,0,0.06) 100%), ${url}`,
+        borderRadius: `${rad}px`,
+        backgroundImage: gFront,
         backgroundSize: "cover, cover",
         backgroundPosition: "center, center",
         backgroundRepeat: "no-repeat, no-repeat",
@@ -416,13 +336,19 @@ function buildFaceStyles(
     };
   }
 
+  const rgb = hexToRgb(panelColorHex);
+  const deep = rgb ? adjustColor(rgb, solid ? -48 : -35) : sideColor;
+
   return {
     wrapStyle: wrap,
     topStyle: {
       ...staticStyles.panelTop,
       width: faceW,
       height: depth,
-      background: topColor,
+      borderRadius: `${rad}px ${rad}px 0 0`,
+      background: solid
+        ? `linear-gradient(165deg, ${adjustColor(rgb ?? { r: 150, g: 150, b: 150 }, 22)}, ${deep})`
+        : topColor,
       borderColor,
       transform: `translateY(-${depth}px) skewX(-45deg)`,
     },
@@ -430,7 +356,10 @@ function buildFaceStyles(
       ...staticStyles.panelSide,
       width: depth,
       height: faceH,
-      background: sideColor,
+      borderRadius: `0 ${rad}px ${rad}px 0`,
+      background: solid
+        ? `linear-gradient(200deg, ${adjustColor(rgb ?? { r: 150, g: 150, b: 150 }, 8)}, ${deep})`
+        : sideColor,
       borderColor,
       transform: `translateX(${faceW}px) skewY(-45deg)`,
     },
@@ -438,7 +367,10 @@ function buildFaceStyles(
       ...staticStyles.panelFront,
       width: faceW,
       height: faceH,
-      background: `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
+      borderRadius: `${rad}px`,
+      background: solid
+        ? `linear-gradient(128deg, ${rgb ? adjustColor(rgb, 28) : frontColor} 0%, ${panelColorHex} 45%, ${rgb ? adjustColor(rgb, -22) : sideColor} 92%)`
+        : `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
       borderColor,
     },
   };
