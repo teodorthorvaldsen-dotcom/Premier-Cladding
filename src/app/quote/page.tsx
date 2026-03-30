@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
+import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
@@ -213,20 +214,20 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Length</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
-              {typeof draft.bendAngleDeg === "number" && draft.bendAngleDeg > 0 ? (
-                <>
-                  {typeof draft.bendInchesFromEdge === "number" ? (
+              {getPanelBendsFromQuoteDraft(draft).map((b, i) => (
+                <div key={`fold-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                     <div>
-                      <dt className="text-gray-500">Inches to fold from edge (along length)</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">{draft.bendInchesFromEdge} in</dd>
+                      <dt className="text-gray-500">Fold {i + 1} — inches from edge (along length)</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
                     </div>
-                  ) : null}
-                  <div>
-                    <dt className="text-gray-500">Bend angle (reference)</dt>
-                    <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAngleDeg}°</dd>
+                    <div>
+                      <dt className="text-gray-500">Fold {i + 1} — angle (reference)</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+                    </div>
                   </div>
-                </>
-              ) : null}
+                </div>
+              ))}
               <div>
                 <dt className="text-gray-500">Thickness</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.thicknessLabel}</dd>

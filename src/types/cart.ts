@@ -1,3 +1,5 @@
+import type { PanelBendSpec } from "@/types/panelBend";
+
 export interface CartItem {
   id: string;
   widthIn: number;
@@ -11,7 +13,9 @@ export interface CartItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
-  /** L-bend configuration when applicable (fold along panel length). */
+  /** Folds along panel length (in order from reference edge); informational. */
+  panelBends?: PanelBendSpec[];
+  /** @deprecated Prefer panelBends; kept for older cart JSON. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;
   /** Set when color is custom match: manufacturer code, Pantone, or other reference. */

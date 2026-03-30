@@ -4,6 +4,8 @@ import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import type { PanelBendSpec } from "@/types/panelBend";
+import { normalizePanelBends } from "@/lib/panelBends";
 
 const PREVIEW_H = 360;
 /** Same visual scale as prior CSS preview (inches → scene units). */
@@ -14,8 +16,8 @@ export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
   panelDepthIn: number;
-  bendAngleDeg?: number;
-  bendInchesFromEdge?: number;
+  /** Folds along length from the reference edge, in order. */
+  bends?: PanelBendSpec[];
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
@@ -35,12 +37,6 @@ type BuiltPart = {
 
 function inchesToWorld(inches: number) {
   return inches * INCH_TO_WORLD;
-}
-
-function clampFoldPosition(positionIn: number, panelSizeIn: number) {
-  const hi = Math.max(MIN_LEG_IN, panelSizeIn - MIN_LEG_IN);
-  if (hi <= MIN_LEG_IN) return panelSizeIn / 2;
-  return Math.min(hi, Math.max(MIN_LEG_IN, positionIn));
 }
 
 /** Fold along panel length (hinge parallel to width). */
@@ -106,28 +102,24 @@ function FoldedPanelMesh({
   widthIn,
   heightIn,
   thicknessWorld,
-  foldPositionIn,
-  foldAngleDeg,
-  isFolded,
+  bendsAlongLength,
   colorHex,
   mapUrl,
 }: {
   widthIn: number;
   heightIn: number;
   thicknessWorld: number;
-  /** Inches from edge to fold along length; ignored when not folded. */
-  foldPositionIn: number;
-  foldAngleDeg: number;
-  isFolded: boolean;
+  bendsAlongLength: PanelBendSpec[];
   colorHex: string;
   mapUrl?: string;
 }) {
   const parts = useMemo(() => {
-    const bends: BendSpec[] = isFolded
-      ? [{ positionIn: foldPositionIn, angleDeg: foldAngleDeg }]
-      : [];
+    const bends: BendSpec[] = bendsAlongLength.map((b) => ({
+      positionIn: b.inchesFromEdge,
+      angleDeg: b.angleDeg,
+    }));
     return collectFoldParts(widthIn, heightIn, thicknessWorld, bends);
-  }, [widthIn, heightIn, thicknessWorld, isFolded, foldPositionIn, foldAngleDeg]);
+  }, [widthIn, heightIn, thicknessWorld, bendsAlongLength]);
 
   return (
     <group>
@@ -156,18 +148,14 @@ function PreviewScene({
   widthIn,
   heightIn,
   thicknessWorld,
-  foldPositionIn,
-  foldAngleDeg,
-  isFolded,
+  bendsAlongLength,
   colorHex,
   mapUrl,
 }: {
   widthIn: number;
   heightIn: number;
   thicknessWorld: number;
-  foldPositionIn: number;
-  foldAngleDeg: number;
-  isFolded: boolean;
+  bendsAlongLength: PanelBendSpec[];
   colorHex: string;
   mapUrl?: string;
 }) {
@@ -199,9 +187,7 @@ function PreviewScene({
             widthIn={widthIn}
             heightIn={heightIn}
             thicknessWorld={thicknessWorld}
-            foldPositionIn={foldPositionIn}
-            foldAngleDeg={foldAngleDeg}
-            isFolded={isFolded}
+            bendsAlongLength={bendsAlongLength}
             colorHex={colorHex}
             mapUrl={mapUrl}
           />
@@ -229,17 +215,18 @@ export function AcmPanel3DPreview({
   panelWidthIn,
   panelHeightIn,
   panelDepthIn,
-  bendAngleDeg = 0,
-  bendInchesFromEdge,
+  bends: bendsProp = [],
   panelColorHex,
   panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
-  const isBent = bendAngleDeg > 0.5 && bendAngleDeg < 179.5;
-
-  const foldPos = clampFoldPosition(
-    bendInchesFromEdge ?? panelHeightIn / 2,
-    panelHeightIn
+  const bendsNormalized = useMemo(
+    () => normalizePanelBends(bendsProp, panelHeightIn),
+    [bendsProp, panelHeightIn]
+  );
+  const hasFoldMesh = bendsNormalized.length > 0;
+  const isVisuallyFolded = bendsNormalized.some(
+    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
   );
 
   const thicknessWorld = inchesToWorld(panelDepthIn);
@@ -254,10 +241,16 @@ export function AcmPanel3DPreview({
 
   const caption = (() => {
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
-    if (isBent) {
-      return `L-bend ${bendAngleDeg}° · fold ${foldPos}" from edge (along length) · ${size} · ${panelColorName}`;
+    if (!hasFoldMesh) {
+      return `${size} · ${panelColorName}`;
     }
-    return `${size} · ${panelColorName}`;
+    if (bendsNormalized.length === 1) {
+      const b = bendsNormalized[0];
+      const flatHint = isVisuallyFolded ? "" : " (straight sections)";
+      return `Fold ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint} · ${size} · ${panelColorName}`;
+    }
+    const bendBits = bendsNormalized.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ");
+    return `${bendsNormalized.length} bends (${bendBits}) · ${size} · ${panelColorName}`;
   })();
 
   return (
@@ -272,7 +265,7 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Interactive 3D when angle is between 0° and 180°. Orbit below.
+        Interactive 3D with one or more folds along the length. Orbit below.
       </p>
 
       <div
@@ -283,9 +276,7 @@ export function AcmPanel3DPreview({
           widthIn={panelWidthIn}
           heightIn={panelHeightIn}
           thicknessWorld={thicknessWorld}
-          foldPositionIn={foldPos}
-          foldAngleDeg={bendAngleDeg}
-          isFolded={isBent}
+          bendsAlongLength={hasFoldMesh ? bendsNormalized : []}
           colorHex={hex}
           mapUrl={mapUrl}
         />

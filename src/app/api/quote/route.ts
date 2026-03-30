@@ -3,6 +3,7 @@ import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import type { QuoteDraft } from "@/types/quote";
+import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
 
 const QUOTES_JSONL_PATH = path.join(process.cwd(), "data", "quotes.jsonl");
 
@@ -148,12 +149,15 @@ function escapeHtml(s: string): string {
 }
 
 function bendReferenceRowsHtml(c: QuoteDraft): string {
-  if (typeof c.bendAngleDeg !== "number" || c.bendAngleDeg <= 0) return "";
-  const foldRow =
-    typeof c.bendInchesFromEdge === "number"
-      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Inches to fold from edge (along length)</td><td>${c.bendInchesFromEdge} in</td></tr>`
-      : "";
-  return `${foldRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
+  const bends = getPanelBendsFromQuoteDraft(c);
+  if (!bends.length) return "";
+  return bends
+    .map((b, i) => {
+      const n = i + 1;
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Fold ${n} — inches from edge (along length)</td><td>${b.inchesFromEdge} in</td></tr>
+<tr><td style="padding: 4px 12px 4px 0; color: #666;">Fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
+    })
+    .join("");
 }
 
 function validatePayload(body: unknown): body is QuotePayload {

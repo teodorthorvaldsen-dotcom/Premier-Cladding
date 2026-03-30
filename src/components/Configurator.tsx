@@ -23,13 +23,13 @@ import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
+import { normalizePanelBends } from "@/lib/panelBends";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
-  bendInchesFromEdge: 48,
-  bendAngleDeg: 0,
+  bends: [],
 };
 
 export interface PriceResult {
@@ -157,6 +157,7 @@ export function Configurator() {
     if (!pricing) return;
     const finish = finishes[0];
     const unitPrice = pricing.total / quantity;
+    const panelBends = normalizePanelBends(size.bends, size.lengthIn);
     addItem({
       widthIn: size.widthIn,
       heightIn: size.lengthIn,
@@ -169,12 +170,7 @@ export function Configurator() {
       areaFt2: pricing.areaFt2,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
-      ...(size.bendAngleDeg > 0
-        ? {
-            bendAngleDeg: size.bendAngleDeg,
-            bendInchesFromEdge: size.bendInchesFromEdge,
-          }
-        : {}),
+      ...(panelBends.length > 0 ? { panelBends } : {}),
       ...(colorId === "custom-color-match"
         ? {
             customColorReference: customColorReference.trim() || undefined,
@@ -212,15 +208,11 @@ export function Configurator() {
       }
     }
 
+    const quoteBends = normalizePanelBends(size.bends, size.lengthIn);
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
-      ...(size.bendAngleDeg > 0
-        ? {
-            bendAngleDeg: size.bendAngleDeg,
-            bendInchesFromEdge: size.bendInchesFromEdge,
-          }
-        : {}),
+      ...(quoteBends.length > 0 ? { panelBends: quoteBends } : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -362,8 +354,7 @@ export function Configurator() {
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}
               panelDepthIn={previewDepthIn}
-              bendAngleDeg={size.bendAngleDeg}
-              bendInchesFromEdge={size.bendInchesFromEdge}
+              bends={size.bends}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
               panelSwatchImage={

@@ -1,11 +1,14 @@
+import type { PanelBendSpec } from "@/types/panelBend";
+
 /** Draft quote request stored when user clicks "Request Final Quote". */
 export interface QuoteDraft {
   /** Common fields used by the ACM configurator (kept for backwards compatibility). */
   widthIn: number;
   lengthIn: number;
-  /** Optional bend angle (degrees); informational only. */
+  /** Folds along panel length (reference edge → …); informational. */
+  panelBends?: PanelBendSpec[];
+  /** @deprecated Prefer panelBends. */
   bendAngleDeg?: number;
-  /** Inches from reference edge to fold along panel length. */
   bendInchesFromEdge?: number;
   widthId: string | null;
   thicknessId: string;

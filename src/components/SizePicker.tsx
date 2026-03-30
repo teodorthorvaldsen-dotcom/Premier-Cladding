@@ -8,35 +8,36 @@ import {
   MIN_LENGTH_IN,
 } from "@/data/acm";
 import type { ThicknessId } from "@/data/acm";
-
-/** Minimum clear distance from fold to each end along the length (inches). */
-const MIN_LEG_IN = 0.5;
+import type { PanelBendSpec } from "@/types/panelBend";
+import {
+  maxPanelBendsForLength,
+  normalizePanelBends,
+  PANEL_BEND_MIN_LEG_IN,
+  suggestNextBendInchesFromEdge,
+} from "@/lib/panelBends";
 
 export interface SizeSelection {
   widthId: string | null;
   widthIn: number;
   lengthIn: number;
-  /**
-   * Inches from the reference edge to the fold line along the panel length (hinge parallel to width).
-   */
-  bendInchesFromEdge: number;
-  /** Included angle between the two legs (0–180°). 90° = right-angle L. 0° or 180° shows as flat in the preview. */
-  bendAngleDeg: number;
+  /** Folds from the reference edge along length, in order (each line is inches from that edge). */
+  bends: PanelBendSpec[];
 }
 
-/** Fold is always along length; keeps both legs at least MIN_LEG_IN. */
-export function clampBendInchesFromEdge(raw: number, widthIn: number, lengthIn: number): number {
-  const along = lengthIn;
-  const n = Math.round(raw * 100) / 100;
-  if (Number.isNaN(n)) return midpointBendInches(widthIn, lengthIn);
-  const lo = MIN_LEG_IN;
-  const hi = Math.max(lo, along - MIN_LEG_IN);
-  if (hi <= lo) return Math.round((along / 2) * 100) / 100;
-  return Math.min(hi, Math.max(lo, n));
+interface BendDraft {
+  inches: string;
+  angle: string;
 }
 
-function midpointBendInches(widthIn: number, lengthIn: number): number {
-  return clampBendInchesFromEdge(lengthIn / 2, widthIn, lengthIn);
+function angleInputStr(deg: number): string {
+  return Number.isInteger(deg) ? String(deg) : deg.toFixed(1);
+}
+
+function draftsFromBends(bends: PanelBendSpec[]): BendDraft[] {
+  return bends.map((b) => ({
+    inches: String(b.inchesFromEdge),
+    angle: angleInputStr(b.angleDeg),
+  }));
 }
 
 interface SizePickerProps {
@@ -56,16 +57,21 @@ function clampWidth(val: number): number {
   return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(CUSTOM_WIDTH_MIN_IN, n));
 }
 
+function clampBendAngle(val: number): number {
+  const n = Math.round(val * 10) / 10;
+  if (Number.isNaN(n) || n < 0) return 0;
+  return Math.min(180, n);
+}
+
 export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   const maxLength = getMaxLengthIn(thicknessId);
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
-  const [bendAngleStr, setBendAngleStr] = useState(() => String(value.bendAngleDeg));
-  const [bendInchesStr, setBendInchesStr] = useState(() => String(value.bendInchesFromEdge));
+  const [bendDrafts, setBendDrafts] = useState<BendDraft[]>(() => draftsFromBends(value.bends));
 
   useEffect(() => {
-    setBendInchesStr(String(value.bendInchesFromEdge));
-  }, [value.bendInchesFromEdge]);
+    setBendDrafts(draftsFromBends(value.bends));
+  }, [value.bends]);
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
@@ -73,10 +79,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     return Math.min(maxLength, Math.max(MIN_LENGTH_IN, n));
   };
 
-  const clampBendAngle = (val: number): number => {
-    const n = Math.round(val * 10) / 10;
-    if (Number.isNaN(n) || n < 0) return 0;
-    return Math.min(180, n);
+  const maxBends = maxPanelBendsForLength(value.lengthIn);
+
+  const pushNormalizedBends = (nextBends: PanelBendSpec[]) => {
+    onChange({
+      ...value,
+      bends: normalizePanelBends(nextBends, value.lengthIn),
+    });
   };
 
   const handleWidthChange = (raw: string) => {
@@ -90,8 +99,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         widthId: "custom",
         widthIn: w,
         lengthIn: len,
-        bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, w, len),
-        bendAngleDeg: clampBendAngle(value.bendAngleDeg),
+        bends: normalizePanelBends(value.bends, len),
       });
       return;
     }
@@ -102,8 +110,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       widthId: "custom",
       widthIn: w,
       lengthIn: len,
-      bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, w, len),
-      bendAngleDeg: clampBendAngle(value.bendAngleDeg),
+      bends: normalizePanelBends(value.bends, len),
     });
   };
 
@@ -115,8 +122,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       onChange({
         ...value,
         lengthIn: len,
-        bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.widthIn, len),
-        bendAngleDeg: clampBendAngle(value.bendAngleDeg),
+        bends: normalizePanelBends(value.bends, len),
       });
       return;
     }
@@ -124,67 +130,65 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     onChange({
       ...value,
       lengthIn: len,
-      bendInchesFromEdge: clampBendInchesFromEdge(value.bendInchesFromEdge, value.widthIn, len),
-      bendAngleDeg: clampBendAngle(value.bendAngleDeg),
+      bends: normalizePanelBends(value.bends, len),
     });
   };
 
-  const handleBendAngleChange = (raw: string) => {
-    setBendAngleStr(raw);
-    const num = Number(raw);
-    if (raw === "" || Number.isNaN(num)) {
-      onChange({
-        ...value,
-        bendAngleDeg: 0,
-        bendInchesFromEdge: value.bendInchesFromEdge,
-      });
-      return;
-    }
-    onChange({
-      ...value,
-      bendInchesFromEdge: value.bendInchesFromEdge,
-      bendAngleDeg: clampBendAngle(num),
+  const commitBendRow = (index: number) => {
+    const draft = bendDrafts[index];
+    if (!draft) return;
+    const inchNum = Number(draft.inches);
+    const angNum = Number(draft.angle);
+    const next = value.bends.map((b, i) => {
+      if (i !== index) return b;
+      return {
+        inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
+        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampBendAngle(angNum),
+      };
+    });
+    pushNormalizedBends(next);
+  };
+
+  const handleBendInchesDraft = (index: number, raw: string) => {
+    setBendDrafts((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], inches: raw };
+      return copy;
     });
   };
 
-  const handleBendInchesChange = (raw: string) => {
-    setBendInchesStr(raw);
-    if (raw.trim() === "" || raw === "." || /^-?\d+\.$/.test(raw.trim())) {
-      return;
-    }
-    const num = Number(raw);
-    if (Number.isNaN(num)) {
-      return;
-    }
-    const next = clampBendInchesFromEdge(num, value.widthIn, value.lengthIn);
-    if (next !== value.bendInchesFromEdge) {
-      onChange({ ...value, bendInchesFromEdge: next });
-    }
+  const handleBendAngleDraft = (index: number, raw: string) => {
+    setBendDrafts((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], angle: raw };
+      return copy;
+    });
   };
 
-  const commitBendInches = () => {
-    const num = Number(bendInchesStr);
-    const next =
-      bendInchesStr.trim() === "" || Number.isNaN(num)
-        ? midpointBendInches(value.widthIn, value.lengthIn)
-        : clampBendInchesFromEdge(num, value.widthIn, value.lengthIn);
-    onChange({ ...value, bendInchesFromEdge: next });
-    setBendInchesStr(String(next));
+  const addBend = () => {
+    if (value.bends.length >= maxBends) return;
+    const suggested = suggestNextBendInchesFromEdge(value.bends, value.lengthIn);
+    pushNormalizedBends([...value.bends, { inchesFromEdge: suggested, angleDeg: 90 }]);
+  };
+
+  const removeBend = (index: number) => {
+    pushNormalizedBends(value.bends.filter((_, i) => i !== index));
   };
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Optional L-bend along the panel length (hinge parallel to width): set fold distance
-        and angle between legs (90° = square L). Preview updates for bends; pricing still uses full width × length (flat).
+        Width and length in inches. Add one or more folds along the panel length (hinge parallel to width). Each fold is
+        measured from the same reference edge. Preview updates with every bend; pricing still uses full width × length
+        (flat).
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Pricing uses width ×
-        length.
+        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Each straight segment
+        must be at least {PANEL_BEND_MIN_LEG_IN} in. Up to {maxBends} fold{maxBends === 1 ? "" : "s"} for this length.
       </p>
-      <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and bend angle">
+      <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and bends">
         <div>
           <label htmlFor="width-input" className="block text-xs font-medium text-gray-700">
             Width (in)
@@ -219,75 +223,109 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             aria-label="Length in inches"
           />
         </div>
-        <div>
-          <label htmlFor="bend-inches-input" className="block text-xs font-medium text-gray-700">
-            Inches to fold from edge (in)
-          </label>
-          <p className="mt-0.5 text-[11px] text-gray-500">
-            Distance from the reference edge to the bend line along the length. Must leave at least {MIN_LEG_IN} in on
-            each side. Preview uses this for leg lengths.
+
+        <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium text-gray-800">Folds along length</p>
+            <button
+              type="button"
+              onClick={addBend}
+              disabled={value.bends.length >= maxBends}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Add bend
+            </button>
+          </div>
+          <p className="mt-1.5 text-[11px] text-gray-500">
+            Bend 1 is closest to the reference edge; each additional bend is farther along the length. Angles are the
+            included angle between the leg before and after each fold (90° = square). Use 0° or 180° for a straight
+            continuation in the preview.
           </p>
-          <input
-            id="bend-inches-input"
-            type="number"
-            inputMode="decimal"
-            min={MIN_LEG_IN}
-            max={value.lengthIn - MIN_LEG_IN}
-            step={0.01}
-            value={bendInchesStr}
-            onChange={(e) => handleBendInchesChange(e.target.value)}
-            onBlur={commitBendInches}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            }}
-            className="mt-1.5 block h-11 w-36 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Inches from edge to bend fold along length"
-          />
+
+          {value.bends.length === 0 ? (
+            <p className="mt-3 text-[13px] text-gray-600">No bends — panel is flat in the 3D preview.</p>
+          ) : (
+            <ul className="mt-3 space-y-4">
+              {value.bends.map((b, index) => (
+                <li
+                  key={`bend-${index}-${b.inchesFromEdge}-${b.angleDeg}`}
+                  className="rounded-lg border border-gray-200 bg-white p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-gray-700">Bend {index + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeBend(index)}
+                      className="text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 rounded"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        className="block text-[11px] font-medium text-gray-600"
+                        htmlFor={`bend-inches-${index}`}
+                      >
+                        Inches from edge (in)
+                      </label>
+                      <input
+                        id={`bend-inches-${index}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={PANEL_BEND_MIN_LEG_IN}
+                        max={value.lengthIn - PANEL_BEND_MIN_LEG_IN}
+                        step={0.01}
+                        value={bendDrafts[index]?.inches ?? String(b.inchesFromEdge)}
+                        onChange={(e) => handleBendInchesDraft(index, e.target.value)}
+                        onBlur={() => commitBendRow(index)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="block text-[11px] font-medium text-gray-600"
+                        htmlFor={`bend-angle-${index}`}
+                      >
+                        Angle (°)
+                      </label>
+                      <input
+                        id={`bend-angle-${index}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={180}
+                        step={0.1}
+                        value={bendDrafts[index]?.angle ?? angleInputStr(b.angleDeg)}
+                        onChange={(e) => handleBendAngleDraft(index, e.target.value)}
+                        onBlur={() => commitBendRow(index)}
+                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                      />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div>
-          <label htmlFor="bend-angle-input" className="block text-xs font-medium text-gray-700">
-            Bend angle (°)
-          </label>
-          <p className="mt-0.5 text-[11px] text-gray-500">
-            Angle between the two legs inside the bend. Use 0 or 180° for a flat panel in the preview.
-          </p>
-          <input
-            id="bend-angle-input"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={180}
-            step={0.1}
-            value={bendAngleStr}
-            onChange={(e) => handleBendAngleChange(e.target.value)}
-            onBlur={() => {
-              const n = value.bendAngleDeg;
-              setBendAngleStr(Number.isInteger(n) ? String(n) : n.toFixed(1));
-            }}
-            className="mt-1.5 block h-11 w-32 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Bend angle in degrees between legs"
-          />
-        </div>
+
         <div>
           <button
             type="button"
             onClick={() => {
-              const mid = midpointBendInches(value.widthIn, value.lengthIn);
-              setBendAngleStr("0");
-              setBendInchesStr(String(mid));
               onChange({
                 ...value,
-                bendAngleDeg: 0,
-                bendInchesFromEdge: mid,
+                bends: [],
               });
             }}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            Reset fold &amp; bend
+            Reset all folds
           </button>
-          <p className="mt-2 text-[11px] text-gray-500">
-            Clears the bend angle (flat fold preview) and sets fold distance to half the panel length.
-          </p>
+          <p className="mt-2 text-[11px] text-gray-500">Removes every bend so the 3D preview is a flat rectangle.</p>
         </div>
       </div>
     </div>
