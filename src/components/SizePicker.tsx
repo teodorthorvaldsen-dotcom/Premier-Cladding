@@ -8,7 +8,7 @@ import {
   MIN_LENGTH_IN,
 } from "@/data/acm";
 import type { ThicknessId } from "@/data/acm";
-import type { PanelBendSpec } from "@/types/panelBend";
+import type { BendReferenceAlong, PanelBendSpec } from "@/types/panelBend";
 import {
   maxPanelBendsForLength,
   maxPanelBendsForWidth,
@@ -161,8 +161,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     const next = value.bends.map((b, i) => {
       if (i !== index) return b;
       return {
+        ...b,
         inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
         angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampBendAngle(angNum),
+        referenceAlong: b.referenceAlong === "fromEnd" ? "fromEnd" : "fromStart",
       };
     });
     pushNormalizedBends(next);
@@ -176,11 +178,25 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     const next = value.bendsAlongWidth.map((b, i) => {
       if (i !== index) return b;
       return {
+        ...b,
         inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
         angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampBendAngle(angNum),
+        referenceAlong: b.referenceAlong === "fromEnd" ? "fromEnd" : "fromStart",
       };
     });
     pushNormalizedBendsW(next);
+  };
+
+  const setLengthBendReference = (index: number, ref: BendReferenceAlong) => {
+    pushNormalizedBends(
+      value.bends.map((b, i) => (i === index ? { ...b, referenceAlong: ref } : b))
+    );
+  };
+
+  const setWidthBendReference = (index: number, ref: BendReferenceAlong) => {
+    pushNormalizedBendsW(
+      value.bendsAlongWidth.map((b, i) => (i === index ? { ...b, referenceAlong: ref } : b))
+    );
   };
 
   const handleBendInchesDraft = (index: number, raw: string) => {
@@ -218,7 +234,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   const addBend = () => {
     if (value.bends.length >= maxBendsLen) return;
     const suggested = suggestNextBendInchesFromEdge(value.bends, value.lengthIn);
-    pushNormalizedBends([...value.bends, { inchesFromEdge: suggested, angleDeg: 90 }]);
+    pushNormalizedBends([
+      ...value.bends,
+      { inchesFromEdge: suggested, angleDeg: 90, referenceAlong: "fromStart" },
+    ]);
   };
 
   const removeBend = (index: number) => {
@@ -228,7 +247,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   const addBendW = () => {
     if (value.bendsAlongWidth.length >= maxBendsW) return;
     const suggested = suggestNextBendInchesAlongWidth(value.bendsAlongWidth, value.widthIn);
-    pushNormalizedBendsW([...value.bendsAlongWidth, { inchesFromEdge: suggested, angleDeg: 90 }]);
+    pushNormalizedBendsW([
+      ...value.bendsAlongWidth,
+      { inchesFromEdge: suggested, angleDeg: 90, referenceAlong: "fromStart" },
+    ]);
   };
 
   const removeBendW = (index: number) => {
@@ -239,10 +261,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Add folds along the <strong className="font-medium">length</strong> (hinge parallel
-        to width) and/or along the <strong className="font-medium">width</strong> (hinge parallel to length — the vertical
-        “Y” direction in the 3D preview). Each fold is measured from its reference edge along that axis. Pricing still
-        uses full width × length (flat).
+        Width and length in inches. Add folds along the length (hinge parallel to width, preview runs along the panel
+        length / local “Y”) or along the width (hinge parallel to length, measured across the sheet’s width / local “X”).
+        For each bend, choose which end of that edge you measure from, then enter inches and angle. Pricing still uses
+        full width × length (flat).
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
@@ -299,8 +321,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Bend 1 is closest to the reference edge along the <strong className="font-medium">length</strong>. Angles are
-            included angles between legs (90° = square). 0° or 180° keeps sections collinear in the preview.
+            Bend lines are perpendicular to length. “Start of length” is the 0″ side along the panel length; “End of
+            length” is the opposite side. Included angle between legs (90° = square). 0° or 180° keeps sections collinear
+            in the preview.
           </p>
 
           {value.bends.length === 0 ? (
@@ -309,7 +332,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             <ul className="mt-3 space-y-4">
               {value.bends.map((b, index) => (
                 <li
-                  key={`bend-l-${index}-${b.inchesFromEdge}-${b.angleDeg}`}
+                  key={`bend-l-${index}-${b.referenceAlong ?? "start"}-${b.inchesFromEdge}-${b.angleDeg}`}
                   className="rounded-lg border border-gray-200 bg-white p-3"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -322,13 +345,29 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                       Remove
                     </button>
                   </div>
+                  <div className="mb-3">
+                    <label className="block text-[11px] font-medium text-gray-600" htmlFor={`bend-ref-l-${index}`}>
+                      Measure from (along length)
+                    </label>
+                    <select
+                      id={`bend-ref-l-${index}`}
+                      value={b.referenceAlong === "fromEnd" ? "fromEnd" : "fromStart"}
+                      onChange={(e) =>
+                        setLengthBendReference(index, e.target.value === "fromEnd" ? "fromEnd" : "fromStart")
+                      }
+                      className="mt-1 block h-10 w-full max-w-md rounded-lg border border-gray-200 bg-white px-2.5 text-[14px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                    >
+                      <option value="fromStart">Start of length (first 0″ end)</option>
+                      <option value="fromEnd">End of length (opposite end)</option>
+                    </select>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label
                         className="block text-[11px] font-medium text-gray-600"
                         htmlFor={`bend-inches-l-${index}`}
                       >
-                        Inches from edge (in)
+                        Inches from that edge (in)
                       </label>
                       <input
                         id={`bend-inches-l-${index}`}
@@ -386,10 +425,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Crease runs parallel to the panel <strong className="font-medium">length</strong> (preview +Y). Bend 1 is
-            closest to the reference edge along the <strong className="font-medium">width</strong>. If you use both
-            length- and width-axis folds, the 3D preview combines both; confirm complex layouts with a shop drawing if
-            needed.
+            Crease runs parallel to the panel length (preview +Y). Lines run across the width. “Start of width” is the 0″
+            side across the sheet width; “End of width” is the opposite edge. Combined length + width folds show together
+            in 3D; confirm unusual layouts with a shop drawing if needed.
           </p>
 
           {value.bendsAlongWidth.length === 0 ? (
@@ -398,7 +436,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             <ul className="mt-3 space-y-4">
               {value.bendsAlongWidth.map((b, index) => (
                 <li
-                  key={`bend-w-${index}-${b.inchesFromEdge}-${b.angleDeg}`}
+                  key={`bend-w-${index}-${b.referenceAlong ?? "start"}-${b.inchesFromEdge}-${b.angleDeg}`}
                   className="rounded-lg border border-violet-100 bg-white p-3"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -411,13 +449,29 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                       Remove
                     </button>
                   </div>
+                  <div className="mb-3">
+                    <label className="block text-[11px] font-medium text-gray-600" htmlFor={`bend-ref-w-${index}`}>
+                      Measure from (along width / X)
+                    </label>
+                    <select
+                      id={`bend-ref-w-${index}`}
+                      value={b.referenceAlong === "fromEnd" ? "fromEnd" : "fromStart"}
+                      onChange={(e) =>
+                        setWidthBendReference(index, e.target.value === "fromEnd" ? "fromEnd" : "fromStart")
+                      }
+                      className="mt-1 block h-10 w-full max-w-md rounded-lg border border-gray-200 bg-white px-2.5 text-[14px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                    >
+                      <option value="fromStart">Start of width (first 0″ end)</option>
+                      <option value="fromEnd">End of width (opposite end)</option>
+                    </select>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label
                         className="block text-[11px] font-medium text-gray-600"
                         htmlFor={`bend-inches-w-${index}`}
                       >
-                        Inches from edge (in)
+                        Inches from that edge (in)
                       </label>
                       <input
                         id={`bend-inches-w-${index}`}

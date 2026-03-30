@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { PanelBendSpec } from "@/types/panelBend";
-import { normalizePanelBends } from "@/lib/panelBends";
+import { canonicalBendPosition, normalizePanelBends } from "@/lib/panelBends";
 
 const PREVIEW_H = 360;
 /** Same visual scale as prior CSS preview (inches → scene units). */
@@ -333,11 +333,11 @@ export function AcmPanel3DPreview({
 
   const activeParts = useMemo(() => {
     const lenSpecs: BendSpec[] = bendsLengthNorm.map((b) => ({
-      positionIn: b.inchesFromEdge,
+      positionIn: canonicalBendPosition(b, panelHeightIn),
       angleDeg: b.angleDeg,
     }));
     const widSpecs: BendSpec[] = bendsWidthNorm.map((b) => ({
-      positionIn: b.inchesFromEdge,
+      positionIn: canonicalBendPosition(b, panelWidthIn),
       angleDeg: b.angleDeg,
     }));
     const t = inchesToWorld(panelDepthIn);
@@ -363,24 +363,26 @@ export function AcmPanel3DPreview({
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
     const bits: string[] = [];
     if (hasLength) {
+      const lenRef = (b: (typeof bendsLengthNorm)[0]) => (b.referenceAlong === "fromEnd" ? "end" : "start");
       if (bendsLengthNorm.length === 1) {
         const b = bendsLengthNorm[0];
         const flatHint = isVisuallyFoldedLength ? "" : " (straight)";
-        bits.push(`Length: ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint}`);
+        bits.push(`Length: ${b.inchesFromEdge}" from ${lenRef(b)} · ${b.angleDeg}°${flatHint}`);
       } else {
         bits.push(
-          `Length: ${bendsLengthNorm.length} bends (${bendsLengthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ")})`
+          `Length: ${bendsLengthNorm.length} bends (${bendsLengthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}° (${lenRef(b)})`).join(", ")})`
         );
       }
     }
     if (hasWidth) {
+      const wRef = (b: (typeof bendsWidthNorm)[0]) => (b.referenceAlong === "fromEnd" ? "end" : "start");
       if (bendsWidthNorm.length === 1) {
         const b = bendsWidthNorm[0];
         const flatHint = isVisuallyFoldedWidth ? "" : " (straight)";
-        bits.push(`Width: ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint}`);
+        bits.push(`Width: ${b.inchesFromEdge}" from ${wRef(b)} · ${b.angleDeg}°${flatHint}`);
       } else {
         bits.push(
-          `Width: ${bendsWidthNorm.length} bends (${bendsWidthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ")})`
+          `Width: ${bendsWidthNorm.length} bends (${bendsWidthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}° (${wRef(b)})`).join(", ")})`
         );
       }
     }
@@ -401,8 +403,9 @@ export function AcmPanel3DPreview({
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
         Folds along <span className="font-medium text-gray-600">length</span> use a hinge parallel to width; folds along{" "}
-        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length. When both are set, the
-        preview combines them (length strips first, then width splits in each strip). Orbit below.
+        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length. Distances follow your
+        chosen start or end of each axis. Combined length + width folds use length strips first, then width splits per
+        strip. Orbit below.
       </p>
 
       <div

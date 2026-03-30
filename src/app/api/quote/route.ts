@@ -150,13 +150,18 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function bendRefPhrase(b: { referenceAlong?: string }): string {
+  return b.referenceAlong === "fromEnd" ? "from end" : "from start";
+}
+
 function bendReferenceRowsHtml(c: QuoteDraft): string {
   const bends = getPanelBendsFromQuoteDraft(c);
   if (!bends.length) return "";
   return bends
     .map((b, i) => {
       const n = i + 1;
-      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Length fold ${n} — inches from edge (along length)</td><td>${b.inchesFromEdge} in</td></tr>
+      const edge = bendRefPhrase(b);
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Length fold ${n} — inches ${edge} (along length)</td><td>${b.inchesFromEdge} in</td></tr>
 <tr><td style="padding: 4px 12px 4px 0; color: #666;">Length fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
     })
     .join("");
@@ -168,7 +173,8 @@ function bendWidthReferenceRowsHtml(c: QuoteDraft): string {
   return bends
     .map((b, i) => {
       const n = i + 1;
-      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Width fold ${n} — inches from edge (along width)</td><td>${b.inchesFromEdge} in</td></tr>
+      const edge = bendRefPhrase(b);
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Width fold ${n} — inches ${edge} (along width)</td><td>${b.inchesFromEdge} in</td></tr>
 <tr><td style="padding: 4px 12px 4px 0; color: #666;">Width fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
     })
     .join("");
