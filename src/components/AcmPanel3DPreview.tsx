@@ -290,8 +290,11 @@ export function AcmPanel3DPreview({
         id="acm-panel-3d-preview-heading"
         className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
       >
-        Panel Preview
+        Fold &amp; bend preview
       </h2>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Interactive 3D when angle is between 0° and 180°. Orbit below.
+      </p>
 
       <div
         className="mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"

@@ -332,6 +332,29 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             aria-label="Bend angle in degrees between legs"
           />
         </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              const mid = midpointBendInches("x", value.widthIn, value.lengthIn);
+              setBendAngleStr("0");
+              setBendInchesStr(String(mid));
+              onChange({
+                ...value,
+                bendAxis: "x",
+                bendAngleDeg: 0,
+                bendInchesFromEdge: mid,
+              });
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Reset fold &amp; bend
+          </button>
+          <p className="mt-2 text-[11px] text-gray-500">
+            Clears the bend angle (flat L preview), sets axis to X, and restores fold distance to half the split
+            dimension.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import { QuantityPicker } from "./QuantityPicker";
 import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
+import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
 
 const defaultSize: SizeSelection = {
@@ -347,6 +348,19 @@ export function Configurator() {
           <div
             className="space-y-3 lg:space-y-4 md:sticky md:z-10 md:max-h-[calc(100vh-18rem)] md:overflow-y-auto md:overscroll-y-contain md:pb-2 md:top-[16.5rem] lg:top-[18rem] xl:top-[20.5rem]"
           >
+            <AcmPanelFlatPreview
+              panelWidthIn={size.widthIn}
+              panelHeightIn={size.lengthIn}
+              panelDepthIn={previewDepthIn}
+              panelColorHex={color.swatchHex}
+              panelColorName={color.name}
+              panelSwatchImage={
+                "swatchImage" in color &&
+                typeof (color as { swatchImage?: string }).swatchImage === "string"
+                  ? (color as { swatchImage: string }).swatchImage
+                  : undefined
+              }
+            />
             <AcmPanel3DPreview
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}
