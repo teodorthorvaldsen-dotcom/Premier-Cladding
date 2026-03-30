@@ -148,8 +148,9 @@ export function Configurator() {
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
   const widthLabel = `${size.widthIn}"`;
   const thicknessMm = Number(thicknessId.replace("mm", ""));
+  const metalThicknessIn = thicknessMm / 25.4;
   /** Illustrative depth so thin ACM reads clearly in the 3D preview (not sheet metal thickness). */
-  const previewDepthIn = Math.min(3, Math.max(0.5, (thicknessMm / 25.4) * 1.45 + 0.4));
+  const previewDepthIn = Math.min(3, Math.max(0.5, metalThicknessIn * 1.45 + 0.4));
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -341,6 +342,9 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
+              metalThicknessIn={metalThicknessIn}
+              foldFromLeftIn={size.foldFromLeftIn}
+              foldFromBottomIn={size.foldFromBottomIn}
               panelSwatchImage={
                 "swatchImage" in color &&
                 typeof (color as { swatchImage?: string }).swatchImage === "string"

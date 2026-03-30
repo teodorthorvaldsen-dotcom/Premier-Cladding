@@ -159,10 +159,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches—you can clear a field and type your own size. Optional bend / fold
-        lines are measured from the <span className="font-medium text-gray-700">bottom-left corner</span>{" "}
-        of the panel face. If your drawing uses another reference, say so in your
-        quote notes or attach a drawing.
+        Width and length in inches—you can clear a field and type your own size. Optional bends are
+        measured from the <span className="font-medium text-gray-700">bottom-left corner</span> of the
+        panel face; the preview folds the mesh at 90° when you enter one or both distances. If your
+        drawing uses another reference, note it on the quote or attach a drawing.
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN} in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in).
@@ -203,9 +203,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           />
         </div>
         <div className="border-t border-gray-100 pt-4">
-          <p className="text-xs font-medium text-gray-900">Bend / fold lines (optional)</p>
+          <p className="text-xs font-medium text-gray-900">Bends (optional)</p>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            Each value is the distance from that edge to a bend line on the face.
+            Distances from each edge to the bend on the formed panel. The preview updates like width
+            and length; bend allowance and bend deduction (for flat layout) are estimated under the
+            preview when bends are set.
           </p>
         </div>
         <div>
@@ -213,7 +215,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             Distance from left edge (in)
           </label>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            Vertical line on the face. Leave blank if none.
+            Width of the base from the left; material to the right folds 90°. Leave blank if none.
           </p>
           <input
             id="fold-left-input"
@@ -237,7 +239,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             Distance from bottom edge (in)
           </label>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            Horizontal line on the face. Leave blank if none.
+            Depth of the base from the bottom; material toward the top folds 90°. Leave blank if none.
           </p>
           <input
             id="fold-bottom-input"
