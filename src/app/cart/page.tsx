@@ -39,12 +39,6 @@ function describeItem(item: CartItem): string {
     : "";
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const parts = [sizeLabel, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
-  if (item.leftReturnIn != null || item.rightReturnIn != null) {
-    const ch: string[] = [];
-    if (item.leftReturnIn != null) ch.push(`left ${item.leftReturnIn}"`);
-    if (item.rightReturnIn != null) ch.push(`right ${item.rightReturnIn}"`);
-    parts.push(`returns: ${ch.join(", ")}`);
-  }
   return parts.join(" · ");
 }
 

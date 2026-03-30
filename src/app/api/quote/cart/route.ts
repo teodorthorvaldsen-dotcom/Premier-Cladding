@@ -16,8 +16,6 @@ interface CartQuotePayload {
     panelTypeLabel?: string;
     customColorReference?: string;
     customColorSpecFileName?: string;
-    leftReturnIn?: number;
-    rightReturnIn?: number;
   }>;
   fullName: string;
   company: string;
@@ -52,16 +50,9 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
     .map((i) => {
-      const channelNote =
-        typeof i.leftReturnIn === "number" || typeof i.rightReturnIn === "number"
-          ? `<div>Channel returns: ${typeof i.leftReturnIn === "number" ? `left ${i.leftReturnIn}"` : ""}${
-              typeof i.leftReturnIn === "number" && typeof i.rightReturnIn === "number" ? "; " : ""
-            }${typeof i.rightReturnIn === "number" ? `right ${i.rightReturnIn}"` : ""}</div>`
-          : "";
       const extra =
-        i.customColorReference || i.customColorSpecFileName || channelNote
+        i.customColorReference || i.customColorSpecFileName
           ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
-              ${channelNote}
               ${i.customColorReference ? `<div>Color reference: ${escapeHtml(i.customColorReference)}</div>` : ""}
               ${
                 i.customColorSpecFileName

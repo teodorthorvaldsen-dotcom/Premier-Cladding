@@ -15,9 +15,6 @@ export interface CartItem {
   customColorReference?: string;
   /** Original filename if user attached a PDF (file is not stored in the cart). */
   customColorSpecFileName?: string;
-  /** Optional 90° channel returns (in) from configurator preview. */
-  leftReturnIn?: number;
-  rightReturnIn?: number;
 }
 
 export function cartItemLineTotal(item: CartItem): number {

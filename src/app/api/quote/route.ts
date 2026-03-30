@@ -60,16 +60,6 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.leftReturnIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Left return</td><td>${c.leftReturnIn} in</td></tr>`
-        : ""
-    }
-    ${
-      typeof c.rightReturnIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Right return</td><td>${c.rightReturnIn} in</td></tr>`
-        : ""
-    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -116,16 +106,6 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.leftReturnIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Left return</td><td>${c.leftReturnIn} in</td></tr>`
-        : ""
-    }
-    ${
-      typeof c.rightReturnIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Right return</td><td>${c.rightReturnIn} in</td></tr>`
-        : ""
-    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
