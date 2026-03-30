@@ -30,20 +30,22 @@ function colorById(id: string): ColorRow | undefined {
   return colors.find((c) => c.id === id);
 }
 
+/** Equal-width columns that shrink with the container — avoids max-content overflow beside the summary column. */
 function gridColsClass(maxCols: number): string {
+  const base = "w-full min-w-0 justify-items-center";
   if (maxCols >= 5) {
-    return "[grid-template-columns:repeat(2,max-content)] sm:[grid-template-columns:repeat(3,max-content)] md:[grid-template-columns:repeat(4,max-content)] lg:[grid-template-columns:repeat(5,max-content)]";
+    return `${base} grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5`;
   }
   if (maxCols === 4) {
-    return "[grid-template-columns:repeat(2,max-content)] sm:[grid-template-columns:repeat(2,max-content)] md:[grid-template-columns:repeat(3,max-content)] lg:[grid-template-columns:repeat(4,max-content)]";
+    return `${base} grid-cols-2 md:grid-cols-3 lg:grid-cols-4`;
   }
   if (maxCols === 3) {
-    return "[grid-template-columns:repeat(2,max-content)] sm:[grid-template-columns:repeat(3,max-content)]";
+    return `${base} grid-cols-2 lg:grid-cols-3`;
   }
   if (maxCols === 2) {
-    return "[grid-template-columns:repeat(2,max-content)]";
+    return `${base} grid-cols-2`;
   }
-  return "[grid-template-columns:repeat(1,max-content)]";
+  return `${base} grid-cols-1`;
 }
 
 function SwatchGrid({
@@ -58,10 +60,7 @@ function SwatchGrid({
   onChange: (id: ColorId) => void;
 }) {
   return (
-    <div
-      className={"mt-4 grid gap-x-4 gap-y-5 justify-start " + gridColsClass(maxCols)}
-      role="group"
-    >
+    <div className={"mt-4 grid gap-x-3 gap-y-5 " + gridColsClass(maxCols)} role="group">
       {colorIds.map((id) => {
         const c = colorById(id);
         if (!c) return null;
@@ -93,7 +92,7 @@ function SwatchCell({
       : undefined;
 
   return (
-    <div className="flex w-[5.75rem] flex-col items-center gap-1.5 sm:w-[6.25rem]">
+    <div className="flex min-w-0 w-full max-w-[6.25rem] flex-col items-center gap-1.5 justify-self-center">
       <button
         type="button"
         onClick={onSelect}
@@ -133,8 +132,8 @@ function SwatchCell({
           </span>
         )}
       </button>
-      <div className="w-full text-center">
-        <p className="text-[15px] font-semibold leading-snug text-gray-900 sm:text-xs">{c.name}</p>
+      <div className="w-full min-w-0 text-center">
+        <p className="break-words text-[15px] font-semibold leading-snug text-gray-900 sm:text-xs">{c.name}</p>
         <p className="mt-0.5 text-[14px] font-normal tabular-nums text-gray-500 sm:text-[15px]">{c.code}</p>
         {coatLabel && (
           <p className="mt-0.5 text-[9px] font-normal capitalize leading-tight text-gray-400">{coatLabel}</p>
@@ -166,7 +165,7 @@ export function ColorSwatches({
   const selectedColor = colors.find((c) => c.id === value);
 
   return (
-    <div>
+    <div className="min-w-0">
       <label className="block text-sm font-medium text-gray-900">Color &amp; Finish</label>
       <p className="mt-0.5 text-[15px] text-gray-500">
         Select a standard Alfrex FR finish or custom color match. Series below follow the standard finishes catalog.
