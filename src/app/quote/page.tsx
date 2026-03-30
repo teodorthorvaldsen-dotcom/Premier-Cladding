@@ -215,11 +215,8 @@ export default function QuotePage() {
               </div>
               {typeof draft.bendAngleDeg === "number" && draft.bendAngleDeg > 0 ? (
                 <div>
-                  <dt className="text-gray-500">Bend angle (preview)</dt>
-                  <dd className="mt-0.5 font-medium text-gray-900">
-                    {draft.bendAngleDeg}°
-                    {draft.bendMirrored ? " · mirrored" : ""}
-                  </dd>
+                  <dt className="text-gray-500">Bend angle (reference)</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAngleDeg}°</dd>
                 </div>
               ) : null}
               <div>

@@ -13,10 +13,8 @@ export interface SizeSelection {
   widthId: string | null;
   widthIn: number;
   lengthIn: number;
-  /** Bend angle in degrees (0–180); bent preview uses two legs of half lengthIn (fold at center). */
+  /** Bend angle in degrees (0–180); for quoting or shop reference — does not change the flat panel preview. */
   bendAngleDeg: number;
-  /** Flip bent preview left/right (horizontal mirror). */
-  bendMirrored: boolean;
 }
 
 interface SizePickerProps {
@@ -48,7 +46,6 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     return Math.min(maxLength, Math.max(MIN_LENGTH_IN, n));
   };
 
-  /** 0–180° inclusive, one decimal (matches unit-circle style angle entry). */
   const clampBendAngle = (val: number): number => {
     const n = Math.round(val * 10) / 10;
     if (Number.isNaN(n) || n < 0) return 0;
@@ -117,15 +114,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Bend angle uses a 0–180° scale (like a protractor):{" "}
-        <span className="font-medium">0°</span> is flat, <span className="font-medium">90°</span> is a square corner,{" "}
-        <span className="font-medium">180°</span> closes the two halves together in the preview. Each bent leg is half of
-        your length. Type any angle (e.g. 30, 45.5, 90) — the 3D preview updates to match.
+        Width and length in inches. Bend angle (optional) is 0–180° for your notes or quote; it does not change the
+        panel preview or pricing.
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Bend: 0–180°, preview
-        only; pricing uses full width × length.
+        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Pricing uses width ×
+        length.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and bend angle">
         <div>
@@ -182,20 +177,6 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             className="mt-1.5 block h-11 w-32 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label="Bend angle in degrees"
           />
-          <label className="mt-3 flex cursor-pointer items-start gap-2.5">
-            <input
-              id="bend-mirror-input"
-              type="checkbox"
-              checked={value.bendMirrored}
-              disabled={value.bendAngleDeg <= 0.05}
-              onChange={(e) => onChange({ ...value, bendMirrored: e.target.checked })}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400 disabled:opacity-40"
-            />
-            <span className="text-xs text-gray-600">
-              <span className="font-medium text-gray-800">Mirror bend</span> — flip the bent preview
-              left/right (available when angle {">"} 0°).
-            </span>
-          </label>
         </div>
       </div>
     </div>
