@@ -1,4 +1,5 @@
 import type { PanelBendSpec } from "@/types/panelBend";
+import type { BoxTraySideRow } from "@/types/boxTray";
 
 export interface CartItem {
   id: string;
@@ -17,6 +18,8 @@ export interface CartItem {
   panelBends?: PanelBendSpec[];
   /** Folds along panel width (hinge parallel to length); informational. */
   panelBendsAlongWidth?: PanelBendSpec[];
+  /** Tray / box returns (fixed center W×L); informational. */
+  boxTraySides?: BoxTraySideRow[];
   /** @deprecated Prefer panelBends; kept for older cart JSON. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;

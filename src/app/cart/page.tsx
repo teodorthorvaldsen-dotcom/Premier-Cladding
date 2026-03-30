@@ -14,6 +14,7 @@ import {
   formatPanelBendsSummary,
   formatPanelBendsAlongWidthSummary,
 } from "@/lib/panelBends";
+import { formatBoxTraySummary, normalizeBoxTraySides } from "@/lib/boxTray";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 function formatUSD(n: number): string {
@@ -49,7 +50,9 @@ function describeItem(item: CartItem): string {
     item.panelBendsAlongWidth && item.panelBendsAlongWidth.length > 0
       ? formatPanelBendsAlongWidthSummary(item.panelBendsAlongWidth)
       : "";
-  const parts = [sizeLabel, bendL, bendW, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
+  const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
+  const tray = trayNorm.length > 0 ? formatBoxTraySummary(trayNorm) : "";
+  const parts = [sizeLabel, tray, bendL, bendW, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
   return parts.join(" · ");
 }
 

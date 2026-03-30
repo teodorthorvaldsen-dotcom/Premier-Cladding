@@ -3,7 +3,16 @@ import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import type { QuoteDraft } from "@/types/quote";
+import type { BoxTrayEdge } from "@/types/boxTray";
 import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
+import { normalizeBoxTraySides } from "@/lib/boxTray";
+
+const BOX_EDGE_EMAIL_LABEL: Record<BoxTrayEdge, string> = {
+  south: "Front (y = 0)",
+  north: "Back (y = length)",
+  west: "Left (x = −W/2)",
+  east: "Right (x = +W/2)",
+};
 
 const QUOTES_JSONL_PATH = path.join(process.cwd(), "data", "quotes.jsonl");
 
@@ -33,9 +42,14 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
+function quoteUsesTrayGeometry(c: QuoteDraft): boolean {
+  return normalizeBoxTraySides(c.boxTraySides ?? []).length > 0;
+}
+
 function buildBusinessEmailHtml(payload: QuotePayload): string {
   const c = payload.config;
   const unitPrice = c.quantity > 0 ? c.estimatedTotal / c.quantity : 0;
+  const trayMode = quoteUsesTrayGeometry(c);
   return `
 <!DOCTYPE html>
 <html>
@@ -61,8 +75,8 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${bendReferenceRowsHtml(c)}
-    ${bendWidthReferenceRowsHtml(c)}
+    ${trayMode ? boxTrayReferenceRowsHtml(c) : bendReferenceRowsHtml(c)}
+    ${trayMode ? "" : bendWidthReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -96,6 +110,7 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
 function buildCustomerEmailHtml(payload: QuotePayload): string {
   const c = payload.config;
   const unitPrice = c.quantity > 0 ? c.estimatedTotal / c.quantity : 0;
+  const trayMode = quoteUsesTrayGeometry(c);
   return `
 <!DOCTYPE html>
 <html>
@@ -109,8 +124,8 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${bendReferenceRowsHtml(c)}
-    ${bendWidthReferenceRowsHtml(c)}
+    ${trayMode ? boxTrayReferenceRowsHtml(c) : bendReferenceRowsHtml(c)}
+    ${trayMode ? "" : bendWidthReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -148,6 +163,20 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function boxTrayReferenceRowsHtml(c: QuoteDraft): string {
+  const sides = normalizeBoxTraySides(c.boxTraySides ?? []);
+  if (!sides.length) return "";
+  return sides
+    .map((s, i) => {
+      const n = i + 1;
+      const edgeLabel = escapeHtml(BOX_EDGE_EMAIL_LABEL[s.edge]);
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Tray side ${n} — edge</td><td>${edgeLabel}</td></tr>
+<tr><td style="padding: 4px 12px 4px 0; color: #666;">Tray side ${n} — return height</td><td>${s.flangeHeightIn} in</td></tr>
+<tr><td style="padding: 4px 12px 4px 0; color: #666;">Tray side ${n} — angle</td><td>${s.angleDeg}°</td></tr>`;
+    })
+    .join("");
 }
 
 function bendReferenceRowsHtml(c: QuoteDraft): string {

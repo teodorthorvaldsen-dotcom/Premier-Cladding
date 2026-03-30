@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
+import type { BoxTrayEdge } from "@/types/boxTray";
 import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
+import { normalizeBoxTraySides } from "@/lib/boxTray";
+
+const BOX_EDGE_LABEL: Record<BoxTrayEdge, string> = {
+  south: "Front (y = 0)",
+  north: "Back (y = length)",
+  west: "Left (x = −W/2)",
+  east: "Right (x = +W/2)",
+};
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
@@ -185,6 +194,8 @@ export default function QuotePage() {
   if (!draft) return null;
 
   const isMetal = draft.productKind === "metal";
+  const trayRowsNorm = normalizeBoxTraySides(draft.boxTraySides ?? []);
+  const showLegacyFolds = trayRowsNorm.length === 0;
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
@@ -214,34 +225,54 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Length</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
-              {getPanelBendsFromQuoteDraft(draft).map((b, i) => (
-                <div key={`fold-l-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+              {trayRowsNorm.map((s, i) => (
+                <div key={`tray-${s.id}-${i}`} className="sm:col-span-2">
                   <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                     <div>
-                      <dt className="text-gray-500">Length fold {i + 1} — inches from edge (along length)</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
+                      <dt className="text-gray-500">Tray side {i + 1} — edge</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{BOX_EDGE_LABEL[s.edge]}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500">Length fold {i + 1} — angle (reference)</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+                      <dt className="text-gray-500">Tray side {i + 1} — return height</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{s.flangeHeightIn} in</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-gray-500">Tray side {i + 1} — angle</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{s.angleDeg}°</dd>
                     </div>
                   </div>
                 </div>
               ))}
-              {(draft.panelBendsAlongWidth ?? []).map((b, i) => (
-                <div key={`fold-w-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
-                  <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-gray-500">Width fold {i + 1} — inches from edge (along width)</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Width fold {i + 1} — angle (reference)</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+              {showLegacyFolds &&
+                getPanelBendsFromQuoteDraft(draft).map((b, i) => (
+                  <div key={`fold-l-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-gray-500">Length fold {i + 1} — inches from edge (along length)</dt>
+                        <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
+                      </div>
+                      <div>
+                        <dt className="text-gray-500">Length fold {i + 1} — angle (reference)</dt>
+                        <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              {showLegacyFolds &&
+                (draft.panelBendsAlongWidth ?? []).map((b, i) => (
+                  <div key={`fold-w-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-gray-500">Width fold {i + 1} — inches from edge (along width)</dt>
+                        <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
+                      </div>
+                      <div>
+                        <dt className="text-gray-500">Width fold {i + 1} — angle (reference)</dt>
+                        <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               <div>
                 <dt className="text-gray-500">Thickness</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.thicknessLabel}</dd>

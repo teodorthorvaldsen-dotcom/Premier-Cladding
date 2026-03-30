@@ -1,4 +1,5 @@
 import type { PanelBendSpec } from "@/types/panelBend";
+import type { BoxTraySideRow } from "@/types/boxTray";
 
 /** Draft quote request stored when user clicks "Request Final Quote". */
 export interface QuoteDraft {
@@ -9,6 +10,8 @@ export interface QuoteDraft {
   panelBends?: PanelBendSpec[];
   /** Folds along panel width (hinge parallel to length); informational. */
   panelBendsAlongWidth?: PanelBendSpec[];
+  /** Tray / box returns; informational. */
+  boxTraySides?: BoxTraySideRow[];
   /** @deprecated Prefer panelBends. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;

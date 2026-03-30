@@ -8,29 +8,32 @@ import {
   MIN_LENGTH_IN,
 } from "@/data/acm";
 import type { ThicknessId } from "@/data/acm";
-import type { PanelBendSpec } from "@/types/panelBend";
-import {
-  clampAngleDeg,
-  maxPanelBendsForLength,
-  maxPanelBendsForWidth,
-  normalizePanelBends,
-  PANEL_BEND_MIN_LEG_IN,
-  suggestNextBendInchesAlongWidth,
-  suggestNextBendInchesFromEdge,
-} from "@/lib/panelBends";
+import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
+import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { clampAngleDeg } from "@/lib/panelBends";
+
+const ALL_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
+
+const EDGE_LABELS: Record<BoxTrayEdge, string> = {
+  south: "Front (y = 0, spans width)",
+  north: "Back (y = length)",
+  west: "Left (x = −W/2, spans length)",
+  east: "Right (x = +W/2, spans length)",
+};
 
 export interface SizeSelection {
   widthId: string | null;
   widthIn: number;
   lengthIn: number;
-  /** Folds from the reference edge along length (hinge parallel to width). */
-  bends: PanelBendSpec[];
-  /** Folds from the reference edge along width (hinge parallel to length / “Y” in the 3D preview). */
-  bendsAlongWidth: PanelBendSpec[];
+  /**
+   * Tray / box returns — one entry per edge max; duplicates collapse (last wins) when saved.
+   * Center panel in 3D is always width × length.
+   */
+  boxSides: BoxTraySideRow[];
 }
 
-interface BendDraft {
-  inches: string;
+interface SideDraft {
+  height: string;
   angle: string;
 }
 
@@ -38,11 +41,15 @@ function angleInputStr(deg: number): string {
   return Number.isInteger(deg) ? String(deg) : deg.toFixed(1);
 }
 
-function draftsFromBends(bends: PanelBendSpec[]): BendDraft[] {
-  return bends.map((b) => ({
-    inches: String(b.inchesFromEdge),
-    angle: angleInputStr(b.angleDeg),
-  }));
+function newSideId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function newBoxSideRow(edge: BoxTrayEdge): BoxTraySideRow {
+  return { id: newSideId(), edge, flangeHeightIn: 6, angleDeg: 90 };
 }
 
 interface SizePickerProps {
@@ -66,16 +73,21 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   const maxLength = getMaxLengthIn(thicknessId);
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
-  const [bendDrafts, setBendDrafts] = useState<BendDraft[]>(() => draftsFromBends(value.bends));
-  const [bendDraftsW, setBendDraftsW] = useState<BendDraft[]>(() => draftsFromBends(value.bendsAlongWidth));
+  const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
+    value.boxSides.map((s) => ({
+      height: String(s.flangeHeightIn),
+      angle: angleInputStr(s.angleDeg),
+    }))
+  );
 
   useEffect(() => {
-    setBendDrafts(draftsFromBends(value.bends));
-  }, [value.bends]);
-
-  useEffect(() => {
-    setBendDraftsW(draftsFromBends(value.bendsAlongWidth));
-  }, [value.bendsAlongWidth]);
+    setSideDrafts(
+      value.boxSides.map((s) => ({
+        height: String(s.flangeHeightIn),
+        angle: angleInputStr(s.angleDeg),
+      }))
+    );
+  }, [value.boxSides]);
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
@@ -83,20 +95,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     return Math.min(maxLength, Math.max(MIN_LENGTH_IN, n));
   };
 
-  const maxBendsLen = maxPanelBendsForLength(value.lengthIn);
-  const maxBendsW = maxPanelBendsForWidth(value.widthIn);
-
-  const pushNormalizedBends = (nextBends: PanelBendSpec[]) => {
+  const pushSides = (next: BoxTraySideRow[]) => {
     onChange({
       ...value,
-      bends: normalizePanelBends(nextBends, value.lengthIn),
-    });
-  };
-
-  const pushNormalizedBendsW = (next: PanelBendSpec[]) => {
-    onChange({
-      ...value,
-      bendsAlongWidth: normalizePanelBends(next, value.widthIn),
+      boxSides: normalizeBoxTraySides(next),
     });
   };
 
@@ -111,8 +113,6 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         widthId: "custom",
         widthIn: w,
         lengthIn: len,
-        bends: normalizePanelBends(value.bends, len),
-        bendsAlongWidth: normalizePanelBends(value.bendsAlongWidth, w),
       });
       return;
     }
@@ -123,8 +123,6 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       widthId: "custom",
       widthIn: w,
       lengthIn: len,
-      bends: normalizePanelBends(value.bends, len),
-      bendsAlongWidth: normalizePanelBends(value.bendsAlongWidth, w),
     });
   };
 
@@ -132,11 +130,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     setLengthStr(raw);
     const num = Number(raw);
     if (raw === "" || Number.isNaN(num)) {
-      const len = MIN_LENGTH_IN;
       onChange({
         ...value,
-        lengthIn: len,
-        bends: normalizePanelBends(value.bends, len),
+        lengthIn: MIN_LENGTH_IN,
       });
       return;
     }
@@ -144,110 +140,57 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     onChange({
       ...value,
       lengthIn: len,
-      bends: normalizePanelBends(value.bends, len),
     });
   };
 
-  const commitBendRow = (index: number) => {
-    const draft = bendDrafts[index];
-    if (!draft) return;
-    const inchNum = Number(draft.inches);
-    const angNum = Number(draft.angle);
-    const next = value.bends.map((b, i) => {
-      if (i !== index) return b;
+  const usedEdges = new Set(value.boxSides.map((s) => s.edge));
+  const canAddSide = usedEdges.size < ALL_EDGES.length;
+  const nextEdgeToAdd = ALL_EDGES.find((e) => !usedEdges.has(e));
+
+  const addSide = () => {
+    if (!canAddSide || !nextEdgeToAdd) return;
+    pushSides([...value.boxSides, newBoxSideRow(nextEdgeToAdd)]);
+  };
+
+  const removeSide = (id: string) => {
+    pushSides(value.boxSides.filter((s) => s.id !== id));
+  };
+
+  const setRowEdge = (id: string, edge: BoxTrayEdge) => {
+    pushSides(value.boxSides.map((s) => (s.id === id ? { ...s, edge } : s)));
+  };
+
+  const commitRow = (index: number) => {
+    const row = value.boxSides[index];
+    const draft = sideDrafts[index];
+    if (!row || !draft) return;
+    const hNum = Number(draft.height);
+    const aNum = Number(draft.angle);
+    const next = value.boxSides.map((s, i) => {
+      if (i !== index) return s;
       return {
-        inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
-        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampAngleDeg(angNum),
+        ...s,
+        flangeHeightIn: Number.isNaN(hNum) ? s.flangeHeightIn : hNum,
+        angleDeg: Number.isNaN(aNum) ? s.angleDeg : clampAngleDeg(aNum),
       };
     });
-    pushNormalizedBends(next);
-  };
-
-  const commitBendRowW = (index: number) => {
-    const draft = bendDraftsW[index];
-    if (!draft) return;
-    const inchNum = Number(draft.inches);
-    const angNum = Number(draft.angle);
-    const next = value.bendsAlongWidth.map((b, i) => {
-      if (i !== index) return b;
-      return {
-        inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
-        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampAngleDeg(angNum),
-      };
-    });
-    pushNormalizedBendsW(next);
-  };
-
-  const handleBendInchesDraft = (index: number, raw: string) => {
-    setBendDrafts((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], inches: raw };
-      return copy;
-    });
-  };
-
-  const handleBendAngleDraft = (index: number, raw: string) => {
-    setBendDrafts((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], angle: raw };
-      return copy;
-    });
-  };
-
-  const handleBendInchesDraftW = (index: number, raw: string) => {
-    setBendDraftsW((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], inches: raw };
-      return copy;
-    });
-  };
-
-  const handleBendAngleDraftW = (index: number, raw: string) => {
-    setBendDraftsW((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], angle: raw };
-      return copy;
-    });
-  };
-
-  const addBend = () => {
-    if (value.bends.length >= maxBendsLen) return;
-    const suggested = suggestNextBendInchesFromEdge(value.bends, value.lengthIn);
-    pushNormalizedBends([...value.bends, { inchesFromEdge: suggested, angleDeg: 90 }]);
-  };
-
-  const removeBend = (index: number) => {
-    pushNormalizedBends(value.bends.filter((_, i) => i !== index));
-  };
-
-  const addBendW = () => {
-    if (value.bendsAlongWidth.length >= maxBendsW) return;
-    const suggested = suggestNextBendInchesAlongWidth(value.bendsAlongWidth, value.widthIn);
-    pushNormalizedBendsW([...value.bendsAlongWidth, { inchesFromEdge: suggested, angleDeg: 90 }]);
-  };
-
-  const removeBendW = (index: number) => {
-    pushNormalizedBendsW(value.bendsAlongWidth.filter((_, i) => i !== index));
+    pushSides(next);
   };
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Folds follow a simple <span className="font-medium text-gray-800">X / Y</span> layout:
-        length-axis bends use hinge lines parallel to <span className="font-medium text-gray-800">X</span>; width-axis
-        bends use hinge lines parallel to <span className="font-medium text-gray-800">Y</span> (panel length in the
-        preview). Angle is signed: <span className="font-medium text-gray-800">positive°</span> bends outward (+Z / toward
-        you in the default view); <span className="font-medium text-gray-800">negative°</span> bends inward. Pricing
-        still uses full width × length (flat).
+        Width and length set the <span className="font-medium text-gray-800">flat center face</span> of the tray (always
+        that width × length in the preview). Each side you add is a return with its own height in inches and bend angle.
+        Pricing still uses full width × length (flat). Positive° bends a side outward (+Z); negative° bends inward.
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Each straight segment
-        must be at least {PANEL_BEND_MIN_LEG_IN} in. Up to {maxBendsLen} length fold{maxBendsLen === 1 ? "" : "s"} and up
-        to {maxBendsW} width fold{maxBendsW === 1 ? "" : "s"} for the current size.
+        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to four sides (one
+        per edge).
       </p>
-      <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and bends">
+      <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>
           <label htmlFor="width-input" className="block text-xs font-medium text-gray-700">
             Width (in)
@@ -285,58 +228,78 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
         <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Folds along length (X axis)</p>
+            <p className="text-xs font-medium text-gray-800">Tray sides (returns)</p>
             <button
               type="button"
-              onClick={addBend}
-              disabled={value.bends.length >= maxBendsLen}
+              onClick={addSide}
+              disabled={!canAddSide}
               className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Add bend
+              Add side
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Bend lines run along <span className="font-medium text-gray-700">X</span> (perpendicular to length). Use
-            positive angles to fold the next leg outward, negative for inward. Near 0° or ±180° the strip stays collinear.
+            Choose which edge each return sits on, how deep the return is (inches), and the bend angle. Edges match the
+            3D blank: front/back run full width; left/right run full length.
           </p>
 
-          {value.bends.length === 0 ? (
-            <p className="mt-3 text-[13px] text-gray-600">No length-axis bends.</p>
+          {value.boxSides.length === 0 ? (
+            <p className="mt-3 text-[13px] text-gray-600">No sides — flat panel.</p>
           ) : (
             <ul className="mt-3 space-y-4">
-              {value.bends.map((b, index) => (
-                <li
-                  key={`bend-l-${index}-${b.inchesFromEdge}-${b.angleDeg}`}
-                  className="rounded-lg border border-gray-200 bg-white p-3"
-                >
+              {value.boxSides.map((side, index) => (
+                <li key={side.id} className="rounded-lg border border-gray-200 bg-white p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-gray-700">Length bend {index + 1}</span>
+                    <span className="text-xs font-medium text-gray-700">Side {index + 1}</span>
                     <button
                       type="button"
-                      onClick={() => removeBend(index)}
-                      className="text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 rounded"
+                      onClick={() => removeSide(side.id)}
+                      className="rounded text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
                     >
                       Remove
                     </button>
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-[11px] font-medium text-gray-600" htmlFor={`edge-${side.id}`}>
+                      Edge
+                    </label>
+                    <select
+                      id={`edge-${side.id}`}
+                      value={side.edge}
+                      onChange={(e) => setRowEdge(side.id, e.target.value as BoxTrayEdge)}
+                      className="mt-1 block h-10 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                    >
+                      {ALL_EDGES.map((e) => (
+                        <option key={e} value={e}>
+                          {EDGE_LABELS[e]}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label
                         className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`bend-inches-l-${index}`}
+                        htmlFor={`side-h-${side.id}`}
                       >
-                        Inches from edge (in)
+                        Return height (in)
                       </label>
                       <input
-                        id={`bend-inches-l-${index}`}
+                        id={`side-h-${side.id}`}
                         type="number"
                         inputMode="decimal"
-                        min={PANEL_BEND_MIN_LEG_IN}
-                        max={value.lengthIn - PANEL_BEND_MIN_LEG_IN}
+                        min={0.01}
+                        max={120}
                         step={0.01}
-                        value={bendDrafts[index]?.inches ?? String(b.inchesFromEdge)}
-                        onChange={(e) => handleBendInchesDraft(index, e.target.value)}
-                        onBlur={() => commitBendRow(index)}
+                        value={sideDrafts[index]?.height ?? String(side.flangeHeightIn)}
+                        onChange={(e) =>
+                          setSideDrafts((prev) => {
+                            const copy = [...prev];
+                            copy[index] = { ...copy[index], height: e.target.value };
+                            return copy;
+                          })
+                        }
+                        onBlur={() => commitRow(index)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                         }}
@@ -346,109 +309,26 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                     <div>
                       <label
                         className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`bend-angle-l-${index}`}
+                        htmlFor={`side-a-${side.id}`}
                       >
                         Angle (°)
                       </label>
                       <input
-                        id={`bend-angle-l-${index}`}
+                        id={`side-a-${side.id}`}
                         type="number"
                         inputMode="decimal"
                         min={-180}
                         max={180}
                         step={0.1}
-                        value={bendDrafts[index]?.angle ?? angleInputStr(b.angleDeg)}
-                        onChange={(e) => handleBendAngleDraft(index, e.target.value)}
-                        onBlur={() => commitBendRow(index)}
-                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                      />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-gray-200/80 bg-violet-50/40 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Folds along width (Y axis)</p>
-            <button
-              type="button"
-              onClick={addBendW}
-              disabled={value.bendsAlongWidth.length >= maxBendsW}
-              className="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-violet-50/80 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Add bend
-            </button>
-          </div>
-          <p className="mt-1.5 text-[11px] text-gray-500">
-            Crease lines run parallel to <span className="font-medium text-gray-700">Y</span> (panel length in the
-            preview). Fold lines progress along <span className="font-medium text-gray-700">X</span> (width). Same sign
-            rule: positive° outward, negative° inward. Combined X and Y bends show together in 3D; confirm unusual jobs
-            with a shop drawing.
-          </p>
-
-          {value.bendsAlongWidth.length === 0 ? (
-            <p className="mt-3 text-[13px] text-gray-600">No width-axis bends.</p>
-          ) : (
-            <ul className="mt-3 space-y-4">
-              {value.bendsAlongWidth.map((b, index) => (
-                <li
-                  key={`bend-w-${index}-${b.inchesFromEdge}-${b.angleDeg}`}
-                  className="rounded-lg border border-violet-100 bg-white p-3"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-gray-700">Width bend {index + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeBendW(index)}
-                      className="text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 rounded"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label
-                        className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`bend-inches-w-${index}`}
-                      >
-                        Inches from edge (in)
-                      </label>
-                      <input
-                        id={`bend-inches-w-${index}`}
-                        type="number"
-                        inputMode="decimal"
-                        min={PANEL_BEND_MIN_LEG_IN}
-                        max={value.widthIn - PANEL_BEND_MIN_LEG_IN}
-                        step={0.01}
-                        value={bendDraftsW[index]?.inches ?? String(b.inchesFromEdge)}
-                        onChange={(e) => handleBendInchesDraftW(index, e.target.value)}
-                        onBlur={() => commitBendRowW(index)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`bend-angle-w-${index}`}
-                      >
-                        Angle (°)
-                      </label>
-                      <input
-                        id={`bend-angle-w-${index}`}
-                        type="number"
-                        inputMode="decimal"
-                        min={-180}
-                        max={180}
-                        step={0.1}
-                        value={bendDraftsW[index]?.angle ?? angleInputStr(b.angleDeg)}
-                        onChange={(e) => handleBendAngleDraftW(index, e.target.value)}
-                        onBlur={() => commitBendRowW(index)}
+                        value={sideDrafts[index]?.angle ?? angleInputStr(side.angleDeg)}
+                        onChange={(e) =>
+                          setSideDrafts((prev) => {
+                            const copy = [...prev];
+                            copy[index] = { ...copy[index], angle: e.target.value };
+                            return copy;
+                          })
+                        }
+                        onBlur={() => commitRow(index)}
                         className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
                       />
                     </div>
@@ -465,15 +345,14 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             onClick={() => {
               onChange({
                 ...value,
-                bends: [],
-                bendsAlongWidth: [],
+                boxSides: [],
               });
             }}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            Reset all folds
+            Clear all sides
           </button>
-          <p className="mt-2 text-[11px] text-gray-500">Clears length- and width-axis bends.</p>
+          <p className="mt-2 text-[11px] text-gray-500">Removes every tray return; center size stays the same.</p>
         </div>
       </div>
     </div>

@@ -23,14 +23,13 @@ import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
-import { normalizePanelBends, normalizePanelBendsAlongWidth } from "@/lib/panelBends";
+import { normalizeBoxTraySides } from "@/lib/boxTray";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
-  bends: [],
-  bendsAlongWidth: [],
+  boxSides: [],
 };
 
 export interface PriceResult {
@@ -158,8 +157,7 @@ export function Configurator() {
     if (!pricing) return;
     const finish = finishes[0];
     const unitPrice = pricing.total / quantity;
-    const panelBends = normalizePanelBends(size.bends, size.lengthIn);
-    const panelBendsAlongWidth = normalizePanelBendsAlongWidth(size.bendsAlongWidth, size.widthIn);
+    const boxTraySides = normalizeBoxTraySides(size.boxSides);
     addItem({
       widthIn: size.widthIn,
       heightIn: size.lengthIn,
@@ -172,8 +170,7 @@ export function Configurator() {
       areaFt2: pricing.areaFt2,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
-      ...(panelBends.length > 0 ? { panelBends } : {}),
-      ...(panelBendsAlongWidth.length > 0 ? { panelBendsAlongWidth } : {}),
+      ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
       ...(colorId === "custom-color-match"
         ? {
             customColorReference: customColorReference.trim() || undefined,
@@ -211,13 +208,11 @@ export function Configurator() {
       }
     }
 
-    const quoteBends = normalizePanelBends(size.bends, size.lengthIn);
-    const quoteBendsW = normalizePanelBendsAlongWidth(size.bendsAlongWidth, size.widthIn);
+    const boxTraySides = normalizeBoxTraySides(size.boxSides);
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
-      ...(quoteBends.length > 0 ? { panelBends: quoteBends } : {}),
-      ...(quoteBendsW.length > 0 ? { panelBendsAlongWidth: quoteBendsW } : {}),
+      ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -359,8 +354,7 @@ export function Configurator() {
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}
               panelDepthIn={previewDepthIn}
-              bends={size.bends}
-              bendsAlongWidth={size.bendsAlongWidth}
+              boxSides={size.boxSides}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
               panelSwatchImage={
