@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -20,8 +21,19 @@ import { PriceSummary } from "./PriceSummary";
 import { QuantityPicker } from "./QuantityPicker";
 import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
-import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
+
+const AcmPanelPreview3D = dynamic(() => import("./AcmPanelPreview3D"), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="flex h-[360px] items-center justify-center rounded-2xl border border-gray-200/80 bg-gray-50 text-sm text-gray-500"
+      aria-hidden
+    >
+      Loading 3D preview…
+    </div>
+  ),
+});
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -146,9 +158,6 @@ export function Configurator() {
   const selectedWidth = allWidths.find((w) => w.id === size.widthId);
   const widthLabel = `${size.widthIn}"`;
   const thicknessMm = Number(thicknessId.replace("mm", ""));
-  const metalThicknessIn = thicknessMm / 25.4;
-  /** Illustrative depth so thin ACM reads clearly in the 3D preview (not sheet metal thickness). */
-  const previewDepthIn = Math.min(3, Math.max(0.5, metalThicknessIn * 1.45 + 0.4));
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -330,19 +339,29 @@ export function Configurator() {
           <div
             className="space-y-3 lg:space-y-4 md:sticky md:z-10 md:max-h-[calc(100vh-18rem)] md:overflow-y-auto md:overscroll-y-contain md:pb-2 md:top-[16.5rem] lg:top-[18rem] xl:top-[20.5rem]"
           >
-            <AcmPanel3DPreview
-              panelWidthIn={size.widthIn}
-              panelHeightIn={size.lengthIn}
-              panelDepthIn={previewDepthIn}
-              panelColorHex={color.swatchHex}
-              panelColorName={color.name}
-              panelSwatchImage={
-                "swatchImage" in color &&
-                typeof (color as { swatchImage?: string }).swatchImage === "string"
-                  ? (color as { swatchImage: string }).swatchImage
-                  : undefined
-              }
-            />
+            <section
+              className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
+              aria-labelledby="acm-panel-3d-preview-heading"
+            >
+              <h2
+                id="acm-panel-3d-preview-heading"
+                className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
+              >
+                Panel Preview
+              </h2>
+              <div className="mt-3">
+                <AcmPanelPreview3D
+                  color={color.swatchHex}
+                  length={size.lengthIn}
+                  swatchImage={color.swatchImage}
+                  thickness={thicknessMm}
+                  width={size.widthIn}
+                />
+              </div>
+              <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
+                {size.widthIn}&quot; × {size.lengthIn}&quot; · {color.name}
+              </p>
+            </section>
             <PriceSummary
               pricing={pricing}
               loading={loading}
