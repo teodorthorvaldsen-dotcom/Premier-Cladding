@@ -28,7 +28,6 @@ const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
-  bendAxis: "x",
   bendInchesFromEdge: 48,
   bendAngleDeg: 0,
 };
@@ -172,7 +171,6 @@ export function Configurator() {
       panelTypeLabel: pricing.panelTypeLabel,
       ...(size.bendAngleDeg > 0
         ? {
-            bendAxis: size.bendAxis,
             bendAngleDeg: size.bendAngleDeg,
             bendInchesFromEdge: size.bendInchesFromEdge,
           }
@@ -220,7 +218,6 @@ export function Configurator() {
       ...(size.bendAngleDeg > 0
         ? {
             bendAngleDeg: size.bendAngleDeg,
-            bendAxis: size.bendAxis,
             bendInchesFromEdge: size.bendInchesFromEdge,
           }
         : {}),
@@ -365,7 +362,6 @@ export function Configurator() {
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}
               panelDepthIn={previewDepthIn}
-              bendAxis={size.bendAxis}
               bendAngleDeg={size.bendAngleDeg}
               bendInchesFromEdge={size.bendInchesFromEdge}
               panelColorHex={color.swatchHex}

@@ -11,8 +11,7 @@ export interface CartItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
-  /** L-bend configuration when applicable. */
-  bendAxis?: "x" | "y";
+  /** L-bend configuration when applicable (fold along panel length). */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;
   /** Set when color is custom match: manufacturer code, Pantone, or other reference. */

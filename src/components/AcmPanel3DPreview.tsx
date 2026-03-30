@@ -10,13 +10,10 @@ const PREVIEW_H = 360;
 const INCH_TO_WORLD = 0.05;
 const MIN_LEG_IN = 0.5;
 
-export type PanelBendAxis = "x" | "y";
-
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
   panelDepthIn: number;
-  bendAxis?: PanelBendAxis;
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;
   panelColorHex: string;
@@ -46,18 +43,16 @@ function clampFoldPosition(positionIn: number, panelSizeIn: number) {
   return Math.min(hi, Math.max(MIN_LEG_IN, positionIn));
 }
 
+/** Fold along panel length (hinge parallel to width). */
 function collectFoldParts(
-  axis: "horizontal" | "vertical",
   widthIn: number,
   heightIn: number,
   thicknessWorld: number,
   bends: BendSpec[]
 ): BuiltPart[] {
   const width = inchesToWorld(widthIn);
-  const height = inchesToWorld(heightIn);
   const thickness = Math.max(thicknessWorld, 0.008);
-
-  const panelSize = axis === "horizontal" ? heightIn : widthIn;
+  const panelSize = heightIn;
 
   const validBends = [...bends]
     .filter((b) => b.positionIn > MIN_LEG_IN && b.positionIn < panelSize - MIN_LEG_IN)
@@ -76,27 +71,15 @@ function collectFoldParts(
 
     const len = inchesToWorld(lenIn);
 
-    if (axis === "horizontal") {
-      const dir = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(1, 0, 0), angle);
-      const center = origin.clone().add(dir.clone().multiplyScalar(len / 2));
-      nodes.push({
-        key: `h-${segIdx}`,
-        position: [center.x, center.y, center.z],
-        rotation: [angle, 0, 0],
-        args: [width, len, thickness],
-      });
-      origin = origin.clone().add(dir.multiplyScalar(len));
-    } else {
-      const dir = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), angle);
-      const center = origin.clone().add(dir.clone().multiplyScalar(len / 2));
-      nodes.push({
-        key: `v-${segIdx}`,
-        position: [center.x, center.y, center.z],
-        rotation: [0, 0, angle],
-        args: [len, height, thickness],
-      });
-      origin = origin.clone().add(dir.multiplyScalar(len));
-    }
+    const dir = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(1, 0, 0), angle);
+    const center = origin.clone().add(dir.clone().multiplyScalar(len / 2));
+    nodes.push({
+      key: `h-${segIdx}`,
+      position: [center.x, center.y, center.z],
+      rotation: [angle, 0, 0],
+      args: [width, len, thickness],
+    });
+    origin = origin.clone().add(dir.multiplyScalar(len));
 
     if (i < validBends.length) {
       angle += THREE.MathUtils.degToRad(validBends[i].angleDeg);
@@ -123,7 +106,6 @@ function FoldedPanelMesh({
   widthIn,
   heightIn,
   thicknessWorld,
-  axis,
   foldPositionIn,
   foldAngleDeg,
   isFolded,
@@ -133,8 +115,7 @@ function FoldedPanelMesh({
   widthIn: number;
   heightIn: number;
   thicknessWorld: number;
-  axis: "horizontal" | "vertical";
-  /** Inches from edge to fold along split dimension; ignored when not folded. */
+  /** Inches from edge to fold along length; ignored when not folded. */
   foldPositionIn: number;
   foldAngleDeg: number;
   isFolded: boolean;
@@ -145,16 +126,8 @@ function FoldedPanelMesh({
     const bends: BendSpec[] = isFolded
       ? [{ positionIn: foldPositionIn, angleDeg: foldAngleDeg }]
       : [];
-    return collectFoldParts(axis, widthIn, heightIn, thicknessWorld, bends);
-  }, [
-    axis,
-    widthIn,
-    heightIn,
-    thicknessWorld,
-    isFolded,
-    foldPositionIn,
-    foldAngleDeg,
-  ]);
+    return collectFoldParts(widthIn, heightIn, thicknessWorld, bends);
+  }, [widthIn, heightIn, thicknessWorld, isFolded, foldPositionIn, foldAngleDeg]);
 
   return (
     <group>
@@ -185,7 +158,6 @@ function PreviewScene({
   widthIn,
   heightIn,
   thicknessWorld,
-  axis,
   foldPositionIn,
   foldAngleDeg,
   isFolded,
@@ -195,7 +167,6 @@ function PreviewScene({
   widthIn: number;
   heightIn: number;
   thicknessWorld: number;
-  axis: "horizontal" | "vertical";
   foldPositionIn: number;
   foldAngleDeg: number;
   isFolded: boolean;
@@ -223,7 +194,6 @@ function PreviewScene({
             widthIn={widthIn}
             heightIn={heightIn}
             thicknessWorld={thicknessWorld}
-            axis={axis}
             foldPositionIn={foldPositionIn}
             foldAngleDeg={foldAngleDeg}
             isFolded={isFolded}
@@ -247,20 +217,17 @@ export function AcmPanel3DPreview({
   panelWidthIn,
   panelHeightIn,
   panelDepthIn,
-  bendAxis = "x",
   bendAngleDeg = 0,
   bendInchesFromEdge,
   panelColorHex,
   panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
-  const r3fAxis: "horizontal" | "vertical" = bendAxis === "x" ? "horizontal" : "vertical";
-  const splitSize = bendAxis === "x" ? panelHeightIn : panelWidthIn;
   const isBent = bendAngleDeg > 0.5 && bendAngleDeg < 179.5;
 
   const foldPos = clampFoldPosition(
-    bendInchesFromEdge ?? splitSize / 2,
-    splitSize
+    bendInchesFromEdge ?? panelHeightIn / 2,
+    panelHeightIn
   );
 
   const thicknessWorld = inchesToWorld(panelDepthIn);
@@ -276,7 +243,7 @@ export function AcmPanel3DPreview({
   const caption = (() => {
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
     if (isBent) {
-      return `L-bend ${bendAngleDeg}° · fold ${foldPos}" from edge · axis ${bendAxis.toUpperCase()} · ${size} · ${panelColorName}`;
+      return `L-bend ${bendAngleDeg}° · fold ${foldPos}" from edge (along length) · ${size} · ${panelColorName}`;
     }
     return `${size} · ${panelColorName}`;
   })();
@@ -304,7 +271,6 @@ export function AcmPanel3DPreview({
           widthIn={panelWidthIn}
           heightIn={panelHeightIn}
           thicknessWorld={thicknessWorld}
-          axis={r3fAxis}
           foldPositionIn={foldPos}
           foldAngleDeg={bendAngleDeg}
           isFolded={isBent}

@@ -40,8 +40,8 @@ function describeItem(item: CartItem): string {
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const bend =
     typeof item.bendAngleDeg === "number" && item.bendAngleDeg > 0
-      ? `L-bend ${item.bendAngleDeg}°${item.bendAxis ? ` (${item.bendAxis.toUpperCase()})` : ""}${
-          typeof item.bendInchesFromEdge === "number" ? ` · fold ${item.bendInchesFromEdge}" from edge` : ""
+      ? `L-bend ${item.bendAngleDeg}°${
+          typeof item.bendInchesFromEdge === "number" ? ` · fold ${item.bendInchesFromEdge}" along length` : ""
         }`
       : "";
   const parts = [sizeLabel, bend, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);

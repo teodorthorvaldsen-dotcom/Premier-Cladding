@@ -215,17 +215,9 @@ export default function QuotePage() {
               </div>
               {typeof draft.bendAngleDeg === "number" && draft.bendAngleDeg > 0 ? (
                 <>
-                  {draft.bendAxis ? (
-                    <div>
-                      <dt className="text-gray-500">Bend axis</dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">
-                        {draft.bendAxis.toUpperCase()} (hinge along {draft.bendAxis === "x" ? "width" : "length"})
-                      </dd>
-                    </div>
-                  ) : null}
                   {typeof draft.bendInchesFromEdge === "number" ? (
                     <div>
-                      <dt className="text-gray-500">Inches to fold from edge</dt>
+                      <dt className="text-gray-500">Inches to fold from edge (along length)</dt>
                       <dd className="mt-0.5 font-medium text-gray-900">{draft.bendInchesFromEdge} in</dd>
                     </div>
                   ) : null}

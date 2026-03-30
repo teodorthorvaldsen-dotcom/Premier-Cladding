@@ -149,15 +149,11 @@ function escapeHtml(s: string): string {
 
 function bendReferenceRowsHtml(c: QuoteDraft): string {
   if (typeof c.bendAngleDeg !== "number" || c.bendAngleDeg <= 0) return "";
-  const axisRow =
-    c.bendAxis === "x" || c.bendAxis === "y"
-      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend axis</td><td>${escapeHtml(c.bendAxis.toUpperCase())}</td></tr>`
-      : "";
   const foldRow =
     typeof c.bendInchesFromEdge === "number"
-      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Inches to fold from edge</td><td>${c.bendInchesFromEdge} in</td></tr>`
+      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Inches to fold from edge (along length)</td><td>${c.bendInchesFromEdge} in</td></tr>`
       : "";
-  return `${axisRow}${foldRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
+  return `${foldRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
 }
 
 function validatePayload(body: unknown): body is QuotePayload {
