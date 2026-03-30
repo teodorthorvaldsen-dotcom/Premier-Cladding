@@ -7,6 +7,8 @@ export interface QuoteDraft {
   lengthIn: number;
   /** Folds along panel length (reference edge → …); informational. */
   panelBends?: PanelBendSpec[];
+  /** Folds along panel width (hinge parallel to length); informational. */
+  panelBendsAlongWidth?: PanelBendSpec[];
   /** @deprecated Prefer panelBends. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;

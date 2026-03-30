@@ -62,6 +62,7 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     ${bendReferenceRowsHtml(c)}
+    ${bendWidthReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -109,6 +110,7 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     ${bendReferenceRowsHtml(c)}
+    ${bendWidthReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -154,8 +156,20 @@ function bendReferenceRowsHtml(c: QuoteDraft): string {
   return bends
     .map((b, i) => {
       const n = i + 1;
-      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Fold ${n} — inches from edge (along length)</td><td>${b.inchesFromEdge} in</td></tr>
-<tr><td style="padding: 4px 12px 4px 0; color: #666;">Fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Length fold ${n} — inches from edge (along length)</td><td>${b.inchesFromEdge} in</td></tr>
+<tr><td style="padding: 4px 12px 4px 0; color: #666;">Length fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
+    })
+    .join("");
+}
+
+function bendWidthReferenceRowsHtml(c: QuoteDraft): string {
+  const bends = c.panelBendsAlongWidth;
+  if (!bends?.length) return "";
+  return bends
+    .map((b, i) => {
+      const n = i + 1;
+      return `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Width fold ${n} — inches from edge (along width)</td><td>${b.inchesFromEdge} in</td></tr>
+<tr><td style="padding: 4px 12px 4px 0; color: #666;">Width fold ${n} — angle (reference)</td><td>${b.angleDeg}°</td></tr>`;
     })
     .join("");
 }

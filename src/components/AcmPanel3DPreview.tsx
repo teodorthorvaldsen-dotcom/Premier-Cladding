@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo } from "react";
+import { Suspense, useLayoutEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -18,6 +18,8 @@ export interface AcmPanel3DPreviewProps {
   panelDepthIn: number;
   /** Folds along length from the reference edge, in order. */
   bends?: PanelBendSpec[];
+  /** Folds along width (hinge parallel to length); preview may switch when both axes have folds. */
+  bendsAlongWidth?: PanelBendSpec[];
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
@@ -86,6 +88,53 @@ function collectFoldParts(
   return nodes;
 }
 
+/** Fold along panel width (hinge parallel to length / scene +Y). */
+function collectFoldPartsAlongWidth(
+  widthIn: number,
+  heightIn: number,
+  thicknessWorld: number,
+  bends: BendSpec[]
+): BuiltPart[] {
+  const lengthWorld = inchesToWorld(heightIn);
+  const thickness = Math.max(thicknessWorld, 0.008);
+  const panelSize = widthIn;
+
+  const validBends = [...bends]
+    .filter((b) => b.positionIn > MIN_LEG_IN && b.positionIn < panelSize - MIN_LEG_IN)
+    .sort((a, b) => a.positionIn - b.positionIn);
+
+  const breakpoints = [0, ...validBends.map((b) => b.positionIn), panelSize];
+
+  let origin = new THREE.Vector3(0, 0, 0);
+  let angle = 0;
+  const nodes: BuiltPart[] = [];
+  let segIdx = 0;
+
+  for (let i = 0; i < breakpoints.length - 1; i++) {
+    const lenIn = breakpoints[i + 1] - breakpoints[i];
+    if (lenIn <= 1e-6) continue;
+
+    const len = inchesToWorld(lenIn);
+
+    const dir = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+    const center = origin.clone().add(dir.clone().multiplyScalar(len / 2));
+    nodes.push({
+      key: `w-${segIdx}`,
+      position: [center.x, center.y, center.z],
+      rotation: [0, angle, 0],
+      args: [len, lengthWorld, thickness],
+    });
+    origin = origin.clone().add(dir.multiplyScalar(len));
+
+    if (i < validBends.length) {
+      angle += THREE.MathUtils.degToRad(validBends[i].angleDeg);
+    }
+    segIdx += 1;
+  }
+
+  return nodes;
+}
+
 function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
   const tex = useTexture(mapUrl);
   useLayoutEffect(() => {
@@ -99,27 +148,14 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
 }
 
 function FoldedPanelMesh({
-  widthIn,
-  heightIn,
-  thicknessWorld,
-  bendsAlongLength,
+  parts,
   colorHex,
   mapUrl,
 }: {
-  widthIn: number;
-  heightIn: number;
-  thicknessWorld: number;
-  bendsAlongLength: PanelBendSpec[];
+  parts: BuiltPart[];
   colorHex: string;
   mapUrl?: string;
 }) {
-  const parts = useMemo(() => {
-    const bends: BendSpec[] = bendsAlongLength.map((b) => ({
-      positionIn: b.inchesFromEdge,
-      angleDeg: b.angleDeg,
-    }));
-    return collectFoldParts(widthIn, heightIn, thicknessWorld, bends);
-  }, [widthIn, heightIn, thicknessWorld, bendsAlongLength]);
 
   return (
     <group>
@@ -145,21 +181,23 @@ function FoldedPanelMesh({
 }
 
 function PreviewScene({
-  widthIn,
-  heightIn,
-  thicknessWorld,
-  bendsAlongLength,
+  parts,
+  minSpanInches,
   colorHex,
   mapUrl,
 }: {
-  widthIn: number;
-  heightIn: number;
-  thicknessWorld: number;
-  bendsAlongLength: PanelBendSpec[];
+  parts: BuiltPart[];
+  /** Floor for camera distance (typically max(width, length)). */
+  minSpanInches: number;
   colorHex: string;
   mapUrl?: string;
 }) {
-  const maxWorld = inchesToWorld(Math.max(widthIn, heightIn, 12));
+  let maxWorld = inchesToWorld(Math.max(minSpanInches, 12));
+  for (const p of parts) {
+    const [px, py] = p.position;
+    const [ax, ay] = p.args;
+    maxWorld = Math.max(maxWorld, Math.abs(px) + ax / 2, Math.abs(py) + ay / 2, Math.abs(p.position[2]) + p.args[2] / 2);
+  }
   const camDistance = Math.max(7, maxWorld * 4.2);
   /** Tight zoom band around default framing */
   const zoomMin = camDistance * 0.58;
@@ -183,14 +221,7 @@ function PreviewScene({
 
       <Suspense fallback={null}>
         <Center precise>
-          <FoldedPanelMesh
-            widthIn={widthIn}
-            heightIn={heightIn}
-            thicknessWorld={thicknessWorld}
-            bendsAlongLength={bendsAlongLength}
-            colorHex={colorHex}
-            mapUrl={mapUrl}
-          />
+          <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
         </Center>
       </Suspense>
 
@@ -216,20 +247,55 @@ export function AcmPanel3DPreview({
   panelHeightIn,
   panelDepthIn,
   bends: bendsProp = [],
+  bendsAlongWidth: bendsWidthProp = [],
   panelColorHex,
   panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
-  const bendsNormalized = useMemo(
+  const bendsLengthNorm = useMemo(
     () => normalizePanelBends(bendsProp, panelHeightIn),
     [bendsProp, panelHeightIn]
   );
-  const hasFoldMesh = bendsNormalized.length > 0;
-  const isVisuallyFolded = bendsNormalized.some(
-    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
+  const bendsWidthNorm = useMemo(
+    () => normalizePanelBends(bendsWidthProp, panelWidthIn),
+    [bendsWidthProp, panelWidthIn]
   );
 
-  const thicknessWorld = inchesToWorld(panelDepthIn);
+  const hasLength = bendsLengthNorm.length > 0;
+  const hasWidth = bendsWidthNorm.length > 0;
+  const both = hasLength && hasWidth;
+
+  const [previewAxis, setPreviewAxis] = useState<"length" | "width">("length");
+
+  const partsLength = useMemo(() => {
+    const bends: BendSpec[] = bendsLengthNorm.map((b) => ({
+      positionIn: b.inchesFromEdge,
+      angleDeg: b.angleDeg,
+    }));
+    return collectFoldParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), bends);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsLengthNorm]);
+
+  const partsWidth = useMemo(() => {
+    const bends: BendSpec[] = bendsWidthNorm.map((b) => ({
+      positionIn: b.inchesFromEdge,
+      angleDeg: b.angleDeg,
+    }));
+    return collectFoldPartsAlongWidth(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), bends);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsWidthNorm]);
+
+  const activeParts = useMemo(() => {
+    if (both) return previewAxis === "length" ? partsLength : partsWidth;
+    if (hasLength) return partsLength;
+    if (hasWidth) return partsWidth;
+    return partsLength;
+  }, [both, previewAxis, hasLength, hasWidth, partsLength, partsWidth]);
+
+  const isVisuallyFoldedLength = bendsLengthNorm.some(
+    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
+  );
+  const isVisuallyFoldedWidth = bendsWidthNorm.some(
+    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
+  );
 
   const hex =
     panelColorHex && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(panelColorHex.trim())
@@ -241,16 +307,31 @@ export function AcmPanel3DPreview({
 
   const caption = (() => {
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
-    if (!hasFoldMesh) {
-      return `${size} · ${panelColorName}`;
+    const bits: string[] = [];
+    if (hasLength) {
+      if (bendsLengthNorm.length === 1) {
+        const b = bendsLengthNorm[0];
+        const flatHint = isVisuallyFoldedLength ? "" : " (straight)";
+        bits.push(`Length: ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint}`);
+      } else {
+        bits.push(
+          `Length: ${bendsLengthNorm.length} bends (${bendsLengthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ")})`
+        );
+      }
     }
-    if (bendsNormalized.length === 1) {
-      const b = bendsNormalized[0];
-      const flatHint = isVisuallyFolded ? "" : " (straight sections)";
-      return `Fold ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint} · ${size} · ${panelColorName}`;
+    if (hasWidth) {
+      if (bendsWidthNorm.length === 1) {
+        const b = bendsWidthNorm[0];
+        const flatHint = isVisuallyFoldedWidth ? "" : " (straight)";
+        bits.push(`Width: ${b.inchesFromEdge}" · ${b.angleDeg}°${flatHint}`);
+      } else {
+        bits.push(
+          `Width: ${bendsWidthNorm.length} bends (${bendsWidthNorm.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ")})`
+        );
+      }
     }
-    const bendBits = bendsNormalized.map((b) => `${b.inchesFromEdge}"@${b.angleDeg}°`).join(", ");
-    return `${bendsNormalized.length} bends (${bendBits}) · ${size} · ${panelColorName}`;
+    if (bits.length === 0) return `${size} · ${panelColorName}`;
+    return `${bits.join(" · ")} · ${size} · ${panelColorName}`;
   })();
 
   return (
@@ -265,18 +346,49 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Interactive 3D with one or more folds along the length. Orbit below.
+        Folds along <span className="font-medium text-gray-600">length</span> use a hinge parallel to width; folds along{" "}
+        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length (local Y). If both are
+        set, switch the preview below. Orbit after.
       </p>
+
+      {both ? (
+        <div className="mt-2 flex flex-wrap gap-2" role="tablist" aria-label="3D preview axis">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={previewAxis === "length"}
+            onClick={() => setPreviewAxis("length")}
+            className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
+              previewAxis === "length"
+                ? "bg-gray-900 text-white"
+                : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            Preview length-axis folds
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={previewAxis === "width"}
+            onClick={() => setPreviewAxis("width")}
+            className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
+              previewAxis === "width"
+                ? "bg-gray-900 text-white"
+                : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            Preview width-axis folds
+          </button>
+        </div>
+      ) : null}
 
       <div
         className="mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"
         style={{ height: PREVIEW_H, maxWidth: 520 }}
       >
         <PreviewScene
-          widthIn={panelWidthIn}
-          heightIn={panelHeightIn}
-          thicknessWorld={thicknessWorld}
-          bendsAlongLength={hasFoldMesh ? bendsNormalized : []}
+          parts={activeParts}
+          minSpanInches={Math.max(panelWidthIn, panelHeightIn)}
           colorHex={hex}
           mapUrl={mapUrl}
         />

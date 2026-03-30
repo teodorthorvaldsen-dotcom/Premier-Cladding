@@ -215,14 +215,28 @@ export default function QuotePage() {
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
               {getPanelBendsFromQuoteDraft(draft).map((b, i) => (
-                <div key={`fold-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+                <div key={`fold-l-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
                   <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                     <div>
-                      <dt className="text-gray-500">Fold {i + 1} — inches from edge (along length)</dt>
+                      <dt className="text-gray-500">Length fold {i + 1} — inches from edge (along length)</dt>
                       <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500">Fold {i + 1} — angle (reference)</dt>
+                      <dt className="text-gray-500">Length fold {i + 1} — angle (reference)</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(draft.panelBendsAlongWidth ?? []).map((b, i) => (
+                <div key={`fold-w-${i}-${b.inchesFromEdge}-${b.angleDeg}`} className="sm:col-span-2">
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-gray-500">Width fold {i + 1} — inches from edge (along width)</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">{b.inchesFromEdge} in</dd>
+                    </div>
+                    <div>
+                      <dt className="text-gray-500">Width fold {i + 1} — angle (reference)</dt>
                       <dd className="mt-0.5 font-medium text-gray-900">{b.angleDeg}°</dd>
                     </div>
                   </div>

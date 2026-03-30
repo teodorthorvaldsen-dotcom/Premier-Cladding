@@ -8,12 +8,21 @@ export type { PanelBendSpec };
 
 const MAX_BENDS_CAP = 20;
 
-export function maxPanelBendsForLength(lengthIn: number): number {
-  const L = lengthIn;
+/** Max interior fold lines along a panel edge dimension (length or width), each leg ≥ min. */
+export function maxPanelBendsAlongDimension(panelExtentIn: number): number {
+  const L = panelExtentIn;
   const lo = PANEL_BEND_MIN_LEG_IN;
   if (L < 2 * lo + 1e-9) return 0;
   const n = Math.floor(L / lo) - 1;
   return Math.min(MAX_BENDS_CAP, Math.max(0, n));
+}
+
+export function maxPanelBendsForLength(lengthIn: number): number {
+  return maxPanelBendsAlongDimension(lengthIn);
+}
+
+export function maxPanelBendsForWidth(widthIn: number): number {
+  return maxPanelBendsAlongDimension(widthIn);
 }
 
 function clampAngleDeg(val: number): number {
@@ -23,10 +32,10 @@ function clampAngleDeg(val: number): number {
 }
 
 /**
- * Sorts folds along length, enforces minimum leg between folds and to each end, drops invalid extras.
+ * Sorts folds along an edge (length or width), enforces minimum leg between folds and to each end.
  */
-export function normalizePanelBends(raw: PanelBendSpec[], lengthIn: number): PanelBendSpec[] {
-  const L = lengthIn;
+export function normalizePanelBends(raw: PanelBendSpec[], alongDimensionIn: number): PanelBendSpec[] {
+  const L = alongDimensionIn;
   const lo = PANEL_BEND_MIN_LEG_IN;
   const hi = Math.max(lo, L - lo);
   if (hi <= lo || raw.length === 0) return [];
@@ -62,10 +71,15 @@ export function normalizePanelBends(raw: PanelBendSpec[], lengthIn: number): Pan
   return out;
 }
 
+/** @deprecated Use normalizePanelBends(raw, widthIn) for width-axis folds (same math, different extent). */
+export function normalizePanelBendsAlongWidth(raw: PanelBendSpec[], widthIn: number): PanelBendSpec[] {
+  return normalizePanelBends(raw, widthIn);
+}
+
 /** Midpoint of the widest gap between existing folds and ends (for "add bend"). */
-export function suggestNextBendInchesFromEdge(existing: PanelBendSpec[], lengthIn: number): number {
-  const normalized = normalizePanelBends(existing, lengthIn);
-  const L = lengthIn;
+export function suggestNextBendInchesFromEdge(existing: PanelBendSpec[], alongDimensionIn: number): number {
+  const normalized = normalizePanelBends(existing, alongDimensionIn);
+  const L = alongDimensionIn;
   const lo = PANEL_BEND_MIN_LEG_IN;
   const hi = Math.max(lo, L - lo);
   if (hi <= lo) return L / 2;
@@ -85,10 +99,19 @@ export function suggestNextBendInchesFromEdge(existing: PanelBendSpec[], lengthI
   return Math.min(hi, Math.max(lo, Math.round(bestMid * 100) / 100));
 }
 
+export function suggestNextBendInchesAlongWidth(existing: PanelBendSpec[], widthIn: number): number {
+  return suggestNextBendInchesFromEdge(existing, widthIn);
+}
+
 export function formatPanelBendsSummary(bends: PanelBendSpec[]): string {
   if (!bends.length) return "";
   const parts = bends.map((b) => `${b.inchesFromEdge}" @ ${Number.isInteger(b.angleDeg) ? b.angleDeg : b.angleDeg.toFixed(1)}°`);
   return `${bends.length} fold${bends.length === 1 ? "" : "s"}: ${parts.join(" · ")}`;
+}
+
+export function formatPanelBendsAlongWidthSummary(bends: PanelBendSpec[]): string {
+  if (!bends.length) return "";
+  return `Width · ${formatPanelBendsSummary(bends)}`;
 }
 
 export function panelBendsFromLegacy(

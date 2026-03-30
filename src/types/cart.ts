@@ -15,6 +15,8 @@ export interface CartItem {
   panelTypeLabel?: string;
   /** Folds along panel length (in order from reference edge); informational. */
   panelBends?: PanelBendSpec[];
+  /** Folds along panel width (hinge parallel to length); informational. */
+  panelBendsAlongWidth?: PanelBendSpec[];
   /** @deprecated Prefer panelBends; kept for older cart JSON. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;

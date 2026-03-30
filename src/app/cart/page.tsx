@@ -9,7 +9,11 @@ import {
   thicknesses,
 } from "@/data/acm";
 import { useCart } from "@/context/CartContext";
-import { getPanelBendsFromCartItem, formatPanelBendsSummary } from "@/lib/panelBends";
+import {
+  getPanelBendsFromCartItem,
+  formatPanelBendsSummary,
+  formatPanelBendsAlongWidthSummary,
+} from "@/lib/panelBends";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 function formatUSD(n: number): string {
@@ -40,8 +44,12 @@ function describeItem(item: CartItem): string {
     : "";
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const bends = getPanelBendsFromCartItem(item);
-  const bend = bends.length > 0 ? formatPanelBendsSummary(bends) : "";
-  const parts = [sizeLabel, bend, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
+  const bendL = bends.length > 0 ? `Length · ${formatPanelBendsSummary(bends)}` : "";
+  const bendW =
+    item.panelBendsAlongWidth && item.panelBendsAlongWidth.length > 0
+      ? formatPanelBendsAlongWidthSummary(item.panelBendsAlongWidth)
+      : "";
+  const parts = [sizeLabel, bendL, bendW, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
   return parts.join(" · ");
 }
 
