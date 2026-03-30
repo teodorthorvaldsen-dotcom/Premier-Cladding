@@ -75,10 +75,14 @@ export function AcmPanel3DPreview({
     const L1 = legLenIn * FLAT_LEN_SCALE;
     const L2 = L1;
     const depthPx = panelDepthIn * DEPTH_MULT;
-    const thetaRad = (bendAngle * Math.PI) / 180;
-    const reach = L1 + L2 * (Math.abs(Math.sin(thetaRad)) + Math.abs(Math.cos(thetaRad)) * 0.35);
+    /**
+     * Fit the preview as if the bend were always 90° (square L). That way zoom stays constant
+     * when the angle changes; the hinge still uses the typed value 1:1 (rotateX = bend degrees).
+     */
+    const ref90Rad = Math.PI / 2;
+    const reachAt90 = L1 + L2 * (Math.sin(ref90Rad) + Math.cos(ref90Rad) * 0.35);
     const span = baseW + depthPx * 1.35 + 56;
-    const totalH = reach + depthPx * 1.15 + 44;
+    const totalH = reachAt90 + depthPx * 1.15 + 44;
     const scaleX = (PREVIEW_W - 80) / span;
     const scaleY = (PREVIEW_H - 80) / totalH;
     const scale = Math.min(scaleX, scaleY, 1) * 0.9;
@@ -89,7 +93,7 @@ export function AcmPanel3DPreview({
       faceH2: L2 * scale,
       depth: Math.max(depthPx * scale * 1.32, 10),
     };
-  }, [useBend, panelWidthIn, panelHeightIn, panelDepthIn, bendAngle]);
+  }, [useBend, panelWidthIn, panelHeightIn, panelDepthIn]);
 
   const flatStyles = useMemo(
     () =>
@@ -201,7 +205,7 @@ export function AcmPanel3DPreview({
                   showInnerBorder={false}
                   styles={bentStyles}
                 />
-                {/* Sharp hinge: included bend equals typed angle (0° = flat, 90° = square L, 180° = closed). */}
+                {/* Sharp hinge: rotateX degrees match input exactly (90 → square L between legs). */}
                 <div
                   style={{
                     left: 0,
