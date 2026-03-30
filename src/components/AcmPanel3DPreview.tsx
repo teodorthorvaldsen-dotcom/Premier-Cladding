@@ -42,8 +42,8 @@ export function AcmPanel3DPreview({
 }: AcmPanel3DPreviewProps) {
   const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
-  const bendAngle = Math.min(180, Math.max(0, bendAngleDeg));
-  const useBend = bendAngle >= 0.5;
+  const bendAngle = Math.min(180, Math.max(0, Number(bendAngleDeg) || 0));
+  const useBend = bendAngle > 0.05;
 
   const flatScaled = useMemo(() => {
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
@@ -114,15 +114,10 @@ export function AcmPanel3DPreview({
   const bentStyles = useMemo(() => {
     if (!bentLayout) return null;
     const { faceW, faceH1, faceH2, depth } = bentLayout;
-    return buildFaceStyles(
-      faceW,
-      Math.max(faceH1, faceH2),
-      depth,
-      panelColorHex,
-      shades,
-      panelSwatchImage,
-      { solidBlock: true, wrapShadow: false }
-    );
+    return buildFaceStyles(faceW, Math.max(faceH1, faceH2), depth, panelColorHex, shades, panelSwatchImage, {
+      referenceBlock: true,
+      wrapShadow: false,
+    });
   }, [bentLayout, panelColorHex, panelSwatchImage, shades]);
 
   const caption = useMemo(() => {
@@ -130,7 +125,9 @@ export function AcmPanel3DPreview({
     if (!useBend) return `${base} · ${panelColorName}`;
     const ba = baIn >= 0.001 ? ` · BA ≈ ${baIn.toFixed(3)}"` : "";
     const mir = bendMirrored ? " · mirrored" : "";
-    return `${base} · ${Math.round(bendAngle)}° L-fold (½ length each leg)${ba}${mir} · ${panelColorName}`;
+    const angLabel =
+      Math.abs(bendAngle - Math.round(bendAngle)) < 1e-6 ? String(Math.round(bendAngle)) : bendAngle.toFixed(1);
+    return `${base} · ${angLabel}° bend (½ length each leg)${ba}${mir} · ${panelColorName}`;
   }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn, bendMirrored]);
 
   return (
@@ -168,18 +165,19 @@ export function AcmPanel3DPreview({
           <div
             style={{
               ...staticStyles.previewCenter,
-              perspective: "1100px",
-              perspectiveOrigin: "48% 44%",
+              background: "linear-gradient(168deg, #e4edf6 0%, #bfd3eb 52%, #a3bddc 100%)",
+              perspective: "1200px",
+              perspectiveOrigin: "46% 42%",
             }}
           >
             <div
               style={{
                 transformStyle: "preserve-3d",
-                /** View similar to solid L-block: foot reads toward the viewer, stem vertical. */
-                transform: `rotateX(40deg) rotateY(-22deg) rotateZ(-30deg) translateY(14px)${
+                /** L-block: stem vertical, foot toward viewer (reference-style illustration). */
+                transform: `rotateX(38deg) rotateY(-24deg) rotateZ(-28deg) translateY(12px)${
                   bendMirrored ? " scaleX(-1)" : ""
                 }`,
-                filter: "drop-shadow(0 28px 48px rgba(0,0,0,0.18))",
+                filter: "drop-shadow(12px 32px 40px rgba(15, 23, 42, 0.35))",
                 position: "relative",
               }}
             >
@@ -196,29 +194,31 @@ export function AcmPanel3DPreview({
                 }}
               >
                 <ExtrudedLeg
+                  celShaded
                   depth={bentLayout.depth}
                   faceH={bentLayout.faceH1}
                   faceW={bentLayout.faceW}
-                  showInnerBorder={!panelSwatchImage}
+                  showInnerBorder={false}
                   styles={bentStyles}
                 />
-                {/* Single sharp hinge (solid L / mitered block) — second leg rotates by full bend angle. */}
+                {/* Sharp hinge: included bend equals typed angle (0° = flat, 90° = square L, 180° = closed). */}
                 <div
                   style={{
                     left: 0,
                     position: "absolute",
                     top: 0,
-                    transform: `rotateX(${bendAngleDeg}deg)`,
+                    transform: `rotateX(${bendAngle}deg)`,
                     transformOrigin: "50% 0 0",
                     transformStyle: "preserve-3d",
                     width: bentLayout.faceW,
                   }}
                 >
                   <ExtrudedLeg
+                    celShaded
                     depth={bentLayout.depth}
                     faceH={bentLayout.faceH2}
                     faceW={bentLayout.faceW}
-                    showInnerBorder={!panelSwatchImage}
+                    showInnerBorder={false}
                     styles={bentStyles}
                   />
                 </div>
@@ -248,20 +248,22 @@ function ExtrudedLeg({
   depth,
   styles,
   showInnerBorder,
+  celShaded = false,
 }: {
   faceW: number;
   faceH: number;
   depth: number;
   styles: FaceStyles;
   showInnerBorder: boolean;
+  celShaded?: boolean;
 }) {
   return (
     <div style={{ ...styles.wrapStyle, height: faceH, position: "relative", width: faceW }}>
       <div style={{ ...styles.topStyle, height: depth, width: faceW }} />
       <div style={{ ...styles.sideStyle, height: faceH, width: depth }} />
       <div style={{ ...styles.frontStyle, height: faceH, width: faceW }}>
-        <div style={staticStyles.panelGloss} />
-        {showInnerBorder ? <div style={staticStyles.panelInnerBorder} /> : null}
+        {celShaded ? null : <div style={staticStyles.panelGloss} />}
+        {showInnerBorder && !celShaded ? <div style={staticStyles.panelInnerBorder} /> : null}
       </div>
     </div>
   );
@@ -274,12 +276,14 @@ function buildFaceStyles(
   panelColorHex: string,
   shades: ReturnType<typeof createPanelShades>,
   panelSwatchImage?: string,
-  opts?: { wrapShadow?: boolean; solidBlock?: boolean }
+  opts?: { wrapShadow?: boolean; solidBlock?: boolean; referenceBlock?: boolean }
 ): FaceStyles {
   const { frontColor, sideColor, topColor, borderColor } = shades;
   const wrapShadow = opts?.wrapShadow !== false;
   const solid = opts?.solidBlock === true;
-  const rad = solid ? 5 : 2;
+  const ref = opts?.referenceBlock === true;
+  const rad = ref ? 2 : solid ? 5 : 2;
+  const edge = "2px solid #111827";
 
   const wrap: CSSProperties = {
     position: "relative",
@@ -288,6 +292,88 @@ function buildFaceStyles(
     height: faceH,
     ...(wrapShadow ? { filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))" } : {}),
   };
+
+  if (ref && panelSwatchImage) {
+    const url = `url(${panelSwatchImage})`;
+    return {
+      wrapStyle: wrap,
+      topStyle: {
+        ...staticStyles.panelTop,
+        width: faceW,
+        height: depth,
+        border: edge,
+        borderRadius: "2px 2px 0 0",
+        transform: `translateY(-${depth}px) skewX(-45deg)`,
+        backgroundImage: `linear-gradient(155deg, rgba(248,250,252,0.88) 0%, rgba(180,190,205,0.55) 100%), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+        boxShadow: "inset 0 2px 4px rgba(255,255,255,0.35)",
+      },
+      sideStyle: {
+        ...staticStyles.panelSide,
+        width: depth,
+        height: faceH,
+        border: edge,
+        borderRadius: "0 2px 2px 0",
+        transform: `translateX(${faceW}px) skewY(-45deg)`,
+        backgroundImage: `linear-gradient(210deg, rgba(90,100,115,0.82) 0%, rgba(45,52,64,0.92) 100%), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+        filter: "brightness(0.88) contrast(1.05)",
+      },
+      frontStyle: {
+        ...staticStyles.panelFront,
+        width: faceW,
+        height: faceH,
+        border: edge,
+        borderRadius: "2px",
+        backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(235,238,245,0.78) 55%, rgba(210,215,225,0.5) 100%), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.95)",
+      },
+    };
+  }
+
+  if (ref && !panelSwatchImage) {
+    const rgb = hexToRgb(panelColorHex);
+    const lift = rgb ? adjustColor(rgb, 52) : "#efefef";
+    return {
+      wrapStyle: wrap,
+      topStyle: {
+        ...staticStyles.panelTop,
+        width: faceW,
+        height: depth,
+        border: edge,
+        borderRadius: "2px 2px 0 0",
+        transform: `translateY(-${depth}px) skewX(-45deg)`,
+        background: "linear-gradient(155deg, #f1f4f9 0%, #c5cedc 48%, #9aa5b4 100%)",
+        boxShadow: "inset 0 2px 3px rgba(255,255,255,0.45)",
+      },
+      sideStyle: {
+        ...staticStyles.panelSide,
+        width: depth,
+        height: faceH,
+        border: edge,
+        borderRadius: "0 2px 2px 0",
+        transform: `translateX(${faceW}px) skewY(-45deg)`,
+        background: "linear-gradient(100deg, #7a8494 0%, #3d4555 55%, #2a3140 100%)",
+        boxShadow: "inset -2px 0 4px rgba(0,0,0,0.2)",
+      },
+      frontStyle: {
+        ...staticStyles.panelFront,
+        width: faceW,
+        height: faceH,
+        border: edge,
+        borderRadius: "2px",
+        background: `linear-gradient(165deg, #ffffff 0%, #f6f7f9 38%, ${lift} 100%)`,
+        boxShadow: "inset 0 1px 2px rgba(255,255,255,1), inset 0 -8px 24px rgba(0,0,0,0.04)",
+      },
+    };
+  }
 
   if (panelSwatchImage) {
     const url = `url(${panelSwatchImage})`;

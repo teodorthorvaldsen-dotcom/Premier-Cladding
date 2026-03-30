@@ -48,8 +48,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     return Math.min(maxLength, Math.max(MIN_LENGTH_IN, n));
   };
 
+  /** 0–180° inclusive, one decimal (matches unit-circle style angle entry). */
   const clampBendAngle = (val: number): number => {
-    const n = Math.round(Number(val));
+    const n = Math.round(val * 10) / 10;
     if (Number.isNaN(n) || n < 0) return 0;
     return Math.min(180, n);
   };
@@ -116,9 +117,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches; bend angle in degrees (0–180°). When bent, the preview treats each
-        straight leg as half of your length (folded in half at the bend). Use <span className="font-medium">90° fold</span>{" "}
-        for a square corner.
+        Width and length in inches. Bend angle uses a 0–180° scale (like a protractor):{" "}
+        <span className="font-medium">0°</span> is flat, <span className="font-medium">90°</span> is a square corner,{" "}
+        <span className="font-medium">180°</span> closes the two halves together in the preview. Each bent leg is half of
+        your length. Type any angle (e.g. 30, 45.5, 90) — the 3D preview updates to match.
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
@@ -167,49 +169,31 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           <input
             id="bend-angle-input"
             type="number"
-            inputMode="numeric"
+            inputMode="decimal"
             min={0}
             max={180}
+            step={0.1}
             value={bendAngleStr}
             onChange={(e) => handleBendAngleChange(e.target.value)}
-            onBlur={() => setBendAngleStr(String(value.bendAngleDeg))}
-            className="mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            onBlur={() => {
+              const n = value.bendAngleDeg;
+              setBendAngleStr(Number.isInteger(n) ? String(n) : n.toFixed(1));
+            }}
+            className="mt-1.5 block h-11 w-32 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label="Bend angle in degrees"
           />
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-              onClick={() => {
-                onChange({ ...value, bendAngleDeg: 0 });
-                setBendAngleStr("0");
-              }}
-            >
-              Flat
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-              onClick={() => {
-                onChange({ ...value, bendAngleDeg: 90 });
-                setBendAngleStr("90");
-              }}
-            >
-              90° fold
-            </button>
-          </div>
           <label className="mt-3 flex cursor-pointer items-start gap-2.5">
             <input
               id="bend-mirror-input"
               type="checkbox"
               checked={value.bendMirrored}
-              disabled={value.bendAngleDeg < 0.5}
+              disabled={value.bendAngleDeg <= 0.05}
               onChange={(e) => onChange({ ...value, bendMirrored: e.target.checked })}
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400 disabled:opacity-40"
             />
             <span className="text-xs text-gray-600">
               <span className="font-medium text-gray-800">Mirror bend</span> — flip the bent preview
-              left/right (only affects 3D preview when angle {">"} 0).
+              left/right (available when angle {">"} 0°).
             </span>
           </label>
         </div>
