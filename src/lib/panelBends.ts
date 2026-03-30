@@ -1,13 +1,6 @@
 import type { CartItem } from "@/types/cart";
 import type { BendReferenceAlong, PanelBendSpec } from "@/types/panelBend";
 
-/** Loose row shape (e.g. form JSON or CSV) before normalization with {@link normalizeBendsFromRows}. */
-export type LooseBendRow = {
-  inchesFromEdge: number | string;
-  angleDeg: number | string;
-  referenceAlong?: string;
-};
-
 /** Minimum clear distance from any fold line to the end of the panel along length (inches). */
 export const PANEL_BEND_MIN_LEG_IN = 0.5;
 
@@ -28,28 +21,6 @@ function roundInches(n: number): number {
 export function displayInchesForReference(canonicalFromStart: number, ref: BendReferenceAlong, extentIn: number): number {
   if (ref === "fromEnd") return roundInches(extentIn - canonicalFromStart);
   return roundInches(canonicalFromStart);
-}
-
-/**
- * Parses `referenceAlong` for {@link PanelBendSpec}.
- * Use `fromStart` / `fromEnd` only; length vs width is determined by which list the bend belongs to, not this field.
- */
-export function parseBendReferenceAlong(value: unknown): BendReferenceAlong | undefined {
-  if (value === "fromEnd" || value === "end" || value === "opposite") return "fromEnd";
-  if (value === "fromStart" || value === "start" || value === "leading") return "fromStart";
-  return undefined;
-}
-
-/** Coerces loose rows (strings, optional reference) into panel bend specs. Does not run leg-spacing normalization. */
-export function normalizeBendsFromRows(rows: LooseBendRow[]): PanelBendSpec[] {
-  return rows.map((row): PanelBendSpec => {
-    const ref = parseBendReferenceAlong(row.referenceAlong);
-    const base: PanelBendSpec = {
-      inchesFromEdge: Number(row.inchesFromEdge) || 0,
-      angleDeg: Number(row.angleDeg) || 0,
-    };
-    return ref !== undefined ? { ...base, referenceAlong: ref } : base;
-  });
 }
 
 const MAX_BENDS_CAP = 20;
