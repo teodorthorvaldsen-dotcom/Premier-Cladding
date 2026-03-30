@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo, useState } from "react";
+import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -18,7 +18,7 @@ export interface AcmPanel3DPreviewProps {
   panelDepthIn: number;
   /** Folds along length from the reference edge, in order. */
   bends?: PanelBendSpec[];
-  /** Folds along width (hinge parallel to length); preview may switch when both axes have folds. */
+  /** Folds along width (hinge parallel to length). Combined with length folds in one preview when both set. */
   bendsAlongWidth?: PanelBendSpec[];
   panelColorHex: string;
   panelColorName: string;
@@ -117,7 +117,10 @@ function collectFoldPartsAlongWidth(
     const len = inchesToWorld(lenIn);
 
     const dir = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
-    const center = origin.clone().add(dir.clone().multiplyScalar(len / 2));
+    const midAlong = dir.clone().multiplyScalar(len / 2);
+    /** Match length-axis convention: panel spans y ∈ [0, lengthWorld] at z = 0 mid-plane. */
+    const midLength = new THREE.Vector3(0, lengthWorld / 2, 0);
+    const center = origin.clone().add(midAlong).add(midLength);
     nodes.push({
       key: `w-${segIdx}`,
       position: [center.x, center.y, center.z],
@@ -133,6 +136,67 @@ function collectFoldPartsAlongWidth(
   }
 
   return nodes;
+}
+
+/**
+ * When both axes have folds: apply length-axis strips first, then width-axis splits within each strip’s local frame
+ * (hinge parallel to strip length / +Y).
+ */
+function composeLengthAndWidthParts(
+  widthIn: number,
+  heightIn: number,
+  thicknessWorld: number,
+  lengthSpecs: BendSpec[],
+  widthSpecs: BendSpec[]
+): BuiltPart[] {
+  if (widthSpecs.length === 0) {
+    return collectFoldParts(widthIn, heightIn, thicknessWorld, lengthSpecs);
+  }
+  if (lengthSpecs.length === 0) {
+    return collectFoldPartsAlongWidth(widthIn, heightIn, thicknessWorld, widthSpecs);
+  }
+
+  const lengthParts = collectFoldParts(widthIn, heightIn, thicknessWorld, lengthSpecs);
+  const out: BuiltPart[] = [];
+  let idx = 0;
+  const eulerOrder: "XYZ" = "XYZ";
+
+  for (const lp of lengthParts) {
+    const W = lp.args[0];
+    const L = lp.args[1];
+    const t = lp.args[2];
+    const W_in = W / INCH_TO_WORLD;
+    const L_in = L / INCH_TO_WORLD;
+
+    const subParts = collectFoldPartsAlongWidth(W_in, L_in, thicknessWorld, widthSpecs);
+
+    const parentEuler = new THREE.Euler(lp.rotation[0], lp.rotation[1], lp.rotation[2], eulerOrder);
+    const parentQuat = new THREE.Quaternion().setFromEuler(parentEuler);
+    const parentCenter = new THREE.Vector3(...lp.position);
+
+    const localBottomLeft = new THREE.Vector3(-W / 2, -L / 2, 0);
+    const cornerWorld = parentCenter.clone().add(localBottomLeft.clone().applyQuaternion(parentQuat));
+
+    for (const sp of subParts) {
+      const offset = new THREE.Vector3(sp.position[0], sp.position[1], sp.position[2]);
+      const worldPos = cornerWorld.clone().add(offset.clone().applyQuaternion(parentQuat));
+
+      const subEuler = new THREE.Euler(sp.rotation[0], sp.rotation[1], sp.rotation[2], eulerOrder);
+      const subQuat = new THREE.Quaternion().setFromEuler(subEuler);
+      const worldQuat = parentQuat.clone().multiply(subQuat);
+      const worldEuler = new THREE.Euler().setFromQuaternion(worldQuat, eulerOrder);
+
+      out.push({
+        key: `lw-${idx}`,
+        position: [worldPos.x, worldPos.y, worldPos.z],
+        rotation: [worldEuler.x, worldEuler.y, worldEuler.z],
+        args: sp.args,
+      });
+      idx += 1;
+    }
+  }
+
+  return out;
 }
 
 function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
@@ -164,6 +228,8 @@ function FoldedPanelMesh({
           key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}`}
           position={p.position}
           rotation={p.rotation}
+          castShadow={false}
+          receiveShadow={false}
         >
           <boxGeometry args={p.args} />
           {mapUrl ? (
@@ -212,12 +278,13 @@ function PreviewScene({
         near: 0.1,
         far: camDistance * 25,
       }}
+      shadows={false}
       style={{ width: "100%", height: "100%", display: "block" }}
       gl={{ antialias: true }}
     >
       <color attach="background" args={["#f4f5f7"]} />
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[8, 12, 6]} intensity={1} />
+      <ambientLight intensity={0.92} />
+      <directionalLight castShadow={false} position={[8, 12, 6]} intensity={0.72} />
 
       <Suspense fallback={null}>
         <Center precise>
@@ -263,32 +330,19 @@ export function AcmPanel3DPreview({
 
   const hasLength = bendsLengthNorm.length > 0;
   const hasWidth = bendsWidthNorm.length > 0;
-  const both = hasLength && hasWidth;
-
-  const [previewAxis, setPreviewAxis] = useState<"length" | "width">("length");
-
-  const partsLength = useMemo(() => {
-    const bends: BendSpec[] = bendsLengthNorm.map((b) => ({
-      positionIn: b.inchesFromEdge,
-      angleDeg: b.angleDeg,
-    }));
-    return collectFoldParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), bends);
-  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsLengthNorm]);
-
-  const partsWidth = useMemo(() => {
-    const bends: BendSpec[] = bendsWidthNorm.map((b) => ({
-      positionIn: b.inchesFromEdge,
-      angleDeg: b.angleDeg,
-    }));
-    return collectFoldPartsAlongWidth(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), bends);
-  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsWidthNorm]);
 
   const activeParts = useMemo(() => {
-    if (both) return previewAxis === "length" ? partsLength : partsWidth;
-    if (hasLength) return partsLength;
-    if (hasWidth) return partsWidth;
-    return partsLength;
-  }, [both, previewAxis, hasLength, hasWidth, partsLength, partsWidth]);
+    const lenSpecs: BendSpec[] = bendsLengthNorm.map((b) => ({
+      positionIn: b.inchesFromEdge,
+      angleDeg: b.angleDeg,
+    }));
+    const widSpecs: BendSpec[] = bendsWidthNorm.map((b) => ({
+      positionIn: b.inchesFromEdge,
+      angleDeg: b.angleDeg,
+    }));
+    const t = inchesToWorld(panelDepthIn);
+    return composeLengthAndWidthParts(panelWidthIn, panelHeightIn, t, lenSpecs, widSpecs);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsLengthNorm, bendsWidthNorm]);
 
   const isVisuallyFoldedLength = bendsLengthNorm.some(
     (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
@@ -347,40 +401,9 @@ export function AcmPanel3DPreview({
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
         Folds along <span className="font-medium text-gray-600">length</span> use a hinge parallel to width; folds along{" "}
-        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length (local Y). If both are
-        set, switch the preview below. Orbit after.
+        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length. When both are set, the
+        preview combines them (length strips first, then width splits in each strip). Orbit below.
       </p>
-
-      {both ? (
-        <div className="mt-2 flex flex-wrap gap-2" role="tablist" aria-label="3D preview axis">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewAxis === "length"}
-            onClick={() => setPreviewAxis("length")}
-            className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
-              previewAxis === "length"
-                ? "bg-gray-900 text-white"
-                : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            Preview length-axis folds
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewAxis === "width"}
-            onClick={() => setPreviewAxis("width")}
-            className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
-              previewAxis === "width"
-                ? "bg-gray-900 text-white"
-                : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            Preview width-axis folds
-          </button>
-        </div>
-      ) : null}
 
       <div
         className="mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"

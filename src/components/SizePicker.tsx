@@ -388,8 +388,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           <p className="mt-1.5 text-[11px] text-gray-500">
             Crease runs parallel to the panel <strong className="font-medium">length</strong> (preview +Y). Bend 1 is
             closest to the reference edge along the <strong className="font-medium">width</strong>. If you use both
-            length- and width-axis folds, the 3D preview lets you switch which axis is shown (combined shape needs a shop
-            drawing).
+            length- and width-axis folds, the 3D preview combines both; confirm complex layouts with a shop drawing if
+            needed.
           </p>
 
           {value.bendsAlongWidth.length === 0 ? (
