@@ -12,6 +12,10 @@ const PREVIEW_H = 360;
 /** Same visual scale as prior CSS preview (inches → scene units). */
 const INCH_TO_WORLD = 0.05;
 
+/** Lighting tuned so swatches read like the CSS flat preview (diffuse-dominant, not gray IBL). */
+const PREVIEW_KEY_LIGHT = "#fff7f2";
+const PREVIEW_FILL_LIGHT = "#ffffff";
+
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
@@ -152,9 +156,9 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
     <meshStandardMaterial
       color="#ffffff"
       map={tex}
-      metalness={0.02}
-      roughness={0.34}
-      envMapIntensity={1.42}
+      metalness={0}
+      roughness={0.82}
+      envMapIntensity={0.42}
     />
   );
 }
@@ -180,11 +184,11 @@ function FoldedPanelMesh({
         >
           <boxGeometry args={p.args} />
           {mapUrl ? (
-            <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0.05} roughness={0.4} envMapIntensity={1.38} />}>
+            <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />}>
               <SwatchTexturedMaterial mapUrl={mapUrl} />
             </Suspense>
           ) : (
-            <meshStandardMaterial color={colorHex} metalness={0.05} roughness={0.4} envMapIntensity={1.38} />
+            <meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />
           )}
           <Edges color="#555" threshold={12} />
         </mesh>
@@ -228,19 +232,19 @@ function PreviewScene({
       style={{ width: "100%", height: "100%", display: "block" }}
       gl={{
         antialias: true,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.52,
+        toneMapping: THREE.NeutralToneMapping,
+        toneMappingExposure: 1.08,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
     >
       <color attach="background" args={["#f4f5f7"]} />
-      <hemisphereLight color="#ffffff" groundColor="#dce0e6" intensity={0.82} />
-      <ambientLight intensity={0.55} />
-      <directionalLight castShadow={false} position={[6, 11, 8]} intensity={1.45} />
-      <directionalLight castShadow={false} position={[-6, 5, 6]} intensity={0.72} />
+      <hemisphereLight color="#ffffff" groundColor="#ebe6e1" intensity={0.48} />
+      <ambientLight intensity={0.32} color="#fefefe" />
+      <directionalLight castShadow={false} color={PREVIEW_KEY_LIGHT} position={[6, 11, 8]} intensity={1.38} />
+      <directionalLight castShadow={false} color={PREVIEW_FILL_LIGHT} position={[-6, 5, 6]} intensity={0.62} />
 
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={1.2} />
+        <Environment preset="apartment" environmentIntensity={0.5} />
         <Center precise>
           <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
         </Center>
