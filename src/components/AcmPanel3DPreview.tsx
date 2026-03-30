@@ -189,7 +189,8 @@ export function AcmPanel3DPreview({
             <div
               style={{
                 transformStyle: "preserve-3d",
-                transform: "rotateX(56deg) rotateZ(-40deg) translateY(12px)",
+                transform:
+                  "rotateX(52deg) rotateY(12deg) rotateZ(-38deg) translateY(10px)",
                 filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
                 position: "relative",
               }}
@@ -286,7 +287,7 @@ function BendChain({
           bottom: "100%",
           left: 0,
           position: "absolute",
-          transform: `rotateX(${dThetaDeg}deg)`,
+          transform: `rotateX(${-dThetaDeg}deg)`,
           transformOrigin: "50% 100% 0",
           transformStyle: "preserve-3d",
           width: faceW,
