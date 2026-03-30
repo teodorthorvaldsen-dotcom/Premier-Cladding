@@ -2,7 +2,7 @@
 
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
+import { Center, Edges, Environment, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
@@ -144,9 +144,18 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
   }, [tex]);
   return (
-    <meshStandardMaterial color="#ffffff" map={tex} metalness={0.08} roughness={0.55} envMapIntensity={0.85} />
+    <meshStandardMaterial
+      color="#ffffff"
+      map={tex}
+      metalness={0.02}
+      roughness={0.34}
+      envMapIntensity={1.42}
+    />
   );
 }
 
@@ -171,11 +180,11 @@ function FoldedPanelMesh({
         >
           <boxGeometry args={p.args} />
           {mapUrl ? (
-            <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0.15} roughness={0.75} />}>
+            <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0.05} roughness={0.4} envMapIntensity={1.38} />}>
               <SwatchTexturedMaterial mapUrl={mapUrl} />
             </Suspense>
           ) : (
-            <meshStandardMaterial color={colorHex} metalness={0.15} roughness={0.75} />
+            <meshStandardMaterial color={colorHex} metalness={0.05} roughness={0.4} envMapIntensity={1.38} />
           )}
           <Edges color="#555" threshold={12} />
         </mesh>
@@ -217,13 +226,21 @@ function PreviewScene({
       }}
       shadows={false}
       style={{ width: "100%", height: "100%", display: "block" }}
-      gl={{ antialias: true }}
+      gl={{
+        antialias: true,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.52,
+        outputColorSpace: THREE.SRGBColorSpace,
+      }}
     >
       <color attach="background" args={["#f4f5f7"]} />
-      <ambientLight intensity={0.92} />
-      <directionalLight castShadow={false} position={[8, 12, 6]} intensity={0.72} />
+      <hemisphereLight color="#ffffff" groundColor="#dce0e6" intensity={0.82} />
+      <ambientLight intensity={0.55} />
+      <directionalLight castShadow={false} position={[6, 11, 8]} intensity={1.45} />
+      <directionalLight castShadow={false} position={[-6, 5, 6]} intensity={0.72} />
 
       <Suspense fallback={null}>
+        <Environment preset="studio" environmentIntensity={1.2} />
         <Center precise>
           <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
         </Center>
