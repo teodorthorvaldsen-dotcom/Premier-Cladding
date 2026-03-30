@@ -9,11 +9,19 @@ const FLAT_LEN_SCALE = 3.2;
 const FLAT_WIDTH_SCALE = 6;
 const DEPTH_MULT = 16;
 
+const SCENE_TILT = "rotateX(-11deg) rotateY(32deg)";
+
+export type PanelBendAxis = "x" | "y";
+
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
   /** Visual depth in inches (may be scaled from real thickness for readability). */
   panelDepthIn: number;
+  /** Bend hinge direction: X splits length (horizontal hinge); Y splits width (vertical hinge). */
+  bendAxis?: PanelBendAxis;
+  /** Included angle between the two legs (0–180°). Outside ~1–179° shows an L in 3D. */
+  bendAngleDeg?: number;
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
@@ -23,6 +31,8 @@ export function AcmPanel3DPreview({
   panelWidthIn,
   panelHeightIn,
   panelDepthIn,
+  bendAxis = "x",
+  bendAngleDeg = 0,
   panelColorHex,
   panelColorName,
   panelSwatchImage,
@@ -31,24 +41,51 @@ export function AcmPanel3DPreview({
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
     const baseH = panelHeightIn * FLAT_LEN_SCALE;
     const depthPx = panelDepthIn * DEPTH_MULT;
+    const isBent = bendAngleDeg > 0.5 && bendAngleDeg < 179.5;
+    const foldRad = ((180 - bendAngleDeg) * Math.PI) / 180;
 
-    const totalW = baseW + depthPx + 40;
-    const totalH = baseH + depthPx + 40;
+    let spanW = baseW + depthPx + 40;
+    let spanH = baseH + depthPx + 40;
 
-    const scaleX = (PREVIEW_W - 80) / totalW;
-    const scaleY = (PREVIEW_H - 80) / totalH;
+    if (isBent) {
+      if (bendAxis === "x") {
+        const half = baseH / 2;
+        spanH =
+          half +
+          Math.abs(half * Math.cos(foldRad)) +
+          Math.abs(depthPx * Math.sin(foldRad)) +
+          depthPx +
+          48;
+        spanW = baseW + depthPx + 40;
+      } else {
+        const half = baseW / 2;
+        spanW =
+          half +
+          Math.abs(half * Math.cos(foldRad)) +
+          Math.abs(depthPx * Math.sin(foldRad)) +
+          depthPx +
+          48;
+        spanH = baseH + depthPx + 40;
+      }
+    }
+
+    const scaleX = (PREVIEW_W - 80) / spanW;
+    const scaleY = (PREVIEW_H - 80) / spanH;
     const scale = Math.min(scaleX, scaleY, 1);
 
     return {
       faceW: baseW * scale,
       faceH: baseH * scale,
       depth: Math.max(depthPx * scale, 6),
+      isBent,
+      /** Rotation from coplanar: 180° − interior bend angle. */
+      foldDeg: 180 - bendAngleDeg,
     };
-  }, [panelWidthIn, panelHeightIn, panelDepthIn]);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, bendAngleDeg, bendAxis]);
 
   const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
-  const { wrapStyle, topStyle, sideStyle, frontStyle } = useMemo(() => {
+  const flatStyles = useMemo(() => {
     return buildFaceStyles(
       scaled.faceW,
       scaled.faceH,
@@ -58,6 +95,14 @@ export function AcmPanel3DPreview({
       panelSwatchImage
     );
   }, [scaled.depth, scaled.faceH, scaled.faceW, panelColorHex, panelSwatchImage, shades]);
+
+  const caption = (() => {
+    const size = `${panelWidthIn}" × ${panelHeightIn}"`;
+    if (scaled.isBent) {
+      return `L-bend ${bendAngleDeg}° · axis ${bendAxis.toUpperCase()} · ${size} · ${panelColorName}`;
+    }
+    return `${size} · ${panelColorName}`;
+  })();
 
   return (
     <section
@@ -79,22 +124,174 @@ export function AcmPanel3DPreview({
           background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
         }}
       >
-        <div style={staticStyles.previewCenter}>
-          <div style={wrapStyle}>
-            <div style={topStyle} />
-            <div style={sideStyle} />
-            <div style={frontStyle}>
-              <div style={staticStyles.panelGloss} />
-              {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
+        <div
+          style={{
+            ...staticStyles.previewCenter,
+            perspective: scaled.isBent ? "850px" : undefined,
+          }}
+        >
+          {scaled.isBent ? (
+            <BentLAssembly
+              faceW={scaled.faceW}
+              faceH={scaled.faceH}
+              depth={scaled.depth}
+              foldDeg={scaled.foldDeg}
+              axis={bendAxis}
+              panelColorHex={panelColorHex}
+              panelSwatchImage={panelSwatchImage}
+            />
+          ) : (
+            <div style={{ ...staticStyles.previewCenterInner, perspective: undefined }}>
+              <div style={flatStyles.wrapStyle}>
+                <div style={flatStyles.topStyle} />
+                <div style={flatStyles.sideStyle} />
+                <div style={flatStyles.frontStyle}>
+                  <div style={staticStyles.panelGloss} />
+                  {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
-        {panelWidthIn}&quot; × {panelHeightIn}&quot; · {panelColorName}
+        {caption}
       </p>
     </section>
+  );
+}
+
+function BentLAssembly({
+  faceW,
+  faceH,
+  depth,
+  foldDeg,
+  axis,
+  panelColorHex,
+  panelSwatchImage,
+}: {
+  faceW: number;
+  faceH: number;
+  depth: number;
+  foldDeg: number;
+  axis: PanelBendAxis;
+  panelColorHex: string;
+  panelSwatchImage?: string;
+}) {
+  const h1 = faceH / 2;
+  const h2 = faceH / 2;
+  const w1 = faceW / 2;
+  const w2 = faceW / 2;
+
+  return (
+    <div style={staticStyles.previewCenterInner}>
+      <div
+        style={{
+          transformStyle: "preserve-3d",
+          transform: SCENE_TILT,
+        }}
+      >
+        {axis === "x" ? (
+          <div style={{ position: "relative", transformStyle: "preserve-3d" }}>
+            <PanelPrism
+              faceW={faceW}
+              faceH={h1}
+              depth={depth}
+              panelColorHex={panelColorHex}
+              panelSwatchImage={panelSwatchImage}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: h1,
+                left: 0,
+                width: faceW,
+                transformStyle: "preserve-3d",
+                transformOrigin: "50% 0 0",
+                transform: `rotateX(${foldDeg}deg)`,
+              }}
+            >
+              <PanelPrism
+                faceW={faceW}
+                faceH={h2}
+                depth={depth}
+                panelColorHex={panelColorHex}
+                panelSwatchImage={panelSwatchImage}
+              />
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              position: "relative",
+              transformStyle: "preserve-3d",
+              width: faceW,
+              height: faceH,
+            }}
+          >
+            <div style={{ position: "absolute", left: 0, top: 0, transformStyle: "preserve-3d" }}>
+              <PanelPrism
+                faceW={w1}
+                faceH={faceH}
+                depth={depth}
+                panelColorHex={panelColorHex}
+                panelSwatchImage={panelSwatchImage}
+              />
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: w1,
+                top: 0,
+                transformStyle: "preserve-3d",
+                transformOrigin: "0 50% 0",
+                transform: `rotateY(${-foldDeg}deg)`,
+              }}
+            >
+              <PanelPrism
+                faceW={w2}
+                faceH={faceH}
+                depth={depth}
+                panelColorHex={panelColorHex}
+                panelSwatchImage={panelSwatchImage}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PanelPrism({
+  faceW,
+  faceH,
+  depth,
+  panelColorHex,
+  panelSwatchImage,
+}: {
+  faceW: number;
+  faceH: number;
+  depth: number;
+  panelColorHex: string;
+  panelSwatchImage?: string;
+}) {
+  const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
+  const { wrapStyle, topStyle, sideStyle, frontStyle } = useMemo(
+    () => buildFaceStyles(faceW, faceH, depth, panelColorHex, shades, panelSwatchImage),
+    [depth, faceH, faceW, panelColorHex, panelSwatchImage, shades]
+  );
+
+  return (
+    <div style={{ ...wrapStyle, transformStyle: "preserve-3d" }}>
+      <div style={topStyle} />
+      <div style={sideStyle} />
+      <div style={frontStyle}>
+        <div style={staticStyles.panelGloss} />
+        {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
+      </div>
+    </div>
   );
 }
 
@@ -247,6 +444,12 @@ const staticStyles: Record<string, CSSProperties> = {
     justifyContent: "center",
     padding: "20px",
     boxSizing: "border-box",
+  },
+  previewCenterInner: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transformStyle: "preserve-3d",
   },
   panelFront: {
     position: "relative",

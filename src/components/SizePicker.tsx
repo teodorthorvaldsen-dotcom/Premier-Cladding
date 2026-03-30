@@ -9,11 +9,15 @@ import {
 } from "@/data/acm";
 import type { ThicknessId } from "@/data/acm";
 
+/** Bend line direction: X = hinge parallel to width (splits length into two legs); Y = hinge parallel to length (splits width). */
+export type BendAxis = "x" | "y";
+
 export interface SizeSelection {
   widthId: string | null;
   widthIn: number;
   lengthIn: number;
-  /** Bend angle in degrees (0–180); for quoting or shop reference — does not change the flat panel preview. */
+  bendAxis: BendAxis;
+  /** Included angle between the two legs (0–180°). 90° = right-angle L. 0° or 180° shows as flat in the preview. */
   bendAngleDeg: number;
 }
 
@@ -62,6 +66,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         widthId: "custom",
         widthIn: w,
         lengthIn: clampLength(value.lengthIn),
+        bendAxis: value.bendAxis,
         bendAngleDeg: clampBendAngle(value.bendAngleDeg),
       });
       return;
@@ -72,6 +77,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       widthId: "custom",
       widthIn: w,
       lengthIn: clampLength(value.lengthIn),
+      bendAxis: value.bendAxis,
       bendAngleDeg: clampBendAngle(value.bendAngleDeg),
     });
   };
@@ -83,6 +89,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       onChange({
         ...value,
         lengthIn: MIN_LENGTH_IN,
+        bendAxis: value.bendAxis,
         bendAngleDeg: clampBendAngle(value.bendAngleDeg),
       });
       return;
@@ -90,6 +97,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     onChange({
       ...value,
       lengthIn: clampLength(num),
+      bendAxis: value.bendAxis,
       bendAngleDeg: clampBendAngle(value.bendAngleDeg),
     });
   };
@@ -101,11 +109,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       onChange({
         ...value,
         bendAngleDeg: 0,
+        bendAxis: value.bendAxis,
       });
       return;
     }
     onChange({
       ...value,
+      bendAxis: value.bendAxis,
       bendAngleDeg: clampBendAngle(num),
     });
   };
@@ -114,8 +124,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Bend angle (optional) is 0–180° for your notes or quote; it does not change the
-        panel preview or pricing.
+        Width and length in inches. Optional L-bend: pick whether the bend runs along the width (X) or length (Y), then
+        set the angle between the two legs (90° = square L). Preview updates for bends; pricing still uses full width ×
+        length (flat).
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
@@ -157,10 +168,48 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             aria-label="Length in inches"
           />
         </div>
+        <fieldset className="min-w-0">
+          <legend className="block text-xs font-medium text-gray-700">Bend axis</legend>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            X: hinge parallel to width (each leg uses half the length). Y: hinge parallel to length (each leg uses half the
+            width).
+          </p>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {(
+              [
+                { id: "bend-axis-x", v: "x" as const, label: "X" },
+                { id: "bend-axis-y", v: "y" as const, label: "Y" },
+              ] as const
+            ).map(({ id, v, label }) => (
+              <label
+                key={v}
+                htmlFor={id}
+                className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border bg-white px-3 py-2 text-[15px] font-medium text-gray-800 ${
+                  value.bendAxis === v
+                    ? "border-gray-900 ring-2 ring-gray-400"
+                    : "border-gray-200"
+                }`}
+              >
+                <input
+                  id={id}
+                  type="radio"
+                  name="bend-axis"
+                  checked={value.bendAxis === v}
+                  onChange={() => onChange({ ...value, bendAxis: v })}
+                  className="h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-400"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <div>
           <label htmlFor="bend-angle-input" className="block text-xs font-medium text-gray-700">
             Bend angle (°)
           </label>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            Angle between the two legs inside the bend. Use 0 or 180° for a flat panel in the preview.
+          </p>
           <input
             id="bend-angle-input"
             type="number"
@@ -175,7 +224,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
               setBendAngleStr(Number.isInteger(n) ? String(n) : n.toFixed(1));
             }}
             className="mt-1.5 block h-11 w-32 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Bend angle in degrees"
+            aria-label="Bend angle in degrees between legs"
           />
         </div>
       </div>

@@ -27,6 +27,7 @@ const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
+  bendAxis: "x",
   bendAngleDeg: 0,
 };
 
@@ -167,6 +168,9 @@ export function Configurator() {
       areaFt2: pricing.areaFt2,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
+      ...(size.bendAngleDeg > 0
+        ? { bendAxis: size.bendAxis, bendAngleDeg: size.bendAngleDeg }
+        : {}),
       ...(colorId === "custom-color-match"
         ? {
             customColorReference: customColorReference.trim() || undefined,
@@ -207,7 +211,9 @@ export function Configurator() {
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
-      ...(size.bendAngleDeg > 0 ? { bendAngleDeg: size.bendAngleDeg } : {}),
+      ...(size.bendAngleDeg > 0
+        ? { bendAngleDeg: size.bendAngleDeg, bendAxis: size.bendAxis }
+        : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -336,6 +342,8 @@ export function Configurator() {
               panelWidthIn={size.widthIn}
               panelHeightIn={size.lengthIn}
               panelDepthIn={previewDepthIn}
+              bendAxis={size.bendAxis}
+              bendAngleDeg={size.bendAngleDeg}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
               panelSwatchImage={

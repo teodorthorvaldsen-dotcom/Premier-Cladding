@@ -214,10 +214,20 @@ export default function QuotePage() {
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
               {typeof draft.bendAngleDeg === "number" && draft.bendAngleDeg > 0 ? (
-                <div>
-                  <dt className="text-gray-500">Bend angle (reference)</dt>
-                  <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAngleDeg}°</dd>
-                </div>
+                <>
+                  {draft.bendAxis ? (
+                    <div>
+                      <dt className="text-gray-500">Bend axis</dt>
+                      <dd className="mt-0.5 font-medium text-gray-900">
+                        {draft.bendAxis.toUpperCase()} (hinge along {draft.bendAxis === "x" ? "width" : "length"})
+                      </dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt className="text-gray-500">Bend angle (reference)</dt>
+                    <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAngleDeg}°</dd>
+                  </div>
+                </>
               ) : null}
               <div>
                 <dt className="text-gray-500">Thickness</dt>

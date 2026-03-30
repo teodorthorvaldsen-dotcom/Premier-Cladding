@@ -38,7 +38,11 @@ function describeItem(item: CartItem): string {
     ? finishes.find((f) => f.id === item.finishId)?.label ?? ""
     : "";
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
-  const parts = [sizeLabel, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
+  const bend =
+    typeof item.bendAngleDeg === "number" && item.bendAngleDeg > 0
+      ? `L-bend ${item.bendAngleDeg}°${item.bendAxis ? ` (${item.bendAxis.toUpperCase()})` : ""}`
+      : "";
+  const parts = [sizeLabel, bend, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
   return parts.join(" · ");
 }
 

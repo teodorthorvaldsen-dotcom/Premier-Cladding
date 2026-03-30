@@ -5,6 +5,8 @@ export interface QuoteDraft {
   lengthIn: number;
   /** Optional bend angle (degrees); informational only. */
   bendAngleDeg?: number;
+  /** Bend line: X = along width (splits length); Y = along length (splits width). */
+  bendAxis?: "x" | "y";
   widthId: string | null;
   thicknessId: string;
   colorId: string;

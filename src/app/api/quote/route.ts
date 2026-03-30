@@ -60,11 +60,7 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.bendAngleDeg === "number" && c.bendAngleDeg > 0
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`
-        : ""
-    }
+    ${bendReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -111,11 +107,7 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.bendAngleDeg === "number" && c.bendAngleDeg > 0
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`
-        : ""
-    }
+    ${bendReferenceRowsHtml(c)}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -153,6 +145,15 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function bendReferenceRowsHtml(c: QuoteDraft): string {
+  if (typeof c.bendAngleDeg !== "number" || c.bendAngleDeg <= 0) return "";
+  const axisRow =
+    c.bendAxis === "x" || c.bendAxis === "y"
+      ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend axis</td><td>${escapeHtml(c.bendAxis.toUpperCase())}</td></tr>`
+      : "";
+  return `${axisRow}<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (reference)</td><td>${c.bendAngleDeg}°</td></tr>`;
 }
 
 function validatePayload(body: unknown): body is QuotePayload {

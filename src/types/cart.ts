@@ -11,6 +11,9 @@ export interface CartItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
+  /** L-bend configuration when applicable. */
+  bendAxis?: "x" | "y";
+  bendAngleDeg?: number;
   /** Set when color is custom match: manufacturer code, Pantone, or other reference. */
   customColorReference?: string;
   /** Original filename if user attached a PDF (file is not stored in the cart). */
