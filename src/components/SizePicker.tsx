@@ -10,6 +10,7 @@ import {
 import type { ThicknessId } from "@/data/acm";
 import type { PanelBendSpec } from "@/types/panelBend";
 import {
+  clampAngleDeg,
   maxPanelBendsForLength,
   maxPanelBendsForWidth,
   normalizePanelBends,
@@ -59,12 +60,6 @@ function clampWidth(val: number): number {
   const n = Math.round(Number(val));
   if (Number.isNaN(n) || n < CUSTOM_WIDTH_MIN_IN) return CUSTOM_WIDTH_MIN_IN;
   return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(CUSTOM_WIDTH_MIN_IN, n));
-}
-
-function clampBendAngle(val: number): number {
-  const n = Math.round(val * 10) / 10;
-  if (Number.isNaN(n) || n < 0) return 0;
-  return Math.min(180, n);
 }
 
 export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
@@ -162,7 +157,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       if (i !== index) return b;
       return {
         inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
-        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampBendAngle(angNum),
+        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampAngleDeg(angNum),
       };
     });
     pushNormalizedBends(next);
@@ -177,7 +172,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       if (i !== index) return b;
       return {
         inchesFromEdge: Number.isNaN(inchNum) ? b.inchesFromEdge : inchNum,
-        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampBendAngle(angNum),
+        angleDeg: Number.isNaN(angNum) ? b.angleDeg : clampAngleDeg(angNum),
       };
     });
     pushNormalizedBendsW(next);
@@ -239,10 +234,12 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
       <p className="mt-0.5 text-xs text-gray-500">
-        Width and length in inches. Add folds along the <strong className="font-medium">length</strong> (hinge parallel
-        to width) and/or along the <strong className="font-medium">width</strong> (hinge parallel to length — the vertical
-        “Y” direction in the 3D preview). Each fold is measured from its reference edge along that axis. Pricing still
-        uses full width × length (flat).
+        Width and length in inches. Folds follow a simple <span className="font-medium text-gray-800">X / Y</span> layout:
+        length-axis bends use hinge lines parallel to <span className="font-medium text-gray-800">X</span>; width-axis
+        bends use hinge lines parallel to <span className="font-medium text-gray-800">Y</span> (panel length in the
+        preview). Angle is signed: <span className="font-medium text-gray-800">positive°</span> bends outward (+Z / toward
+        you in the default view); <span className="font-medium text-gray-800">negative°</span> bends inward. Pricing
+        still uses full width × length (flat).
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
@@ -299,8 +296,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Bend 1 is closest to the reference edge along the <strong className="font-medium">length</strong>. Angles are
-            included angles between legs (90° = square). 0° or 180° keeps sections collinear in the preview.
+            Bend lines run along <span className="font-medium text-gray-700">X</span> (perpendicular to length). Use
+            positive angles to fold the next leg outward, negative for inward. Near 0° or ±180° the strip stays collinear.
           </p>
 
           {value.bends.length === 0 ? (
@@ -357,7 +354,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                         id={`bend-angle-l-${index}`}
                         type="number"
                         inputMode="decimal"
-                        min={0}
+                        min={-180}
                         max={180}
                         step={0.1}
                         value={bendDrafts[index]?.angle ?? angleInputStr(b.angleDeg)}
@@ -386,10 +383,10 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Crease runs parallel to the panel <strong className="font-medium">length</strong> (preview +Y). Bend 1 is
-            closest to the reference edge along the <strong className="font-medium">width</strong>. If you use both
-            length- and width-axis folds, the 3D preview combines both; confirm complex layouts with a shop drawing if
-            needed.
+            Crease lines run parallel to <span className="font-medium text-gray-700">Y</span> (panel length in the
+            preview). Fold lines progress along <span className="font-medium text-gray-700">X</span> (width). Same sign
+            rule: positive° outward, negative° inward. Combined X and Y bends show together in 3D; confirm unusual jobs
+            with a shop drawing.
           </p>
 
           {value.bendsAlongWidth.length === 0 ? (
@@ -446,7 +443,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                         id={`bend-angle-w-${index}`}
                         type="number"
                         inputMode="decimal"
-                        min={0}
+                        min={-180}
                         max={180}
                         step={0.1}
                         value={bendDraftsW[index]?.angle ?? angleInputStr(b.angleDeg)}

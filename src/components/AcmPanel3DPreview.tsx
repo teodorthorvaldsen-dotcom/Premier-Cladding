@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { Center, Edges, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { PanelBendSpec } from "@/types/panelBend";
-import { normalizePanelBends } from "@/lib/panelBends";
+import { isSignedBendCollinearDeg, normalizePanelBends } from "@/lib/panelBends";
 
 const PREVIEW_H = 360;
 /** Same visual scale as prior CSS preview (inches → scene units). */
@@ -130,7 +130,8 @@ function collectFoldPartsAlongWidth(
     origin = origin.clone().add(dir.multiplyScalar(len));
 
     if (i < validBends.length) {
-      angle += THREE.MathUtils.degToRad(validBends[i].angleDeg);
+      /** Minus so positive user ° matches length-axis sense: flap toward +Z (outward). */
+      angle -= THREE.MathUtils.degToRad(validBends[i].angleDeg);
     }
     segIdx += 1;
   }
@@ -344,12 +345,8 @@ export function AcmPanel3DPreview({
     return composeLengthAndWidthParts(panelWidthIn, panelHeightIn, t, lenSpecs, widSpecs);
   }, [panelWidthIn, panelHeightIn, panelDepthIn, bendsLengthNorm, bendsWidthNorm]);
 
-  const isVisuallyFoldedLength = bendsLengthNorm.some(
-    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
-  );
-  const isVisuallyFoldedWidth = bendsWidthNorm.some(
-    (b) => b.angleDeg > 0.5 && b.angleDeg < 179.5
-  );
+  const isVisuallyFoldedLength = bendsLengthNorm.some((b) => !isSignedBendCollinearDeg(b.angleDeg));
+  const isVisuallyFoldedWidth = bendsWidthNorm.some((b) => !isSignedBendCollinearDeg(b.angleDeg));
 
   const hex =
     panelColorHex && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(panelColorHex.trim())
@@ -400,9 +397,10 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Folds along <span className="font-medium text-gray-600">length</span> use a hinge parallel to width; folds along{" "}
-        <span className="font-medium text-gray-600">width</span> use a hinge parallel to length. When both are set, the
-        preview combines them (length strips first, then width splits in each strip). Orbit below.
+        <span className="font-medium text-gray-600">X-axis</span> (length) folds hinge along X;{" "}
+        <span className="font-medium text-gray-600">Y-axis</span> (width) folds hinge along Y. Positive angle bends the
+        next leg outward (+Z); negative bends inward. Both axes combine as length strips, then width splits per strip.
+        Orbit below.
       </p>
 
       <div

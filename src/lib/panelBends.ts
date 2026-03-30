@@ -25,10 +25,22 @@ export function maxPanelBendsForWidth(widthIn: number): number {
   return maxPanelBendsAlongDimension(widthIn);
 }
 
-function clampAngleDeg(val: number): number {
+const MIN_BEND_ANGLE = -180;
+const MAX_BEND_ANGLE = 180;
+
+/** Signed bend angle for preview (positive = outward along +Z, negative = inward). */
+export function clampAngleDeg(val: number): number {
   const n = Math.round(val * 10) / 10;
-  if (Number.isNaN(n) || n < 0) return 0;
-  return Math.min(180, n);
+  if (Number.isNaN(n)) return 0;
+  return Math.min(MAX_BEND_ANGLE, Math.max(MIN_BEND_ANGLE, n));
+}
+
+/** True if the bend is visually collinear (no kink) in the 3D preview. */
+export function isSignedBendCollinearDeg(angleDeg: number): boolean {
+  const a = Math.abs(angleDeg);
+  if (a < 0.5) return true;
+  if (Math.abs(a - 180) < 0.5) return true;
+  return false;
 }
 
 /**
