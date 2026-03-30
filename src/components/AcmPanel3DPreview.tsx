@@ -15,10 +15,6 @@ export interface AcmPanel3DPreviewProps {
   panelColorName: string;
   /** Wood-grain (or other) swatch image used on the panel faces when present. */
   panelSwatchImage?: string;
-  /** Inches from left edge to vertical bend line on the face (optional). */
-  foldFromLeftIn?: number | null;
-  /** Inches from bottom edge to horizontal bend line on the face (optional). */
-  foldFromBottomIn?: number | null;
 }
 
 export function AcmPanel3DPreview({
@@ -28,8 +24,6 @@ export function AcmPanel3DPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
-  foldFromLeftIn = null,
-  foldFromBottomIn = null,
 }: AcmPanel3DPreviewProps) {
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * 6;
@@ -140,63 +134,6 @@ export function AcmPanel3DPreview({
     topColor,
   ]);
 
-  const foldOverlay = useMemo(() => {
-    const w = panelWidthIn > 0 ? panelWidthIn : 1;
-    const h = panelHeightIn > 0 ? panelHeightIn : 1;
-    const verticalPx =
-      foldFromLeftIn != null && Number.isFinite(foldFromLeftIn)
-        ? (Math.min(Math.max(0, foldFromLeftIn), panelWidthIn) / w) * scaled.faceW
-        : null;
-    const horizontalPx =
-      foldFromBottomIn != null && Number.isFinite(foldFromBottomIn)
-        ? scaled.faceH -
-          (Math.min(Math.max(0, foldFromBottomIn), panelHeightIn) / h) * scaled.faceH
-        : null;
-
-    type LineSeg = { key: string; style: CSSProperties };
-    const lines: LineSeg[] = [];
-    if (verticalPx != null) {
-      lines.push({
-        key: "v",
-        style: {
-          position: "absolute",
-          left: verticalPx,
-          top: 0,
-          width: 0,
-          height: "100%",
-          borderLeft: "2px dashed rgba(255,255,255,0.92)",
-          boxShadow: "1px 0 0 rgba(0,0,0,0.35)",
-          pointerEvents: "none",
-          zIndex: 3,
-        },
-      });
-    }
-    if (horizontalPx != null) {
-      lines.push({
-        key: "h",
-        style: {
-          position: "absolute",
-          left: 0,
-          top: horizontalPx,
-          width: "100%",
-          height: 0,
-          borderTop: "2px dashed rgba(255,255,255,0.92)",
-          boxShadow: "0 1px 0 rgba(0,0,0,0.35)",
-          pointerEvents: "none",
-          zIndex: 3,
-        },
-      });
-    }
-    return lines;
-  }, [
-    foldFromBottomIn,
-    foldFromLeftIn,
-    panelHeightIn,
-    panelWidthIn,
-    scaled.faceH,
-    scaled.faceW,
-  ]);
-
   return (
     <section
       className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
@@ -223,9 +160,6 @@ export function AcmPanel3DPreview({
             <div style={sideStyle} />
             <div style={frontStyle}>
               <div style={staticStyles.panelGloss} />
-              {foldOverlay.map(({ key, style }) => (
-                <div key={key} style={style} aria-hidden />
-              ))}
               {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
             </div>
           </div>
@@ -234,17 +168,6 @@ export function AcmPanel3DPreview({
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
         {panelWidthIn}&quot; × {panelHeightIn}&quot; · {panelColorName}
-        {(foldFromLeftIn != null || foldFromBottomIn != null) && (
-          <span className="mt-1 block text-[13px] font-normal text-gray-400">
-            {foldFromLeftIn != null ? (
-              <>{foldFromLeftIn}&quot; from left edge</>
-            ) : null}
-            {foldFromLeftIn != null && foldFromBottomIn != null ? " · " : null}
-            {foldFromBottomIn != null ? (
-              <>{foldFromBottomIn}&quot; from bottom edge</>
-            ) : null}
-          </span>
-        )}
       </p>
     </section>
   );

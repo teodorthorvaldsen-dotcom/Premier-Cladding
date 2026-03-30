@@ -341,8 +341,6 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
-              foldFromLeftIn={size.foldFromLeftIn}
-              foldFromBottomIn={size.foldFromBottomIn}
               panelSwatchImage={
                 "swatchImage" in color &&
                 typeof (color as { swatchImage?: string }).swatchImage === "string"

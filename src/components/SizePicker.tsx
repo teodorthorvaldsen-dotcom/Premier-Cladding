@@ -161,7 +161,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       <p className="mt-0.5 text-xs text-gray-500">
         Width and length in inches—you can clear a field and type your own size. Optional bend / fold
         lines are measured from the <span className="font-medium text-gray-700">bottom-left corner</span>{" "}
-        of the panel face, same as the preview. If your drawing uses another reference, say so in your
+        of the panel face. If your drawing uses another reference, say so in your
         quote notes or attach a drawing.
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
@@ -205,8 +205,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         <div className="border-t border-gray-100 pt-4">
           <p className="text-xs font-medium text-gray-900">Bend / fold lines (optional)</p>
           <p className="mt-0.5 text-[11px] text-gray-500">
-            Each value is the distance from an edge to a bend line on the face—see the dashed lines in
-            the preview.
+            Each value is the distance from that edge to a bend line on the face.
           </p>
         </div>
         <div>
