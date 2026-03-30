@@ -148,7 +148,7 @@ export function AcmPanel3DPreview({
     if (!useBend) return `${base} · ${panelColorName}`;
     const ba = baIn >= 0.001 ? ` · BA ≈ ${baIn.toFixed(3)}"` : "";
     const mir = bendMirrored ? " · mirrored" : "";
-    return `${base} · ${Math.round(bendAngle)}° bend (½ length each leg)${ba}${mir} · ${panelColorName}`;
+    return `${base} · ${Math.round(bendAngle)}° L-fold (½ length each leg)${ba}${mir} · ${panelColorName}`;
   }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn, bendMirrored]);
 
   return (
@@ -193,30 +193,42 @@ export function AcmPanel3DPreview({
             <div
               style={{
                 transformStyle: "preserve-3d",
-                transform: `rotateX(52deg) rotateY(12deg) rotateZ(-38deg) translateY(10px)${
+                /** Isometric view tuned so a 90° bend reads as a letter L (vertical stem + horizontal foot). */
+                transform: `rotateX(46deg) rotateY(-14deg) rotateZ(-32deg) translateY(16px)${
                   bendMirrored ? " scaleX(-1)" : ""
                 }`,
                 filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
                 position: "relative",
               }}
             >
-              <div style={{ position: "relative", transformStyle: "preserve-3d" }}>
+              <div
+                style={{
+                  position: "relative",
+                  transformStyle: "preserve-3d",
+                  /**
+                   * Built as Γ (bend at top of first leg). rotateZ(180°) about the bend (top center) yields
+                   * a letter-L silhouette: stem down, foot out from the inside corner.
+                   */
+                  transform: "rotateZ(180deg)",
+                  transformOrigin: "50% 0",
+                }}
+              >
                 <ExtrudedLeg
-                  faceW={bentLayout.faceW}
-                  faceH={bentLayout.faceH1}
                   depth={bentLayout.depth}
-                  styles={bentStyles}
+                  faceH={bentLayout.faceH1}
+                  faceW={bentLayout.faceW}
                   showInnerBorder={!panelSwatchImage}
+                  styles={bentStyles}
                 />
                 <div
                   style={{
+                    height: 0,
+                    left: 0,
                     position: "absolute",
                     top: 0,
-                    left: 0,
-                    width: bentLayout.faceW,
-                    height: 0,
-                    transformStyle: "preserve-3d",
                     transform: `translateY(-${bentLayout.chunkH}px)`,
+                    transformStyle: "preserve-3d",
+                    width: bentLayout.faceW,
                   }}
                 >
                   <BendChain
@@ -225,8 +237,8 @@ export function AcmPanel3DPreview({
                     depth={bentLayout.depth}
                     faceW={bentLayout.faceW}
                     n={bentLayout.n}
-                    styles={bentStyles}
                     showInnerBorder={!panelSwatchImage}
+                    styles={bentStyles}
                     tail={
                       <ExtrudedLeg
                         depth={bentLayout.depth}
