@@ -39,14 +39,6 @@ function describeItem(item: CartItem): string {
     : "";
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const parts = [sizeLabel, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
-  if (item.foldFromLeftIn != null || item.foldFromBottomIn != null) {
-    const folds: string[] = [];
-    if (item.foldFromLeftIn != null)
-      folds.push(`bend ${item.foldFromLeftIn}" from left edge`);
-    if (item.foldFromBottomIn != null)
-      folds.push(`bend ${item.foldFromBottomIn}" from bottom edge`);
-    parts.push(folds.join("; "));
-  }
   return parts.join(" · ");
 }
 

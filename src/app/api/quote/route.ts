@@ -60,16 +60,6 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.foldFromLeftIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend line — from left edge</td><td>${c.foldFromLeftIn} in</td></tr>`
-        : ""
-    }
-    ${
-      typeof c.foldFromBottomIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend line — from bottom edge</td><td>${c.foldFromBottomIn} in</td></tr>`
-        : ""
-    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${
@@ -116,16 +106,6 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em;">
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
-    ${
-      typeof c.foldFromLeftIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend line — from left edge</td><td>${c.foldFromLeftIn} in</td></tr>`
-        : ""
-    }
-    ${
-      typeof c.foldFromBottomIn === "number"
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend line — from bottom edge</td><td>${c.foldFromBottomIn} in</td></tr>`
-        : ""
-    }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Color</td><td>${escapeHtml(c.colorName)} (${escapeHtml(c.colorCode)})</td></tr>
     ${

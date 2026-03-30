@@ -16,8 +16,6 @@ interface CartQuotePayload {
     panelTypeLabel?: string;
     customColorReference?: string;
     customColorSpecFileName?: string;
-    foldFromLeftIn?: number;
-    foldFromBottomIn?: number;
   }>;
   fullName: string;
   company: string;
@@ -52,16 +50,9 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
     .map((i) => {
-      const foldNote =
-        typeof i.foldFromLeftIn === "number" || typeof i.foldFromBottomIn === "number"
-          ? `<div>Bend lines: ${typeof i.foldFromLeftIn === "number" ? `${i.foldFromLeftIn}" from left edge` : ""}${
-              typeof i.foldFromLeftIn === "number" && typeof i.foldFromBottomIn === "number" ? "; " : ""
-            }${typeof i.foldFromBottomIn === "number" ? `${i.foldFromBottomIn}" from bottom edge` : ""}</div>`
-          : "";
       const extra =
-        i.customColorReference || i.customColorSpecFileName || foldNote
+        i.customColorReference || i.customColorSpecFileName
           ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
-              ${foldNote}
               ${i.customColorReference ? `<div>Color reference: ${escapeHtml(i.customColorReference)}</div>` : ""}
               ${
                 i.customColorSpecFileName

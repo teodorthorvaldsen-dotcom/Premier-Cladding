@@ -1,29 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useMemo, type CSSProperties } from "react";
-import { bendAllowanceInches, bendDeductionInches } from "@/lib/sheetMetalBend";
-
-const FoldedPanelWebGL = dynamic(
-  () => import("./FoldedPanelWebGL").then((mod) => mod.FoldedPanelWebGL),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="mx-auto flex h-[280px] max-w-[520px] items-center justify-center rounded-xl bg-gray-50 text-sm text-gray-500"
-        aria-hidden
-      >
-        Loading 3D preview…
-      </div>
-    ),
-  }
-);
 
 const PREVIEW_W = 520;
 const PREVIEW_H = 360;
-const BEND_EPS = 0.01;
-const BEND_ANGLE = 90;
-const DEFAULT_K = 0.33;
 
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
@@ -35,12 +15,6 @@ export interface AcmPanel3DPreviewProps {
   panelColorName: string;
   /** Wood-grain (or other) swatch image used on the panel faces when present. */
   panelSwatchImage?: string;
-  /** Formed layout: inches from left edge to vertical bend (optional). */
-  foldFromLeftIn?: number | null;
-  /** Formed layout: inches from bottom edge to horizontal bend (optional). */
-  foldFromBottomIn?: number | null;
-  /** Actual metal thickness in inches (for WebGL scale and BA/BD). */
-  metalThicknessIn: number;
 }
 
 export function AcmPanel3DPreview({
@@ -50,26 +24,7 @@ export function AcmPanel3DPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
-  foldFromLeftIn = null,
-  foldFromBottomIn = null,
-  metalThicknessIn,
 }: AcmPanel3DPreviewProps) {
-  const hasRight =
-    foldFromLeftIn != null && panelWidthIn - foldFromLeftIn > BEND_EPS;
-  const hasBack =
-    foldFromBottomIn != null && panelHeightIn - foldFromBottomIn > BEND_EPS;
-  const useFoldedPreview = hasRight || hasBack;
-
-  const bendInfo = useMemo(() => {
-    if (!useFoldedPreview) return null;
-    const T = Math.max(metalThicknessIn, 1e-6);
-    const insideR = T;
-    const ba = bendAllowanceInches(BEND_ANGLE, insideR, T, DEFAULT_K);
-    const bd = bendDeductionInches(BEND_ANGLE, insideR, T, DEFAULT_K);
-    const n = (hasRight ? 1 : 0) + (hasBack ? 1 : 0);
-    return { ba, bd, n, insideR: insideR, T };
-  }, [hasRight, hasBack, metalThicknessIn, useFoldedPreview]);
-
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * 6;
     const baseH = panelHeightIn * 3.2;
@@ -190,78 +145,29 @@ export function AcmPanel3DPreview({
         Panel Preview
       </h2>
 
-      {useFoldedPreview ? (
-        <div className="mt-3 overflow-hidden rounded-xl bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfc_100%)]">
-          <FoldedPanelWebGL
-            widthIn={panelWidthIn}
-            heightIn={panelHeightIn}
-            foldFromLeftIn={foldFromLeftIn}
-            foldFromBottomIn={foldFromBottomIn}
-            thicknessIn={metalThicknessIn}
-            panelColorHex={panelColorHex}
-            panelSwatchImage={panelSwatchImage}
-          />
-          <p className="px-2 pb-2 text-center text-[11px] leading-snug text-gray-400">
-            90° bends; corner where two flanges meet is simplified. Confirm flat pattern with shop
-            drawings.
-          </p>
-        </div>
-      ) : (
-        <div
-          className="mx-auto mt-3 overflow-hidden rounded-xl"
-          style={{
-            height: PREVIEW_H,
-            maxWidth: PREVIEW_W,
-            background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
-          }}
-        >
-          <div style={staticStyles.previewCenter}>
-            <div style={wrapStyle}>
-              <div style={topStyle} />
-              <div style={sideStyle} />
-              <div style={frontStyle}>
-                <div style={staticStyles.panelGloss} />
-                {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
-              </div>
+      <div
+        className="mx-auto mt-3 overflow-hidden rounded-xl"
+        style={{
+          height: PREVIEW_H,
+          maxWidth: PREVIEW_W,
+          background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
+        }}
+      >
+        <div style={staticStyles.previewCenter}>
+          <div style={wrapStyle}>
+            <div style={topStyle} />
+            <div style={sideStyle} />
+            <div style={frontStyle}>
+              <div style={staticStyles.panelGloss} />
+              {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
         {panelWidthIn}&quot; × {panelHeightIn}&quot; · {panelColorName}
       </p>
-
-      {bendInfo ? (
-        <div className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/90 px-3 py-2.5 text-left text-[12px] leading-relaxed text-gray-600">
-          <p className="font-medium text-gray-800">Sheet metal estimates ({bendInfo.n} bend{bendInfo.n > 1 ? "s" : ""}, {BEND_ANGLE}°, illustrative)</p>
-          <p className="mt-1">
-            Assumes inside radius R = material thickness ({bendInfo.insideR.toFixed(3)} in), K = {DEFAULT_K}.
-          </p>
-          <ul className="mt-1.5 list-inside list-disc space-y-0.5">
-            <li>Bend allowance (BA): {bendInfo.ba.toFixed(4)} in per bend</li>
-            <li>Bend deduction (BD): {bendInfo.bd.toFixed(4)} in per bend</li>
-          </ul>
-          {hasRight && foldFromLeftIn != null ? (
-            <p className="mt-1.5 text-[11px] text-gray-600">
-              Right flange outside leg ≈ {(panelWidthIn - foldFromLeftIn).toFixed(2)} in → typical flat
-              run ≈{" "}
-              {Math.max(0, panelWidthIn - foldFromLeftIn - bendInfo.bd).toFixed(3)} in (outside − BD).
-            </p>
-          ) : null}
-          {hasBack && foldFromBottomIn != null ? (
-            <p className="mt-1.5 text-[11px] text-gray-600">
-              Back flange outside leg ≈ {(panelHeightIn - foldFromBottomIn).toFixed(2)} in → typical flat
-              run ≈{" "}
-              {Math.max(0, panelHeightIn - foldFromBottomIn - bendInfo.bd).toFixed(3)} in (outside − BD).
-            </p>
-          ) : null}
-          <p className="mt-1.5 text-[11px] text-gray-500">
-            Confirm flat pattern with tooling, tooling station, and material certs—this is a planning
-            aid only.
-          </p>
-        </div>
-      ) : null}
     </section>
   );
 }

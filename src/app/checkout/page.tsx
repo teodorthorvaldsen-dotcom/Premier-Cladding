@@ -40,14 +40,6 @@ function describeItem(item: CartItem): string {
   const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
   const parts = [sizeLabel, color, thickness, item.panelTypeLabel].filter(Boolean);
-  if (item.foldFromLeftIn != null || item.foldFromBottomIn != null) {
-    const folds: string[] = [];
-    if (item.foldFromLeftIn != null)
-      folds.push(`bend ${item.foldFromLeftIn}" from left edge`);
-    if (item.foldFromBottomIn != null)
-      folds.push(`bend ${item.foldFromBottomIn}" from bottom edge`);
-    parts.push(folds.join("; "));
-  }
   return parts.join(" · ");
 }
 

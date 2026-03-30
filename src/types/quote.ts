@@ -3,10 +3,6 @@ export interface QuoteDraft {
   /** Common fields used by the ACM configurator (kept for backwards compatibility). */
   widthIn: number;
   lengthIn: number;
-  /** Optional: bend line distance from left edge (in), panel face. */
-  foldFromLeftIn?: number;
-  /** Optional: bend line distance from bottom edge (in), panel face. */
-  foldFromBottomIn?: number;
   widthId: string | null;
   thicknessId: string;
   colorId: string;

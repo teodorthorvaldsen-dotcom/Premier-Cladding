@@ -27,8 +27,6 @@ const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
-  foldFromLeftIn: null,
-  foldFromBottomIn: null,
 };
 
 export interface PriceResult {
@@ -168,8 +166,6 @@ export function Configurator() {
       areaFt2: pricing.areaFt2,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
-      ...(size.foldFromLeftIn != null ? { foldFromLeftIn: size.foldFromLeftIn } : {}),
-      ...(size.foldFromBottomIn != null ? { foldFromBottomIn: size.foldFromBottomIn } : {}),
       ...(colorId === "custom-color-match"
         ? {
             customColorReference: customColorReference.trim() || undefined,
@@ -210,8 +206,6 @@ export function Configurator() {
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
-      ...(size.foldFromLeftIn != null ? { foldFromLeftIn: size.foldFromLeftIn } : {}),
-      ...(size.foldFromBottomIn != null ? { foldFromBottomIn: size.foldFromBottomIn } : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -342,9 +336,6 @@ export function Configurator() {
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}
-              metalThicknessIn={metalThicknessIn}
-              foldFromLeftIn={size.foldFromLeftIn}
-              foldFromBottomIn={size.foldFromBottomIn}
               panelSwatchImage={
                 "swatchImage" in color &&
                 typeof (color as { swatchImage?: string }).swatchImage === "string"
