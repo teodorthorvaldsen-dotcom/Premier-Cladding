@@ -1,19 +1,29 @@
 "use client";
 
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
+import {
+  bendAllowanceFromAngleInches,
+  defaultInsideBendRadiusInches,
+} from "@/lib/bendPreviewMath";
 
 const PREVIEW_W = 520;
 const PREVIEW_H = 360;
+
+const FLAT_LEN_SCALE = 3.2;
+const FLAT_WIDTH_SCALE = 6;
+const DEPTH_MULT = 16;
 
 export interface AcmPanel3DPreviewProps {
   panelWidthIn: number;
   panelHeightIn: number;
   /** Visual depth in inches (may be scaled from real thickness for readability). */
   panelDepthIn: number;
+  /** Bend angle in degrees (0 = flat). Each straight leg uses panelHeightIn. */
+  bendAngleDeg?: number;
+  /** Nominal metal / composite thickness in inches for neutral-axis bend allowance. */
+  metalThicknessIn?: number;
   panelColorHex: string;
-  /** Display name for the selected finish (e.g. from swatch data). */
   panelColorName: string;
-  /** Wood-grain (or other) swatch image used on the panel faces when present. */
   panelSwatchImage?: string;
 }
 
@@ -21,22 +31,26 @@ export function AcmPanel3DPreview({
   panelWidthIn,
   panelHeightIn,
   panelDepthIn,
+  bendAngleDeg = 0,
+  metalThicknessIn = 0.16,
   panelColorHex,
   panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
-  const scaled = useMemo(() => {
-    const baseW = panelWidthIn * 6;
-    const baseH = panelHeightIn * 3.2;
-    const depthPx = panelDepthIn * 16;
+  const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
+  const bendAngle = Math.min(180, Math.max(0, bendAngleDeg));
+  const useBend = bendAngle >= 0.5;
+
+  const flatScaled = useMemo(() => {
+    const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
+    const baseH = panelHeightIn * FLAT_LEN_SCALE;
+    const depthPx = panelDepthIn * DEPTH_MULT;
     const totalW = baseW + depthPx + 40;
     const totalH = baseH + depthPx + 40;
-
     const scaleX = (PREVIEW_W - 80) / totalW;
     const scaleY = (PREVIEW_H - 80) / totalH;
     const scale = Math.min(scaleX, scaleY, 1);
-
     return {
       faceW: baseW * scale,
       faceH: baseH * scale,
@@ -44,94 +58,92 @@ export function AcmPanel3DPreview({
     };
   }, [panelWidthIn, panelHeightIn, panelDepthIn]);
 
-  const { frontColor, sideColor, topColor, borderColor } = useMemo(
-    () => createPanelShades(panelColorHex),
-    [panelColorHex]
+  const insideRIn = defaultInsideBendRadiusInches(metalThicknessIn);
+  const baIn = useMemo(
+    () => bendAllowanceFromAngleInches(bendAngle, insideRIn, metalThicknessIn),
+    [bendAngle, insideRIn, metalThicknessIn]
   );
 
-  const { wrapStyle, topStyle, sideStyle, frontStyle } = useMemo(() => {
-    const wrap: CSSProperties = {
-      ...staticStyles.panel3dWrap,
-      width: scaled.faceW,
-      height: scaled.faceH,
-    };
+  const bentLayout = useMemo(() => {
+    if (!useBend) return null;
+    const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
+    const L1 = panelHeightIn * FLAT_LEN_SCALE;
+    const L2 = L1;
+    const depthPx = panelDepthIn * DEPTH_MULT;
+    const thetaRad = (bendAngle * Math.PI) / 180;
+    const rnIn = insideRIn + 0.33 * metalThicknessIn;
+    const arcLen = thetaRad * rnIn * FLAT_LEN_SCALE;
 
-    if (panelSwatchImage) {
-      const url = `url(${panelSwatchImage})`;
-      return {
-        wrapStyle: wrap,
-        topStyle: {
-          ...staticStyles.panelTop,
-          width: scaled.faceW,
-          height: scaled.depth,
-          borderColor,
-          transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
-          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4)), ${url}`,
-          backgroundSize: "cover, cover",
-          backgroundPosition: "center, center",
-          backgroundRepeat: "no-repeat, no-repeat",
-        } satisfies CSSProperties,
-        sideStyle: {
-          ...staticStyles.panelSide,
-          width: scaled.depth,
-          height: scaled.faceH,
-          borderColor,
-          transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
-          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38)), ${url}`,
-          backgroundSize: "cover, cover",
-          backgroundPosition: "center, center",
-          backgroundRepeat: "no-repeat, no-repeat",
-        } satisfies CSSProperties,
-        frontStyle: {
-          ...staticStyles.panelFront,
-          width: scaled.faceW,
-          height: scaled.faceH,
-          borderColor,
-          backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.12) 0%, transparent 40%, rgba(0,0,0,0.06) 100%), ${url}`,
-          backgroundSize: "cover, cover",
-          backgroundPosition: "center, center",
-          backgroundRepeat: "no-repeat, no-repeat",
-        } satisfies CSSProperties,
-      };
-    }
+    const n = Math.max(3, Math.min(20, Math.ceil(bendAngle / 7)));
+    const chunkH = arcLen / n;
+    const dThetaDeg = bendAngle / n;
+
+    const armReach = L1 + L2 + arcLen;
+    const span = baseW + depthPx + 48;
+    const totalH = armReach + depthPx * 0.85 + 36;
+    const scaleX = (PREVIEW_W - 80) / span;
+    const scaleY = (PREVIEW_H - 80) / totalH;
+    const scale = Math.min(scaleX, scaleY, 1) * 0.92;
 
     return {
-      wrapStyle: wrap,
-      topStyle: {
-        ...staticStyles.panelTop,
-        width: scaled.faceW,
-        height: scaled.depth,
-        background: topColor,
-        borderColor,
-        transform: `translateY(-${scaled.depth}px) skewX(-45deg)`,
-      } satisfies CSSProperties,
-      sideStyle: {
-        ...staticStyles.panelSide,
-        width: scaled.depth,
-        height: scaled.faceH,
-        background: sideColor,
-        borderColor,
-        transform: `translateX(${scaled.faceW}px) skewY(-45deg)`,
-      } satisfies CSSProperties,
-      frontStyle: {
-        ...staticStyles.panelFront,
-        width: scaled.faceW,
-        height: scaled.faceH,
-        background: `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
-        borderColor,
-      } satisfies CSSProperties,
+      faceW: baseW * scale,
+      faceH1: L1 * scale,
+      faceH2: L2 * scale,
+      chunkH: Math.max(chunkH * scale, 4),
+      depth: Math.max(depthPx * scale, 6),
+      n,
+      dThetaDeg,
     };
   }, [
-    scaled.depth,
-    scaled.faceH,
-    scaled.faceW,
-    borderColor,
-    frontColor,
-    panelColorHex,
-    panelSwatchImage,
-    sideColor,
-    topColor,
+    useBend,
+    panelWidthIn,
+    panelHeightIn,
+    panelDepthIn,
+    bendAngle,
+    insideRIn,
+    metalThicknessIn,
   ]);
+
+  const flatStyles = useMemo(
+    () =>
+      buildFaceStyles(
+        flatScaled.faceW,
+        flatScaled.faceH,
+        flatScaled.depth,
+        panelColorHex,
+        shades,
+        panelSwatchImage
+      ),
+    [
+      flatScaled.depth,
+      flatScaled.faceH,
+      flatScaled.faceW,
+      panelColorHex,
+      panelSwatchImage,
+      shades,
+    ]
+  );
+
+  const bentStyles = useMemo(() => {
+    if (!bentLayout) return null;
+    const { faceW, faceH1, chunkH, depth } = bentLayout;
+    return buildFaceStyles(
+      faceW,
+      Math.max(faceH1, chunkH),
+      depth,
+      panelColorHex,
+      shades,
+      panelSwatchImage,
+      { wrapShadow: false }
+    );
+  }, [bentLayout, panelColorHex, panelSwatchImage, shades]);
+
+  const caption = useMemo(() => {
+    const base = `${panelWidthIn}" × ${panelHeightIn}"`;
+    if (!useBend) return `${base} · ${panelColorName}`;
+    const ba = baIn >= 0.001 ? ` · BA ≈ ${baIn.toFixed(3)}"` : "";
+    return `${base} · ${Math.round(bendAngle)}° bend${ba} · ${panelColorName}`;
+  }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn]);
 
   return (
     <section
@@ -153,23 +165,263 @@ export function AcmPanel3DPreview({
           background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
         }}
       >
-        <div style={staticStyles.previewCenter}>
-          <div style={wrapStyle}>
-            <div style={topStyle} />
-            <div style={sideStyle} />
-            <div style={frontStyle}>
-              <div style={staticStyles.panelGloss} />
-              {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
+        {!useBend || !bentLayout || !bentStyles ? (
+          <div style={staticStyles.previewCenter}>
+            <div style={flatStyles.wrapStyle}>
+              <div style={flatStyles.topStyle} />
+              <div style={flatStyles.sideStyle} />
+              <div style={flatStyles.frontStyle}>
+                <div style={staticStyles.panelGloss} />
+                {!panelSwatchImage ? <div style={staticStyles.panelInnerBorder} /> : null}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            style={{
+              ...staticStyles.previewCenter,
+              perspective: "950px",
+              perspectiveOrigin: "50% 42%",
+            }}
+          >
+            <div
+              style={{
+                transformStyle: "preserve-3d",
+                transform: "rotateX(56deg) rotateZ(-40deg) translateY(12px)",
+                filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
+                position: "relative",
+              }}
+            >
+              <div style={{ position: "relative", transformStyle: "preserve-3d" }}>
+                <ExtrudedLeg
+                  faceW={bentLayout.faceW}
+                  faceH={bentLayout.faceH1}
+                  depth={bentLayout.depth}
+                  styles={bentStyles}
+                  showInnerBorder={!panelSwatchImage}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: bentLayout.faceW,
+                    height: 0,
+                    transformStyle: "preserve-3d",
+                    transform: `translateY(-${bentLayout.chunkH}px)`,
+                  }}
+                >
+                  <BendChain
+                    chunkH={bentLayout.chunkH}
+                    dThetaDeg={bentLayout.dThetaDeg}
+                    depth={bentLayout.depth}
+                    faceW={bentLayout.faceW}
+                    n={bentLayout.n}
+                    styles={bentStyles}
+                    showInnerBorder={!panelSwatchImage}
+                    tail={
+                      <ExtrudedLeg
+                        depth={bentLayout.depth}
+                        faceH={bentLayout.faceH2}
+                        faceW={bentLayout.faceW}
+                        showInnerBorder={!panelSwatchImage}
+                        styles={bentStyles}
+                      />
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
-        {panelWidthIn}&quot; × {panelHeightIn}&quot; · {panelColorName}
+        {caption}
       </p>
     </section>
   );
+}
+
+function BendChain({
+  n,
+  chunkH,
+  dThetaDeg,
+  faceW,
+  depth,
+  styles,
+  showInnerBorder,
+  tail,
+}: {
+  n: number;
+  chunkH: number;
+  dThetaDeg: number;
+  faceW: number;
+  depth: number;
+  styles: FaceStyles;
+  showInnerBorder: boolean;
+  tail: ReactNode;
+}) {
+  if (n <= 0) return <>{tail}</>;
+  return (
+    <div
+      style={{
+        height: chunkH,
+        position: "relative",
+        transformStyle: "preserve-3d",
+        width: faceW,
+      }}
+    >
+      <ExtrudedLeg
+        depth={depth}
+        faceH={chunkH}
+        faceW={faceW}
+        showInnerBorder={showInnerBorder}
+        styles={styles}
+      />
+      <div
+        style={{
+          bottom: "100%",
+          left: 0,
+          position: "absolute",
+          transform: `rotateX(${dThetaDeg}deg)`,
+          transformOrigin: "50% 100% 0",
+          transformStyle: "preserve-3d",
+          width: faceW,
+        }}
+      >
+        <BendChain
+          chunkH={chunkH}
+          dThetaDeg={dThetaDeg}
+          depth={depth}
+          faceW={faceW}
+          n={n - 1}
+          showInnerBorder={showInnerBorder}
+          styles={styles}
+          tail={tail}
+        />
+      </div>
+    </div>
+  );
+}
+
+type FaceStyles = {
+  wrapStyle: CSSProperties;
+  frontStyle: CSSProperties;
+  topStyle: CSSProperties;
+  sideStyle: CSSProperties;
+};
+
+function ExtrudedLeg({
+  faceW,
+  faceH,
+  depth,
+  styles,
+  showInnerBorder,
+}: {
+  faceW: number;
+  faceH: number;
+  depth: number;
+  styles: FaceStyles;
+  showInnerBorder: boolean;
+}) {
+  return (
+    <div style={{ ...styles.wrapStyle, height: faceH, position: "relative", width: faceW }}>
+      <div style={{ ...styles.topStyle, height: depth, width: faceW }} />
+      <div style={{ ...styles.sideStyle, height: faceH, width: depth }} />
+      <div style={{ ...styles.frontStyle, height: faceH, width: faceW }}>
+        <div style={staticStyles.panelGloss} />
+        {showInnerBorder ? <div style={staticStyles.panelInnerBorder} /> : null}
+      </div>
+    </div>
+  );
+}
+
+function buildFaceStyles(
+  faceW: number,
+  faceH: number,
+  depth: number,
+  panelColorHex: string,
+  shades: ReturnType<typeof createPanelShades>,
+  panelSwatchImage?: string,
+  opts?: { wrapShadow?: boolean }
+): FaceStyles {
+  const { frontColor, sideColor, topColor, borderColor } = shades;
+  const wrapShadow = opts?.wrapShadow !== false;
+
+  const wrap: CSSProperties = {
+    position: "relative",
+    transform: "rotateX(0deg) rotateY(0deg)",
+    width: faceW,
+    height: faceH,
+    ...(wrapShadow ? { filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))" } : {}),
+  };
+
+  if (panelSwatchImage) {
+    const url = `url(${panelSwatchImage})`;
+    return {
+      wrapStyle: wrap,
+      topStyle: {
+        ...staticStyles.panelTop,
+        width: faceW,
+        height: depth,
+        borderColor,
+        transform: `translateY(-${depth}px) skewX(-45deg)`,
+        backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.4)), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+      },
+      sideStyle: {
+        ...staticStyles.panelSide,
+        width: depth,
+        height: faceH,
+        borderColor,
+        transform: `translateX(${faceW}px) skewY(-45deg)`,
+        backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.38)), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+      },
+      frontStyle: {
+        ...staticStyles.panelFront,
+        width: faceW,
+        height: faceH,
+        borderColor,
+        backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.12) 0%, transparent 40%, rgba(0,0,0,0.06) 100%), ${url}`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+      },
+    };
+  }
+
+  return {
+    wrapStyle: wrap,
+    topStyle: {
+      ...staticStyles.panelTop,
+      width: faceW,
+      height: depth,
+      background: topColor,
+      borderColor,
+      transform: `translateY(-${depth}px) skewX(-45deg)`,
+    },
+    sideStyle: {
+      ...staticStyles.panelSide,
+      width: depth,
+      height: faceH,
+      background: sideColor,
+      borderColor,
+      transform: `translateX(${faceW}px) skewY(-45deg)`,
+    },
+    frontStyle: {
+      ...staticStyles.panelFront,
+      width: faceW,
+      height: faceH,
+      background: `linear-gradient(145deg, ${frontColor} 0%, ${panelColorHex} 55%, ${sideColor} 100%)`,
+      borderColor,
+    },
+  };
 }
 
 function createPanelShades(hex: string) {
@@ -227,11 +479,6 @@ const staticStyles: Record<string, CSSProperties> = {
     justifyContent: "center",
     padding: "20px",
     boxSizing: "border-box",
-  },
-  panel3dWrap: {
-    position: "relative",
-    transform: "rotateX(0deg) rotateY(0deg)",
-    filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.14))",
   },
   panelFront: {
     position: "relative",

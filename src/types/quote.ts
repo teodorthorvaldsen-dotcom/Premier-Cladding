@@ -3,8 +3,8 @@ export interface QuoteDraft {
   /** Common fields used by the ACM configurator (kept for backwards compatibility). */
   widthIn: number;
   lengthIn: number;
-  /** Optional bend allowance (in); panel preview only unless noted on quote. */
-  bendAllowanceIn?: number;
+  /** Optional bend angle (degrees); informational for bent panel previews. */
+  bendAngleDeg?: number;
   widthId: string | null;
   thicknessId: string;
   colorId: string;

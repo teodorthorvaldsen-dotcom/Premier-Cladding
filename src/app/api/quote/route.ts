@@ -61,8 +61,8 @@ function buildBusinessEmailHtml(payload: QuotePayload): string {
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     ${
-      typeof c.bendAllowanceIn === "number" && c.bendAllowanceIn > 0
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend allowance (preview)</td><td>${c.bendAllowanceIn} in</td></tr>`
+      typeof c.bendAngleDeg === "number" && c.bendAngleDeg > 0
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (preview)</td><td>${c.bendAngleDeg}°</td></tr>`
         : ""
     }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
@@ -112,8 +112,8 @@ function buildCustomerEmailHtml(payload: QuotePayload): string {
     ${c.panelTypeLabel ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Panel type</td><td>${escapeHtml(c.panelTypeLabel)}</td></tr>` : ""}
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Size</td><td>${escapeHtml(c.widthLabel)} × ${c.lengthIn} in</td></tr>
     ${
-      typeof c.bendAllowanceIn === "number" && c.bendAllowanceIn > 0
-        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend allowance (preview)</td><td>${c.bendAllowanceIn} in</td></tr>`
+      typeof c.bendAngleDeg === "number" && c.bendAngleDeg > 0
+        ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Bend angle (preview)</td><td>${c.bendAngleDeg}°</td></tr>`
         : ""
     }
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Thickness</td><td>${escapeHtml(c.thicknessLabel)}</td></tr>
