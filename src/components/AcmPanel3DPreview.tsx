@@ -18,7 +18,7 @@ export interface AcmPanel3DPreviewProps {
   panelHeightIn: number;
   /** Visual depth in inches (may be scaled from real thickness for readability). */
   panelDepthIn: number;
-  /** Bend angle in degrees (0 = flat). Each straight leg uses panelHeightIn. */
+  /** Bend angle in degrees (0 = flat). Each straight leg uses half of panelHeightIn (fold at center). */
   bendAngleDeg?: number;
   /** Nominal metal / composite thickness in inches for neutral-axis bend allowance. */
   metalThicknessIn?: number;
@@ -67,14 +67,16 @@ export function AcmPanel3DPreview({
   const bentLayout = useMemo(() => {
     if (!useBend) return null;
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
-    const L1 = panelHeightIn * FLAT_LEN_SCALE;
+    /** Half nominal length per leg — like folding the sheet in half at the bend. */
+    const legLenIn = panelHeightIn * 0.5;
+    const L1 = legLenIn * FLAT_LEN_SCALE;
     const L2 = L1;
     const depthPx = panelDepthIn * DEPTH_MULT;
     const thetaRad = (bendAngle * Math.PI) / 180;
     const rnIn = insideRIn + 0.33 * metalThicknessIn;
     const arcLen = thetaRad * rnIn * FLAT_LEN_SCALE;
 
-    const n = Math.max(3, Math.min(20, Math.ceil(bendAngle / 7)));
+    const n = Math.max(6, Math.min(24, Math.round(bendAngle / 5)));
     const chunkH = arcLen / n;
     const dThetaDeg = bendAngle / n;
 
@@ -142,7 +144,7 @@ export function AcmPanel3DPreview({
     const base = `${panelWidthIn}" × ${panelHeightIn}"`;
     if (!useBend) return `${base} · ${panelColorName}`;
     const ba = baIn >= 0.001 ? ` · BA ≈ ${baIn.toFixed(3)}"` : "";
-    return `${base} · ${Math.round(bendAngle)}° bend${ba} · ${panelColorName}`;
+    return `${base} · ${Math.round(bendAngle)}° bend (½ length each leg)${ba} · ${panelColorName}`;
   }, [panelWidthIn, panelHeightIn, panelColorName, useBend, bendAngle, baIn]);
 
   return (
