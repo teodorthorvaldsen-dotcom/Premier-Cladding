@@ -27,6 +27,7 @@ const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
+  bendAllowanceIn: 0,
 };
 
 export interface PriceResult {
@@ -206,6 +207,7 @@ export function Configurator() {
     const draft: QuoteDraft = {
       widthIn: size.widthIn,
       lengthIn: size.lengthIn,
+      ...(size.bendAllowanceIn > 0 ? { bendAllowanceIn: size.bendAllowanceIn } : {}),
       widthId: size.widthId,
       thicknessId,
       colorId,
@@ -332,7 +334,7 @@ export function Configurator() {
           >
             <AcmPanel3DPreview
               panelWidthIn={size.widthIn}
-              panelHeightIn={size.lengthIn}
+              panelHeightIn={size.lengthIn + size.bendAllowanceIn}
               panelDepthIn={previewDepthIn}
               panelColorHex={color.swatchHex}
               panelColorName={color.name}

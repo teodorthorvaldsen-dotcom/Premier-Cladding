@@ -213,6 +213,12 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Length</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
+              {typeof draft.bendAllowanceIn === "number" && draft.bendAllowanceIn > 0 ? (
+                <div>
+                  <dt className="text-gray-500">Bend allowance (preview)</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.bendAllowanceIn} in</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-gray-500">Thickness</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.thicknessLabel}</dd>
