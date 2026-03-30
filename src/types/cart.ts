@@ -15,6 +15,10 @@ export interface CartItem {
   customColorReference?: string;
   /** Original filename if user attached a PDF (file is not stored in the cart). */
   customColorSpecFileName?: string;
+  /** Optional bend line from left edge (in), ACM configurator. */
+  foldFromLeftIn?: number;
+  /** Optional bend line from bottom edge (in), ACM configurator. */
+  foldFromBottomIn?: number;
 }
 
 export function cartItemLineTotal(item: CartItem): number {

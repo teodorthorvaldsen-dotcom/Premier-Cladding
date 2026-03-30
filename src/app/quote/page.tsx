@@ -213,6 +213,18 @@ export default function QuotePage() {
                 <dt className="text-gray-500">Length</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.lengthIn} in</dd>
               </div>
+              {typeof draft.foldFromLeftIn === "number" ? (
+                <div>
+                  <dt className="text-gray-500">Bend line — from left edge</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.foldFromLeftIn} in</dd>
+                </div>
+              ) : null}
+              {typeof draft.foldFromBottomIn === "number" ? (
+                <div>
+                  <dt className="text-gray-500">Bend line — from bottom edge</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{draft.foldFromBottomIn} in</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-gray-500">Thickness</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{draft.thicknessLabel}</dd>
