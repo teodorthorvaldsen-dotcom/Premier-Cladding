@@ -124,7 +124,9 @@ function FoldedPanelMesh({
   heightIn,
   thicknessWorld,
   axis,
-  bends,
+  foldPositionIn,
+  foldAngleDeg,
+  isFolded,
   colorHex,
   mapUrl,
 }: {
@@ -132,20 +134,33 @@ function FoldedPanelMesh({
   heightIn: number;
   thicknessWorld: number;
   axis: "horizontal" | "vertical";
-  bends: BendSpec[];
+  /** Inches from edge to fold along split dimension; ignored when not folded. */
+  foldPositionIn: number;
+  foldAngleDeg: number;
+  isFolded: boolean;
   colorHex: string;
   mapUrl?: string;
 }) {
-  const parts = useMemo(
-    () => collectFoldParts(axis, widthIn, heightIn, thicknessWorld, bends),
-    [axis, widthIn, heightIn, thicknessWorld, bends]
-  );
+  const parts = useMemo(() => {
+    const bends: BendSpec[] = isFolded
+      ? [{ positionIn: foldPositionIn, angleDeg: foldAngleDeg }]
+      : [];
+    return collectFoldParts(axis, widthIn, heightIn, thicknessWorld, bends);
+  }, [
+    axis,
+    widthIn,
+    heightIn,
+    thicknessWorld,
+    isFolded,
+    foldPositionIn,
+    foldAngleDeg,
+  ]);
 
   return (
     <group>
       {parts.map((p) => (
         <mesh
-          key={p.key}
+          key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}`}
           position={p.position}
           rotation={p.rotation}
           castShadow
@@ -171,7 +186,9 @@ function PreviewScene({
   heightIn,
   thicknessWorld,
   axis,
-  bends,
+  foldPositionIn,
+  foldAngleDeg,
+  isFolded,
   colorHex,
   mapUrl,
 }: {
@@ -179,7 +196,9 @@ function PreviewScene({
   heightIn: number;
   thicknessWorld: number;
   axis: "horizontal" | "vertical";
-  bends: BendSpec[];
+  foldPositionIn: number;
+  foldAngleDeg: number;
+  isFolded: boolean;
   colorHex: string;
   mapUrl?: string;
 }) {
@@ -189,6 +208,7 @@ function PreviewScene({
   return (
     <Canvas
       shadows
+      dpr={[1, 2]}
       camera={{ position: [camDistance, camDistance * 0.75, camDistance * 1.05], fov: 38 }}
       style={{ width: "100%", height: "100%", display: "block" }}
       gl={{ antialias: true }}
@@ -204,7 +224,9 @@ function PreviewScene({
             heightIn={heightIn}
             thicknessWorld={thicknessWorld}
             axis={axis}
-            bends={bends}
+            foldPositionIn={foldPositionIn}
+            foldAngleDeg={foldAngleDeg}
+            isFolded={isFolded}
             colorHex={colorHex}
             mapUrl={mapUrl}
           />
@@ -240,11 +262,6 @@ export function AcmPanel3DPreview({
     bendInchesFromEdge ?? splitSize / 2,
     splitSize
   );
-
-  const bends: BendSpec[] = useMemo(() => {
-    if (!isBent) return [];
-    return [{ positionIn: foldPos, angleDeg: bendAngleDeg }];
-  }, [isBent, foldPos, bendAngleDeg]);
 
   const thicknessWorld = inchesToWorld(panelDepthIn);
 
@@ -285,7 +302,9 @@ export function AcmPanel3DPreview({
           heightIn={panelHeightIn}
           thicknessWorld={thicknessWorld}
           axis={r3fAxis}
-          bends={bends}
+          foldPositionIn={foldPos}
+          foldAngleDeg={bendAngleDeg}
+          isFolded={isBent}
           colorHex={hex}
           mapUrl={mapUrl}
         />

@@ -166,6 +166,17 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
   const handleBendInchesChange = (raw: string) => {
     setBendInchesStr(raw);
+    if (raw.trim() === "" || raw === "." || /^-?\d+\.$/.test(raw.trim())) {
+      return;
+    }
+    const num = Number(raw);
+    if (Number.isNaN(num)) {
+      return;
+    }
+    const next = clampBendInchesFromEdge(num, value.bendAxis, value.widthIn, value.lengthIn);
+    if (next !== value.bendInchesFromEdge) {
+      onChange({ ...value, bendInchesFromEdge: next });
+    }
   };
 
   const commitBendInches = () => {
@@ -174,11 +185,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       bendInchesStr.trim() === "" || Number.isNaN(num)
         ? midpointBendInches(value.bendAxis, value.widthIn, value.lengthIn)
         : clampBendInchesFromEdge(num, value.bendAxis, value.widthIn, value.lengthIn);
-    if (next !== value.bendInchesFromEdge) {
-      onChange({ ...value, bendInchesFromEdge: next });
-    } else {
-      setBendInchesStr(String(next));
-    }
+    onChange({ ...value, bendInchesFromEdge: next });
+    setBendInchesStr(String(next));
   };
 
   return (
@@ -293,6 +301,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             value={bendInchesStr}
             onChange={(e) => handleBendInchesChange(e.target.value)}
             onBlur={commitBendInches}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
             className="mt-1.5 block h-11 w-36 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label="Inches from edge to bend fold"
           />
