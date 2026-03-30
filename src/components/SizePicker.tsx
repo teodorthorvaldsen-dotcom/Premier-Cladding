@@ -157,7 +157,17 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   };
 
   const setRowEdge = (id: string, edge: BoxTrayEdge) => {
-    pushSides(value.boxSides.map((s) => (s.id === id ? { ...s, edge } : s)));
+    const row = value.boxSides.find((s) => s.id === id);
+    if (!row || row.edge === edge) return;
+    const conflict = value.boxSides.find((s) => s.id !== id && s.edge === edge);
+    const next = conflict
+      ? value.boxSides.map((s) => {
+          if (s.id === id) return { ...s, edge };
+          if (s.id === conflict.id) return { ...s, edge: row.edge };
+          return s;
+        })
+      : value.boxSides.map((s) => (s.id === id ? { ...s, edge } : s));
+    pushSides(next);
   };
 
   const commitRow = (index: number) => {
