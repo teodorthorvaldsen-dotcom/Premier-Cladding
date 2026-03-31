@@ -192,7 +192,7 @@ function FoldedPanelMesh({
     <group>
       {parts.map((p) => (
         <mesh
-          key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}`}
+          key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}-${p.rotation[0].toFixed(4)}-${p.rotation[1].toFixed(4)}-${p.rotation[2].toFixed(4)}`}
           position={p.position}
           rotation={p.rotation}
           castShadow={false}

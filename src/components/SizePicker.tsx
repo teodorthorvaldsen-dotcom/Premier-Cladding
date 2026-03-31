@@ -187,6 +187,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     pushSides(next);
   };
 
+  const reverseRowBend = (id: string) => {
+    const next = value.boxSides.map((s) =>
+      s.id === id ? { ...s, angleDeg: clampAngleDeg(-(Number(s.angleDeg) || 0)) } : s
+    );
+    pushSides(next);
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
@@ -249,8 +256,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Choose which edge each return sits on, how deep the return is (inches), and the bend angle. Edges match the
-            3D blank: front/back run full width; left/right run full length.
+            Choose edge, return depth, and angle. The list order stays fixed while you edit. Paired edges (left/right or
+            front/back) sometimes need <span className="font-medium text-gray-700">Reverse bend</span> so both flanges fold
+            the way you want; you can also enter a negative angle. Edges: front/back = full width; left/right = full length.
           </p>
 
           {value.boxSides.length === 0 ? (
@@ -341,6 +349,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                         onBlur={() => commitRow(index)}
                         className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
                       />
+                      <button
+                        type="button"
+                        onClick={() => reverseRowBend(side.id)}
+                        className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[12px] font-medium text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                      >
+                        Reverse bend
+                      </button>
                     </div>
                   </div>
                 </li>

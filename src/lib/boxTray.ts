@@ -13,21 +13,27 @@ function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
   return typeof x === "string" && (VALID_EDGES as string[]).includes(x);
 }
 
-/** One flap per edge; later rows for the same edge replace earlier (last wins). */
+/**
+ * One flap per physical edge; duplicate edges keep the last row in list order, earlier duplicates dropped.
+ * **Preserves list order** so the configurator cards do not jump when you edit height, angle, or edge.
+ */
 export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
-  const byEdge = new Map<BoxTrayEdge, BoxTraySideRow>();
-  for (const row of raw) {
+  const lastIdxByEdge = new Map<BoxTrayEdge, number>();
+  for (let i = 0; i < raw.length; i++) {
+    const row = raw[i];
     if (!isBoxTrayEdge(row.edge)) continue;
+    lastIdxByEdge.set(row.edge, i);
+  }
+  const out: BoxTraySideRow[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const row = raw[i];
+    if (!isBoxTrayEdge(row.edge)) continue;
+    if (lastIdxByEdge.get(row.edge) !== i) continue;
     const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
-    byEdge.set(row.edge, {
-      ...row,
-      flangeHeightIn: h,
-      angleDeg: a,
-    });
+    out.push({ ...row, flangeHeightIn: h, angleDeg: a });
   }
-  const order: BoxTrayEdge[] = ["south", "east", "north", "west"];
-  return order.map((e) => byEdge.get(e)).filter((x): x is BoxTraySideRow => x != null);
+  return out;
 }
 
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
