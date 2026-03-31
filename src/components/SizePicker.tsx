@@ -176,6 +176,13 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     pushSides(next);
   };
 
+  const reverseRowBend = (id: string) => {
+    const next = value.boxSides.map((s) =>
+      s.id === id ? { ...s, angleDeg: clampAngleDeg(-(Number(s.angleDeg) || 0)) } : s
+    );
+    pushSides(next);
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900">Size</label>
@@ -186,9 +193,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to{" "}
-        {MAX_TRAY_SIDE_ROWS} tray sides; several may use the same edge (stacked). New rows pick a free edge when possible,
-        otherwise default to left.
+        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
+        returns; several may use the same edge (stacked). New rows pick a free edge when possible, otherwise default to
+        left.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>

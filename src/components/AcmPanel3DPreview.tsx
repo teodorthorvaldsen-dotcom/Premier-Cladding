@@ -352,9 +352,9 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. Up to four returns; the same edge may repeat (stacked flanges in the flat
-        layout). Each row has its own height and angle. Positive° tips toward +Z (outward in the default view); negative°
-        tips inward. Drag to rotate.
+        Center face is always width × length. Add returns in any order; the same edge can appear more than once (stacked
+        flanges in the flat layout). Each row has its own height and angle. Positive° tips toward +Z (outward in the default
+        view); negative° tips inward. Drag to rotate.
       </p>
 
       <div
