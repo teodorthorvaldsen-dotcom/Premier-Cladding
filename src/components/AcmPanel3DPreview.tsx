@@ -95,6 +95,12 @@ function buildBoxTrayParts(
     args: [W, L, t],
   });
 
+  /** Flat-layout stacking along each edge when multiple rows share the same edge (world units). */
+  let stackSouth = 0;
+  let stackNorth = 0;
+  let stackWest = 0;
+  let stackEast = 0;
+
   for (const side of sides) {
     const H = inchesToWorld(Math.max(side.flangeHeightIn, 0.01));
     const deg = side.angleDeg;
@@ -104,49 +110,57 @@ function buildBoxTrayParts(
       case "south": {
         const rx = THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(rx, 0, 0, EULER_ORDER);
+        const hingeY = -stackSouth;
         p = partFromHinge(
           side.id,
-          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, hingeY, 0),
           new THREE.Vector3(0, H / 2, 0),
           e,
           [W, H, t]
         );
+        stackSouth += H;
         break;
       }
       case "north": {
         const rx = -THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(rx, 0, 0, EULER_ORDER);
+        const hingeY = L + stackNorth;
         p = partFromHinge(
           side.id,
-          new THREE.Vector3(0, L, 0),
+          new THREE.Vector3(0, hingeY, 0),
           new THREE.Vector3(0, -H / 2, 0),
           e,
           [W, H, t]
         );
+        stackNorth += H;
         break;
       }
       case "west": {
         const ry = THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(0, ry, 0, EULER_ORDER);
+        const hingeX = -W / 2 - stackWest;
         p = partFromHinge(
           side.id,
-          new THREE.Vector3(-W / 2, L / 2, 0),
+          new THREE.Vector3(hingeX, L / 2, 0),
           new THREE.Vector3(H / 2, 0, 0),
           e,
           [H, L, t]
         );
+        stackWest += H;
         break;
       }
       case "east": {
         const ry = -THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(0, ry, 0, EULER_ORDER);
+        const hingeX = W / 2 + stackEast;
         p = partFromHinge(
           side.id,
-          new THREE.Vector3(W / 2, L / 2, 0),
+          new THREE.Vector3(hingeX, L / 2, 0),
           new THREE.Vector3(-H / 2, 0, 0),
           e,
           [H, L, t]
         );
+        stackEast += H;
         break;
       }
       default:
@@ -338,9 +352,9 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. Add sides (returns) on each edge of the blank; each side has its own height
-        in inches and bend angle. Positive° tips that flange toward +Z (outward in the default view); negative° tips
-        inward. Orbit below.
+        Center face is always width × length. Add returns in any order; the same edge can appear more than once (stacked
+        flanges in the flat layout). Each row has its own height and angle. Positive° tips toward +Z (outward in the default
+        view); negative° tips inward. Drag to rotate.
       </p>
 
       <div

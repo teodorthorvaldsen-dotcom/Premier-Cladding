@@ -9,7 +9,7 @@ import {
 } from "@/data/acm";
 import type { ThicknessId } from "@/data/acm";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
-import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { MAX_TRAY_SIDE_ROWS, normalizeBoxTraySides } from "@/lib/boxTray";
 import { clampAngleDeg } from "@/lib/panelBends";
 
 const ALL_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
@@ -26,8 +26,7 @@ export interface SizeSelection {
   widthIn: number;
   lengthIn: number;
   /**
-   * Tray / box returns — one entry per edge max; duplicates collapse (last wins) when saved.
-   * Center panel in 3D is always width × length.
+   * Tray returns in list order. The same edge may appear more than once (stacked returns); 3D offsets them along that edge.
    */
   boxSides: BoxTraySideRow[];
 }
@@ -144,11 +143,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   };
 
   const usedEdges = new Set(value.boxSides.map((s) => s.edge));
-  const canAddSide = usedEdges.size < ALL_EDGES.length;
-  const nextEdgeToAdd = ALL_EDGES.find((e) => !usedEdges.has(e));
+  const canAddSide = value.boxSides.length < MAX_TRAY_SIDE_ROWS;
+  const nextEdgeToAdd = ALL_EDGES.find((e) => !usedEdges.has(e)) ?? "west";
 
   const addSide = () => {
-    if (!canAddSide || !nextEdgeToAdd) return;
+    if (!canAddSide) return;
     pushSides([...value.boxSides, newBoxSideRow(nextEdgeToAdd)]);
   };
 
@@ -157,17 +156,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   };
 
   const setRowEdge = (id: string, edge: BoxTrayEdge) => {
-    const row = value.boxSides.find((s) => s.id === id);
-    if (!row || row.edge === edge) return;
-    const conflict = value.boxSides.find((s) => s.id !== id && s.edge === edge);
-    const next = conflict
-      ? value.boxSides.map((s) => {
-          if (s.id === id) return { ...s, edge };
-          if (s.id === conflict.id) return { ...s, edge: row.edge };
-          return s;
-        })
-      : value.boxSides.map((s) => (s.id === id ? { ...s, edge } : s));
-    pushSides(next);
+    pushSides(value.boxSides.map((s) => (s.id === id ? { ...s, edge } : s)));
   };
 
   const commitRow = (index: number) => {
@@ -204,8 +193,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       </p>
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to four sides (one
-        per edge).
+        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
+        returns; several may use the same edge (stacked). New rows pick a free edge when possible, otherwise default to
+        left.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>
@@ -256,9 +246,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Choose edge, return depth, and angle. The list order stays fixed while you edit. Paired edges (left/right or
-            front/back) sometimes need <span className="font-medium text-gray-700">Reverse bend</span> so both flanges fold
-            the way you want; you can also enter a negative angle. Edges: front/back = full width; left/right = full length.
+            Choose edge, return depth, and angle.             The list order stays fixed while you edit. You can set the same edge on multiple rows (e.g. several “left”
+            returns). Use <span className="font-medium text-gray-700">Reverse bend</span> or a negative angle if a flange
+            should fold the other way. Edges: front/back = full width; left/right = full length.
           </p>
 
           {value.boxSides.length === 0 ? (

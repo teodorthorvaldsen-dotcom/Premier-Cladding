@@ -3,6 +3,9 @@ import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 
 const MAX_FLANGE_IN = 120;
 
+/** Configurator + preview allow many rows; multiple rows may share the same edge (stacked returns). */
+export const MAX_TRAY_SIDE_ROWS = 16;
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -14,26 +17,17 @@ function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
 }
 
 /**
- * One flap per physical edge; duplicate edges keep the last row in list order, earlier duplicates dropped.
- * **Preserves list order** so the configurator cards do not jump when you edit height, angle, or edge.
+ * Clamps each row; **preserves order** and **allows duplicate edges** (same edge listed multiple times = stacked flanges in 3D).
  */
 export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
-  const lastIdxByEdge = new Map<BoxTrayEdge, number>();
-  for (let i = 0; i < raw.length; i++) {
-    const row = raw[i];
-    if (!isBoxTrayEdge(row.edge)) continue;
-    lastIdxByEdge.set(row.edge, i);
-  }
   const out: BoxTraySideRow[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const row = raw[i];
+  for (const row of raw) {
     if (!isBoxTrayEdge(row.edge)) continue;
-    if (lastIdxByEdge.get(row.edge) !== i) continue;
     const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
     out.push({ ...row, flangeHeightIn: h, angleDeg: a });
   }
-  return out;
+  return out.slice(0, MAX_TRAY_SIDE_ROWS);
 }
 
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
