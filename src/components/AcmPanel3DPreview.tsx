@@ -2,7 +2,7 @@
 
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Center, Edges, Environment, OrbitControls, useTexture } from "@react-three/drei";
+import { Billboard, Center, Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
@@ -48,6 +48,8 @@ type BuiltPart = {
   position: [number, number, number];
   rotation: [number, number, number];
   args: [number, number, number];
+  /** Correlates with configurator list: "Flat center" for base, "Side N" for returns. */
+  label: string;
 };
 
 function inchesToWorld(inches: number) {
@@ -65,7 +67,8 @@ function partFromHinge(
   hingeWorld: THREE.Vector3,
   hingeLocal: THREE.Vector3,
   euler: THREE.Euler,
-  args: [number, number, number]
+  args: [number, number, number],
+  label: string
 ): BuiltPart {
   const q = new THREE.Quaternion().setFromEuler(euler);
   const pos = hingeWorld.clone().sub(hingeLocal.clone().applyQuaternion(q));
@@ -74,6 +77,7 @@ function partFromHinge(
     position: [pos.x, pos.y, pos.z],
     rotation: [euler.x, euler.y, euler.z],
     args,
+    label,
   };
 }
 
@@ -93,6 +97,7 @@ function buildBoxTrayParts(
     position: [0, L / 2, 0],
     rotation: [0, 0, 0],
     args: [W, L, t],
+    label: "Flat center",
   });
 
   /** Flat-layout stacking along each edge when multiple rows share the same edge (world units). */
@@ -101,9 +106,11 @@ function buildBoxTrayParts(
   let stackWest = 0;
   let stackEast = 0;
 
-  for (const side of sides) {
+  for (let i = 0; i < sides.length; i++) {
+    const side = sides[i];
     const H = inchesToWorld(Math.max(side.flangeHeightIn, 0.01));
     const deg = side.angleDeg;
+    const rowLabel = `Side ${i + 1}`;
     let p: BuiltPart;
 
     switch (side.edge) {
@@ -116,7 +123,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(0, hingeY, 0),
           new THREE.Vector3(0, H / 2, 0),
           e,
-          [W, H, t]
+          [W, H, t],
+          rowLabel
         );
         stackSouth += H;
         break;
@@ -130,7 +138,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(0, hingeY, 0),
           new THREE.Vector3(0, -H / 2, 0),
           e,
-          [W, H, t]
+          [W, H, t],
+          rowLabel
         );
         stackNorth += H;
         break;
@@ -144,7 +153,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(hingeX, L / 2, 0),
           new THREE.Vector3(H / 2, 0, 0),
           e,
-          [H, L, t]
+          [H, L, t],
+          rowLabel
         );
         stackWest += H;
         break;
@@ -158,7 +168,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(hingeX, L / 2, 0),
           new THREE.Vector3(-H / 2, 0, 0),
           e,
-          [H, L, t]
+          [H, L, t],
+          rowLabel
         );
         stackEast += H;
         break;
@@ -193,6 +204,28 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
   );
 }
 
+function PartBillboardLabel({ args, text }: { args: [number, number, number]; text: string }) {
+  const [ax, ay, az] = args;
+  const span = Math.max(ax, ay, az);
+  const fontSize = THREE.MathUtils.clamp(span * 0.085, 0.07, 0.32);
+  const lift = az / 2 + fontSize * 0.65;
+  return (
+    <Billboard position={[0, 0, lift]} follow={true} lockX={false} lockY={false} lockZ={false}>
+      <Text
+        fontSize={fontSize}
+        color="#1c1917"
+        outlineWidth={fontSize * 0.12}
+        outlineColor="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={span * 2.2}
+      >
+        {text}
+      </Text>
+    </Billboard>
+  );
+}
+
 function FoldedPanelMesh({
   parts,
   colorHex,
@@ -204,24 +237,27 @@ function FoldedPanelMesh({
 }) {
   return (
     <group>
-      {parts.map((p) => (
-        <mesh
-          key={`${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}-${p.rotation[0].toFixed(4)}-${p.rotation[1].toFixed(4)}-${p.rotation[2].toFixed(4)}`}
+      {parts.map((p, partIdx) => (
+        <group
+          key={`${partIdx}-${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}-${p.rotation[0].toFixed(4)}-${p.rotation[1].toFixed(4)}-${p.rotation[2].toFixed(4)}`}
           position={p.position}
           rotation={p.rotation}
-          castShadow={false}
-          receiveShadow={false}
         >
-          <boxGeometry args={p.args} />
-          {mapUrl ? (
-            <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />}>
-              <SwatchTexturedMaterial mapUrl={mapUrl} />
-            </Suspense>
-          ) : (
-            <meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />
-          )}
-          <Edges color="#555" threshold={12} />
-        </mesh>
+          <mesh castShadow={false} receiveShadow={false}>
+            <boxGeometry args={p.args} />
+            {mapUrl ? (
+              <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />}>
+                <SwatchTexturedMaterial mapUrl={mapUrl} />
+              </Suspense>
+            ) : (
+              <meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />
+            )}
+            <Edges color="#555" threshold={12} />
+          </mesh>
+          <Suspense fallback={null}>
+            <PartBillboardLabel args={p.args} text={p.label} />
+          </Suspense>
+        </group>
       ))}
     </group>
   );
@@ -352,9 +388,9 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. Add returns in any order; the same edge can appear more than once (stacked
-        flanges in the flat layout). Each row has its own height and angle. Positive° tips toward +Z (outward in the default
-        view); negative° tips inward. Drag to rotate.
+        Center face is always width × length. 3D labels match the list: <span className="font-medium text-gray-700">Flat center</span> for
+        the main face, <span className="font-medium text-gray-700">Side 1, Side 2, …</span> for each return row. The same edge may repeat
+        (stacked flanges). Positive° tips toward +Z (outward in the default view); negative° tips inward. Drag to rotate.
       </p>
 
       <div
