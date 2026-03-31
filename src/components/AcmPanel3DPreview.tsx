@@ -217,6 +217,25 @@ function PartRadialCallout({
   const layout = useMemo(() => {
     const pos = new THREE.Vector3(...part.position);
     const extent = Math.max(part.args[0], part.args[1], part.args[2]);
+    const fontSize = THREE.MathUtils.clamp(extent * 0.09, 0.08, 0.3);
+
+    /** Main face: lead from middle of broad face along +Z (not +Y), so “back” edge callouts aren’t stacked far above. */
+    if (part.key === "base") {
+      const t = part.args[2];
+      const dir = new THREE.Vector3(0, 0, 1);
+      const surfaceZ = t / 2 + 0.02;
+      const outward = extent * 0.38;
+      const start = pos.clone().add(new THREE.Vector3(0, 0, surfaceZ));
+      const end = pos.clone().add(new THREE.Vector3(0, 0, surfaceZ + outward));
+      const textPos = end.clone().addScaledVector(dir, fontSize * 0.65);
+      return {
+        linePoints: [start, end] as [THREE.Vector3, THREE.Vector3],
+        textPos: [textPos.x, textPos.y, textPos.z] as [number, number, number],
+        fontSize,
+        span: extent,
+      };
+    }
+
     const dir = pos.lengthSq() < 1e-10 ? new THREE.Vector3(0, 1, 0) : pos.clone().normalize();
     const fanRaw = (partIdx - (partsCount - 1) / 2) * 0.05;
     const perp = new THREE.Vector3(-dir.y, dir.x, 0);
@@ -226,7 +245,6 @@ function PartRadialCallout({
     const outer = extent * 0.55;
     const start = pos.clone().addScaledVector(dir, inner).add(perp);
     const end = pos.clone().addScaledVector(dir, outer).add(perp);
-    const fontSize = THREE.MathUtils.clamp(extent * 0.09, 0.08, 0.3);
     const textPos = end.clone().addScaledVector(dir, fontSize * 0.65);
     return {
       linePoints: [start, end] as [THREE.Vector3, THREE.Vector3],
@@ -235,6 +253,7 @@ function PartRadialCallout({
       span: extent,
     };
   }, [
+    part.key,
     part.position[0],
     part.position[1],
     part.position[2],
