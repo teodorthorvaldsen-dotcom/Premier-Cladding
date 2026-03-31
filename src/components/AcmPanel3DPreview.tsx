@@ -2,7 +2,7 @@
 
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Billboard, Center, Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
+import { Billboard, Center, Edges, Environment, Line, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
@@ -204,25 +204,64 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
   );
 }
 
-function PartBillboardLabel({ args, text }: { args: [number, number, number]; text: string }) {
-  const [ax, ay, az] = args;
-  const span = Math.max(ax, ay, az);
-  const fontSize = THREE.MathUtils.clamp(span * 0.085, 0.07, 0.32);
-  const lift = az / 2 + fontSize * 0.65;
+/** Leader line from part center outward; label sits past the line so it stays off the sheet metal. */
+function PartRadialCallout({
+  part,
+  partIdx,
+  partsCount,
+}: {
+  part: BuiltPart;
+  partIdx: number;
+  partsCount: number;
+}) {
+  const layout = useMemo(() => {
+    const pos = new THREE.Vector3(...part.position);
+    const extent = Math.max(part.args[0], part.args[1], part.args[2]);
+    const dir = pos.lengthSq() < 1e-10 ? new THREE.Vector3(0, 1, 0) : pos.clone().normalize();
+    const fanRaw = (partIdx - (partsCount - 1) / 2) * 0.05;
+    const perp = new THREE.Vector3(-dir.y, dir.x, 0);
+    if (perp.lengthSq() < 1e-10) perp.set(1, 0, 0);
+    perp.multiplyScalar(fanRaw);
+    const inner = extent * 0.2;
+    const outer = extent * 0.55;
+    const start = pos.clone().addScaledVector(dir, inner).add(perp);
+    const end = pos.clone().addScaledVector(dir, outer).add(perp);
+    const fontSize = THREE.MathUtils.clamp(extent * 0.09, 0.08, 0.3);
+    const textPos = end.clone().addScaledVector(dir, fontSize * 0.65);
+    return {
+      linePoints: [start, end] as [THREE.Vector3, THREE.Vector3],
+      textPos: [textPos.x, textPos.y, textPos.z] as [number, number, number],
+      fontSize,
+      span: extent,
+    };
+  }, [
+    part.position[0],
+    part.position[1],
+    part.position[2],
+    part.args[0],
+    part.args[1],
+    part.args[2],
+    partIdx,
+    partsCount,
+  ]);
+
   return (
-    <Billboard position={[0, 0, lift]} follow={true} lockX={false} lockY={false} lockZ={false}>
-      <Text
-        fontSize={fontSize}
-        color="#1c1917"
-        outlineWidth={fontSize * 0.12}
-        outlineColor="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={span * 2.2}
-      >
-        {text}
-      </Text>
-    </Billboard>
+    <group>
+      <Line points={layout.linePoints} color="#4b5563" lineWidth={2} opacity={0.92} transparent />
+      <Billboard position={layout.textPos} follow={true}>
+        <Text
+          fontSize={layout.fontSize}
+          color="#111827"
+          outlineWidth={layout.fontSize * 0.14}
+          outlineColor="#f9fafb"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={layout.span * 2.4}
+        >
+          {part.label}
+        </Text>
+      </Billboard>
+    </group>
   );
 }
 
@@ -235,27 +274,28 @@ function FoldedPanelMesh({
   colorHex: string;
   mapUrl?: string;
 }) {
+  const n = parts.length;
   return (
     <group>
       {parts.map((p, partIdx) => (
         <group
           key={`${partIdx}-${p.key}-${p.args[0].toFixed(5)}-${p.args[1].toFixed(5)}-${p.args[2].toFixed(5)}-${p.rotation[0].toFixed(4)}-${p.rotation[1].toFixed(4)}-${p.rotation[2].toFixed(4)}`}
-          position={p.position}
-          rotation={p.rotation}
         >
-          <mesh castShadow={false} receiveShadow={false}>
-            <boxGeometry args={p.args} />
-            {mapUrl ? (
-              <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />}>
-                <SwatchTexturedMaterial mapUrl={mapUrl} />
-              </Suspense>
-            ) : (
-              <meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />
-            )}
-            <Edges color="#555" threshold={12} />
-          </mesh>
+          <group position={p.position} rotation={p.rotation}>
+            <mesh castShadow={false} receiveShadow={false}>
+              <boxGeometry args={p.args} />
+              {mapUrl ? (
+                <Suspense fallback={<meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />}>
+                  <SwatchTexturedMaterial mapUrl={mapUrl} />
+                </Suspense>
+              ) : (
+                <meshStandardMaterial color={colorHex} metalness={0} roughness={0.82} envMapIntensity={0.42} />
+              )}
+              <Edges color="#555" threshold={12} />
+            </mesh>
+          </group>
           <Suspense fallback={null}>
-            <PartBillboardLabel args={p.args} text={p.label} />
+            <PartRadialCallout part={p} partIdx={partIdx} partsCount={n} />
           </Suspense>
         </group>
       ))}
@@ -388,9 +428,9 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. 3D labels match the list: <span className="font-medium text-gray-700">Flat center</span> for
-        the main face, <span className="font-medium text-gray-700">Side 1, Side 2, …</span> for each return row. The same edge may repeat
-        (stacked flanges). Positive° tips toward +Z (outward in the default view); negative° tips inward. Drag to rotate.
+        Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and{" "}
+        <span className="font-medium text-gray-700">Side 1, Side 2, …</span> sit beside the model with leader lines pointing in. The same
+        edge may repeat (stacked flanges). Positive° tips toward +Z (outward in the default view); negative° tips inward. Drag to rotate.
       </p>
 
       <div
