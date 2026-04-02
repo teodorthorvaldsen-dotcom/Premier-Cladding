@@ -10,6 +10,7 @@ import {
   finishes,
   thicknesses,
 } from "@/data/acm";
+import { formatBoxTrayReproductionOneLine, normalizeBoxTraySides } from "@/lib/boxTray";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 const ORDER_STEPS = [
@@ -39,13 +40,17 @@ function describeItem(item: CartItem): string {
   const sizeLabel = `${widthLabel} × ${item.heightIn} in`;
   const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
   const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
-  const parts = [sizeLabel, color, thickness, item.panelTypeLabel].filter(Boolean);
+  const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
+  const repro =
+    item.trayBuildSpec?.split("\n")[0] ??
+    (trayNorm.length > 0 ? formatBoxTrayReproductionOneLine(trayNorm) : "");
+  const parts = [sizeLabel, repro, color, thickness, item.panelTypeLabel].filter(Boolean);
   return parts.join(" · ");
 }
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items } = useCart();
+  const { items, clearCart } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"wire" | "credit">("wire");
@@ -97,6 +102,7 @@ export default function CheckoutPage() {
         if (!res.ok) {
           throw new Error(typeof data?.error === "string" ? data.error : "Failed to submit.");
         }
+        clearCart();
         setSubmitted(true);
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "Something went wrong.");
@@ -104,7 +110,7 @@ export default function CheckoutPage() {
         setSubmitting(false);
       }
     },
-    [items, paymentMethod, signature]
+    [items, paymentMethod, signature, clearCart]
   );
 
   if (items.length === 0 && !submitted) {
@@ -150,11 +156,40 @@ export default function CheckoutPage() {
 
       <section className="mb-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
         <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Order summary</h2>
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-4 space-y-6">
           {items.map((item) => (
-            <li key={item.id} className="flex justify-between text-sm">
-              <span className="text-gray-700">{describeItem(item)} × {item.quantity}</span>
-              <span className="tabular-nums text-gray-900">{formatUSD(cartItemLineTotal(item))}</span>
+            <li
+              key={item.id}
+              className="flex flex-col gap-3 border-b border-gray-100 pb-6 last:border-b-0 last:pb-0 sm:flex-row sm:justify-between"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start gap-3">
+                  {item.previewImageDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.previewImageDataUrl}
+                      alt=""
+                      className="h-28 w-44 shrink-0 rounded-lg border border-gray-200 object-cover bg-[#f4f5f7]"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900">
+                      {describeItem(item)} <span className="text-gray-500">× {item.quantity}</span>
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
+                    </p>
+                    {item.trayBuildSpec ? (
+                      <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md bg-gray-50 p-2 text-[11px] leading-snug text-gray-700">
+                        {item.trayBuildSpec}
+                      </pre>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              <p className="shrink-0 text-right text-sm font-medium tabular-nums text-gray-900">
+                {formatUSD(cartItemLineTotal(item))}
+              </p>
             </li>
           ))}
         </ul>

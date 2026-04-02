@@ -10,6 +10,7 @@ import {
 import type { ThicknessId } from "@/data/acm";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 import {
+  defaultFullTraySides,
   MAX_TRAY_SIDE_ROWS,
   normalizeBoxTraySides,
   trayDefaultAngleDegForSlot,
@@ -451,14 +452,16 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             onClick={() => {
               onChange({
                 ...value,
-                boxSides: [],
+                boxSides: normalizeBoxTraySides(defaultFullTraySides()),
               });
             }}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Clear all sides
           </button>
-          <p className="mt-2 text-[11px] text-gray-500">Removes every tray return; center size stays the same.</p>
+          <p className="mt-2 text-[11px] text-gray-500">
+            Resets Side 1–4 to the default 1″ @ 90° tray on each edge; width and length stay the same.
+          </p>
         </div>
       </div>
     </div>

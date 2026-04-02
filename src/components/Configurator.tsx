@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   allWidths,
@@ -23,7 +23,11 @@ import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
 import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
-import { defaultFullTraySides, normalizeBoxTraySides } from "@/lib/boxTray";
+import {
+  defaultFullTraySides,
+  formatBoxTrayReproductionSpec,
+  normalizeBoxTraySides,
+} from "@/lib/boxTray";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -99,6 +103,7 @@ export function Configurator() {
   );
   const router = useRouter();
   const { addItem } = useCart();
+  const previewGlCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (colorId !== "custom-color-match") {
@@ -158,27 +163,50 @@ export function Configurator() {
     const finish = finishes[0];
     const unitPrice = pricing.total / quantity;
     const boxTraySides = normalizeBoxTraySides(size.boxSides);
-    addItem({
-      widthIn: size.widthIn,
-      heightIn: size.lengthIn,
-      standardId: size.widthId,
-      colorId,
-      finishId: finish.id,
-      thicknessId,
-      quantity,
-      unitPrice,
-      areaFt2: pricing.areaFt2,
-      panelType: pricing.panelType,
-      panelTypeLabel: pricing.panelTypeLabel,
-      ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
-      ...(colorId === "custom-color-match"
-        ? {
-            customColorReference: customColorReference.trim() || undefined,
-            customColorSpecFileName: customColorSpecFile?.name,
-          }
-        : {}),
+    const trayBuildSpec =
+      boxTraySides.length > 0 ? formatBoxTrayReproductionSpec(boxTraySides) : undefined;
+
+    const capturePreview = (): string | undefined => {
+      const canvas = previewGlCanvasRef.current;
+      if (!canvas) return undefined;
+      try {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
+        if (dataUrl.length > 2_400_000) return undefined;
+        return dataUrl;
+      } catch {
+        return undefined;
+      }
+    };
+
+    /** Double rAF so the WebGL buffer reflects the latest frame before readback. */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const previewImageDataUrl = capturePreview();
+        addItem({
+          widthIn: size.widthIn,
+          heightIn: size.lengthIn,
+          standardId: size.widthId,
+          colorId,
+          finishId: finish.id,
+          thicknessId,
+          quantity,
+          unitPrice,
+          areaFt2: pricing.areaFt2,
+          panelType: pricing.panelType,
+          panelTypeLabel: pricing.panelTypeLabel,
+          ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
+          ...(trayBuildSpec ? { trayBuildSpec } : {}),
+          ...(previewImageDataUrl ? { previewImageDataUrl } : {}),
+          ...(colorId === "custom-color-match"
+            ? {
+                customColorReference: customColorReference.trim() || undefined,
+                customColorSpecFileName: customColorSpecFile?.name,
+              }
+            : {}),
+        });
+        router.push("/cart");
+      });
     });
-    router.push("/cart");
   };
 
   const handleRequestQuote = async () => {
@@ -363,6 +391,7 @@ export function Configurator() {
                   ? (color as { swatchImage: string }).swatchImage
                   : undefined
               }
+              glCanvasRef={previewGlCanvasRef}
             />
             <PriceSummary
               pricing={pricing}

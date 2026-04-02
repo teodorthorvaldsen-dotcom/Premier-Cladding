@@ -179,3 +179,37 @@ export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
   );
   return `Box sides: ${parts.join(" · ")}`;
 }
+
+const EDGE_LABELS_EN: Record<BoxTrayEdge, string> = {
+  south: "Front",
+  north: "Back",
+  west: "Left",
+  east: "Right",
+};
+
+/**
+ * Multi-line manufacturing / reproduction note: list order, label, edge, return depth, angle, parent row.
+ */
+export function formatBoxTrayReproductionSpec(sides: BoxTraySideRow[]): string {
+  const n = normalizeBoxTraySides(sides);
+  if (!n.length) return "";
+  const titles = trayFoldRowTitles(n);
+  return n
+    .map((row, i) => {
+      const edge = EDGE_LABELS_EN[row.edge];
+      const ang = Number.isInteger(row.angleDeg) ? `${row.angleDeg}` : row.angleDeg.toFixed(1);
+      const parentIdx = row.parentId ? n.findIndex((r) => r.id === row.parentId) : -1;
+      const parentRef =
+        parentIdx >= 0
+          ? `continues from ${titles[parentIdx]!} (${EDGE_LABELS_EN[n[parentIdx]!.edge]} row #${parentIdx + 1})`
+          : "root return off flat center (Side slot order)";
+      return `Row ${i + 1}: ${titles[i]!} | Edge: ${edge} | Return height: ${row.flangeHeightIn}" | Angle: ${ang}° | ${parentRef}`;
+    })
+    .join("\n");
+}
+
+/** Single-line summary for tight UI (e.g. caption). */
+export function formatBoxTrayReproductionOneLine(sides: BoxTraySideRow[]): string {
+  const spec = formatBoxTrayReproductionSpec(sides);
+  return spec.replace(/\n/g, " · ");
+}

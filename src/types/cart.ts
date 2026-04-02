@@ -20,6 +20,10 @@ export interface CartItem {
   panelBendsAlongWidth?: PanelBendSpec[];
   /** Tray / box returns (fixed center W×L); informational. */
   boxTraySides?: BoxTraySideRow[];
+  /** Multi-line spec for fabrication (edges, returns, angles, parent chain). */
+  trayBuildSpec?: string;
+  /** data:image/jpeg;base64,... 3D preview snapshot when added to cart. */
+  previewImageDataUrl?: string;
   /** @deprecated Prefer panelBends; kept for older cart JSON. */
   bendAngleDeg?: number;
   bendInchesFromEdge?: number;

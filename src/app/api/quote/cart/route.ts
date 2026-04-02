@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
+interface CartQuoteItem {
+  widthIn: number;
+  heightIn: number;
+  standardId: string | null;
+  colorId: string;
+  finishId: string;
+  thicknessId: string;
+  quantity: number;
+  unitPrice: number;
+  areaFt2: number;
+  panelType?: string;
+  panelTypeLabel?: string;
+  customColorReference?: string;
+  customColorSpecFileName?: string;
+  boxTraySides?: unknown;
+  trayBuildSpec?: string;
+  previewImageDataUrl?: string;
+}
+
 interface CartQuotePayload {
-  items: Array<{
-    widthIn: number;
-    heightIn: number;
-    standardId: string | null;
-    colorId: string;
-    finishId: string;
-    thicknessId: string;
-    quantity: number;
-    unitPrice: number;
-    areaFt2: number;
-    panelType?: string;
-    panelTypeLabel?: string;
-    customColorReference?: string;
-    customColorSpecFileName?: string;
-  }>;
+  items: CartQuoteItem[];
   fullName: string;
   company: string;
   email: string;
@@ -34,6 +39,18 @@ function formatUSD(n: number): string {
     currency: "USD",
     minimumFractionDigits: 2,
   }).format(n);
+}
+
+function safePreviewDataUrl(s: unknown): string | undefined {
+  if (typeof s !== "string" || s.length > 2_800_000) return undefined;
+  if (
+    s.startsWith("data:image/jpeg;base64,") ||
+    s.startsWith("data:image/png;base64,") ||
+    s.startsWith("data:image/webp;base64,")
+  ) {
+    return s;
+  }
+  return undefined;
 }
 
 function escapeHtml(s: string): string {
@@ -61,8 +78,15 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
               }
             </div>`
           : "";
+      const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
+      const previewBlock = previewUrl
+        ? `<div style="margin-bottom:8px;"><img src="${previewUrl}" alt="Panel preview" width="260" style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#f4f5f7" /></div>`
+        : "";
+      const specBlock = i.trayBuildSpec
+        ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(i.trayBuildSpec)}</pre>`
+        : "";
       return `<tr>
-          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${i.widthIn}" × ${i.heightIn} in${extra}</td>
+          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${i.widthIn}" × ${i.heightIn} in · Qty ${i.quantity}${extra}${specBlock}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(i.unitPrice * i.quantity)}</td>
@@ -93,7 +117,7 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   <table style="border-collapse: collapse; margin-bottom: 1.5em; width: 100%;">
     <thead>
       <tr style="background: #f5f5f5;">
-        <th style="padding: 8px 12px 8px 0; text-align: left;">Size</th>
+        <th style="padding: 8px 12px 8px 0; text-align: left;">Panel / spec</th>
         <th style="padding: 8px 12px; text-align: left;">Type</th>
         <th style="padding: 8px 12px; text-align: right;">Qty</th>
         <th style="padding: 8px 12px; text-align: right;">Total</th>

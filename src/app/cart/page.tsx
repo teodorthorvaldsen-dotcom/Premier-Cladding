@@ -14,7 +14,11 @@ import {
   formatPanelBendsSummary,
   formatPanelBendsAlongWidthSummary,
 } from "@/lib/panelBends";
-import { formatBoxTraySummary, normalizeBoxTraySides } from "@/lib/boxTray";
+import {
+  formatBoxTrayReproductionOneLine,
+  formatBoxTraySummary,
+  normalizeBoxTraySides,
+} from "@/lib/boxTray";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 function formatUSD(n: number): string {
@@ -52,7 +56,22 @@ function describeItem(item: CartItem): string {
       : "";
   const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
   const tray = trayNorm.length > 0 ? formatBoxTraySummary(trayNorm) : "";
-  const parts = [sizeLabel, tray, bendL, bendW, color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
+  const repro =
+    item.trayBuildSpec?.split("\n")[0] ??
+    (trayNorm.length > 0 ? formatBoxTrayReproductionOneLine(trayNorm) : "");
+  const reproHint =
+    repro && item.trayBuildSpec && item.trayBuildSpec.includes("\n") ? `${repro}…` : repro;
+  const parts = [
+    sizeLabel,
+    reproHint,
+    tray,
+    bendL,
+    bendW,
+    color,
+    finishLabel,
+    thickness,
+    item.panelTypeLabel,
+  ].filter(Boolean);
   return parts.join(" · ");
 }
 
@@ -70,20 +89,40 @@ function CartLine({
   const lineTotal = cartItemLineTotal(item);
 
   return (
-    <li className="flex flex-col gap-4 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div
-          className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-gray-300 bg-gray-100"
-          aria-hidden
-        >
-          {imageSrc ? (
-            <Image src={imageSrc} alt="" fill className="object-cover" sizes="40px" />
-          ) : (
-            <div className="h-full w-full" style={{ backgroundColor: color?.swatchHex ?? "#ccc" }} />
-          )}
+    <li className="flex flex-col gap-4 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex min-w-0 flex-1 gap-3">
+        <div className="flex shrink-0 flex-col gap-2">
+          {item.previewImageDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- data URL from WebGL capture
+            <img
+              src={item.previewImageDataUrl}
+              alt=""
+              className="h-24 w-40 rounded-lg border border-gray-200 object-cover bg-[#f4f5f7]"
+            />
+          ) : null}
+          <div
+            className="relative h-10 w-10 overflow-hidden rounded border border-gray-300 bg-gray-100"
+            aria-hidden
+          >
+            {imageSrc ? (
+              <Image src={imageSrc} alt="" fill className="object-cover" sizes="40px" />
+            ) : (
+              <div className="h-full w-full" style={{ backgroundColor: color?.swatchHex ?? "#ccc" }} />
+            )}
+          </div>
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-900">{describeItem(item)}</p>
+          {item.trayBuildSpec ? (
+            <details className="mt-2 rounded-lg border border-gray-100 bg-gray-50/90 px-2 py-1.5">
+              <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
+                Build spec
+              </summary>
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-gray-600">
+                {item.trayBuildSpec}
+              </pre>
+            </details>
+          ) : null}
           <p className="text-xs text-gray-500">
             {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
           </p>

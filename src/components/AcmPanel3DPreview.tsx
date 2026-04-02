@@ -1,11 +1,17 @@
 "use client";
 
+import type { MutableRefObject } from "react";
 import { Suspense, useLayoutEffect, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
-import { normalizeBoxTraySides, trayFoldRowPreviewLabels } from "@/lib/boxTray";
+import {
+  formatBoxTrayReproductionOneLine,
+  formatBoxTrayReproductionSpec,
+  normalizeBoxTraySides,
+  trayFoldRowPreviewLabels,
+} from "@/lib/boxTray";
 
 /** Preview viewport height (px). */
 const PREVIEW_H = 360;
@@ -46,6 +52,8 @@ export interface AcmPanel3DPreviewProps {
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
+  /** WebGL canvas (for add-to-cart screenshot); set `preserveDrawingBuffer` internally. */
+  glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 }
 
 type BuiltPart = {
@@ -553,12 +561,14 @@ function PreviewScene({
   colorHex,
   mapUrl,
   zoomMul,
+  glCanvasRef,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
   colorHex: string;
   mapUrl?: string;
   zoomMul: number;
+  glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
   const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
@@ -579,6 +589,10 @@ function PreviewScene({
         toneMapping: THREE.NeutralToneMapping,
         toneMappingExposure: 1.08,
         outputColorSpace: THREE.SRGBColorSpace,
+        preserveDrawingBuffer: true,
+      }}
+      onCreated={({ gl }) => {
+        if (glCanvasRef) glCanvasRef.current = gl.domElement;
       }}
     >
       <color attach="background" args={["#f4f5f7"]} />
@@ -606,6 +620,7 @@ export function AcmPanel3DPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
+  glCanvasRef,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -633,11 +648,12 @@ export function AcmPanel3DPreview({
   const caption = (() => {
     const size = `${panelWidthIn}" × ${panelHeightIn}"`;
     if (sidesNorm.length === 0) return `${size} flat · ${panelColorName}`;
-    const bits = sidesNorm.map(
-      (s) => `${edgeShort[s.edge] ?? s.edge} ${s.flangeHeightIn}" @ ${s.angleDeg}°`
-    );
-    return `${size} tray · ${bits.join(" · ")} · ${panelColorName}`;
+    const detail = formatBoxTrayReproductionOneLine(sidesNorm);
+    return `${size} tray · ${detail} · ${panelColorName}`;
   })();
+
+  const reproductionBlock =
+    sidesNorm.length > 0 ? formatBoxTrayReproductionSpec(sidesNorm) : "";
 
   return (
     <section
@@ -697,12 +713,23 @@ export function AcmPanel3DPreview({
           colorHex={hex}
           mapUrl={mapUrl}
           zoomMul={previewZoomMul}
+          glCanvasRef={glCanvasRef}
         />
       </div>
 
       <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
         {caption}
       </p>
+      {reproductionBlock ? (
+        <details className="mt-3 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-left">
+          <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
+            Full reproduction spec (rows, edges, angles)
+          </summary>
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-snug text-gray-600">
+            {reproductionBlock}
+          </pre>
+        </details>
+      ) : null}
       <p className="mt-2 text-center text-xs text-gray-400">
         Drag to rotate. Use + / − on the preview to zoom; 1× resets zoom.
       </p>
