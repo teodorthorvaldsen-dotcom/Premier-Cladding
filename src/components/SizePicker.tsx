@@ -17,6 +17,22 @@ const ALL_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
 /** “Add side” picks left/right before front/back so the 3rd/4th returns are x-axis when the first two were y-axis. */
 const EDGE_ADD_PRIORITY: BoxTrayEdge[] = ["west", "east", "south", "north"];
 
+/** Left/right only (Side 3 & 4 in a typical four-side tray). */
+const X_AXIS_EDGES: BoxTrayEdge[] = ["west", "east"];
+
+function isXAxisLockedRowIndex(index: number): boolean {
+  return index === 2 || index === 3;
+}
+
+/** Map an invalid front/back row at Side 3/4 to the complementary left/right vs the paired row. */
+function coerceEdgeForXOnlyRow(index: number, sides: BoxTraySideRow[]): BoxTrayEdge {
+  const buddyIdx = index === 2 ? 3 : 2;
+  const buddy = sides[buddyIdx];
+  const buddyOk = buddy && (buddy.edge === "west" || buddy.edge === "east");
+  if (!buddyOk) return index === 2 ? "west" : "east";
+  return buddy!.edge === "west" ? "east" : "west";
+}
+
 const EDGE_LABELS: Record<BoxTrayEdge, string> = {
   south: "Front (y = 0, spans width)",
   north: "Back (y = length)",
@@ -50,8 +66,8 @@ function newSideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function newBoxSideRow(edge: BoxTrayEdge): BoxTraySideRow {
-  return { id: newSideId(), edge, flangeHeightIn: 1, angleDeg: 90 };
+function newBoxSideRow(edge: BoxTrayEdge, angleDeg = 90): BoxTraySideRow {
+  return { id: newSideId(), edge, flangeHeightIn: 1, angleDeg };
 }
 
 interface SizePickerProps {
@@ -89,6 +105,19 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         angle: angleInputStr(s.angleDeg),
       }))
     );
+  }, [value.boxSides]);
+
+  /** Side 3/4 may only use left/right; fix legacy front/back rows. */
+  useEffect(() => {
+    const next = value.boxSides.map((s, i) => {
+      if (!isXAxisLockedRowIndex(i) || s.edge === "west" || s.edge === "east") return s;
+      return { ...s, edge: coerceEdgeForXOnlyRow(i, value.boxSides) };
+    });
+    if (!next.some((s, i) => s.edge !== value.boxSides[i]?.edge)) return;
+    onChange({
+      ...value,
+      boxSides: normalizeBoxTraySides(next),
+    });
   }, [value.boxSides]);
 
   const clampLength = (val: number): number => {
@@ -147,11 +176,15 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
   const usedEdges = new Set(value.boxSides.map((s) => s.edge));
   const canAddSide = value.boxSides.length < MAX_TRAY_SIDE_ROWS;
-  const nextEdgeToAdd = EDGE_ADD_PRIORITY.find((e) => !usedEdges.has(e)) ?? "west";
+  const addingXAxisReturns = value.boxSides.length >= 2;
+  const nextEdgeToAdd = addingXAxisReturns
+    ? X_AXIS_EDGES.find((e) => !usedEdges.has(e)) ?? "west"
+    : EDGE_ADD_PRIORITY.find((e) => !usedEdges.has(e)) ?? "west";
 
   const addSide = () => {
     if (!canAddSide) return;
-    pushSides([...value.boxSides, newBoxSideRow(nextEdgeToAdd)]);
+    const angleDeg = addingXAxisReturns ? -90 : 90;
+    pushSides([...value.boxSides, newBoxSideRow(nextEdgeToAdd, angleDeg)]);
   };
 
   const removeSide = (id: string) => {
@@ -197,8 +230,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
         in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
-        returns; several may use the same edge (stacked). New rows prefer a free left or right edge, then front or
-        back; otherwise they default to left.
+        returns; several may use the same edge (stacked). Rows 3–4 are left/right only (−X / +X), starting at −90°
+        (reverse bend along length). New rows before that prefer a free left or right, then front or back.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>
@@ -249,9 +282,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Choose edge, return depth, and angle.             The list order stays fixed while you edit. You can set the same edge on multiple rows (e.g. several “left”
-            returns). Use <span className="font-medium text-gray-700">Reverse bend</span> or a negative angle if a flange
-            should fold the other way. Edges: front/back = full width; left/right = full length.
+            Choose edge, return depth, and angle. The list order stays fixed while you edit. Side 3 and Side 4 only
+            attach along left or right (±X, full length), default −90°. Use <span className="font-medium text-gray-700">Reverse bend</span> or edit the angle to flip. Same edge may repeat for stacked returns. Front/back = full width.
           </p>
 
           {value.boxSides.length === 0 ? (
@@ -280,7 +312,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                       onChange={(e) => setRowEdge(side.id, e.target.value as BoxTrayEdge)}
                       className="mt-1 block h-10 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
                     >
-                      {ALL_EDGES.map((e) => (
+                      {(isXAxisLockedRowIndex(index) ? X_AXIS_EDGES : ALL_EDGES).map((e) => (
                         <option key={e} value={e}>
                           {EDGE_LABELS[e]}
                         </option>

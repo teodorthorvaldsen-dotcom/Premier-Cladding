@@ -13,14 +13,20 @@ function newTraySideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** One return per edge: 1″ height, 90° bend (defaults match “90°” in the form; use Reverse or − for the other direction). */
+/** One return per edge: front/back 1″ @ +90°; left/right 1″ @ −90° (reverse bend, flanges along ±X). */
 export function defaultFullTraySides(): BoxTraySideRow[] {
   const edges: BoxTrayEdge[] = ["south", "north", "west", "east"];
+  const angles: Record<BoxTrayEdge, number> = {
+    south: 90,
+    north: 90,
+    west: -90,
+    east: -90,
+  };
   return edges.map((edge) => ({
     id: newTraySideId(),
     edge,
     flangeHeightIn: 1,
-    angleDeg: 90,
+    angleDeg: angles[edge],
   }));
 }
 
