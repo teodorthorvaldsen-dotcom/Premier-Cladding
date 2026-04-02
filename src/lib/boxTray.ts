@@ -106,6 +106,58 @@ export function trayFoldRowTitles(sides: BoxTraySideRow[]): string[] {
   return titles;
 }
 
+/**
+ * Short labels for 3D face text only, e.g. `Side 2: F1, F1, F1` instead of `Side 2 Fold 1 Fold 1 Fold 1`.
+ */
+export function trayFoldRowPreviewLabels(sides: BoxTraySideRow[]): string[] {
+  const rootIdsInOrder: string[] = [];
+  for (const s of sides) {
+    if (!s.parentId) rootIdsInOrder.push(s.id);
+  }
+  const rootOrdinalById = new Map<string, number>();
+  rootIdsInOrder.forEach((id, i) => rootOrdinalById.set(id, i + 1));
+
+  const rootIdForIndex = (rowIndex: number): string => {
+    let i = rowIndex;
+    const seen = new Set<string>();
+    for (;;) {
+      const row = sides[i];
+      if (!row) return sides[rowIndex]!.id;
+      if (!row.parentId) return row.id;
+      if (seen.has(row.id)) return row.id;
+      seen.add(row.id);
+      const pi = sides.findIndex((s) => s.id === row.parentId);
+      if (pi < 0) return row.id;
+      i = pi;
+    }
+  };
+
+  const foldRanksFromRoot = (rowIndex: number): number[] => {
+    const ranks: number[] = [];
+    let i = rowIndex;
+    while (sides[i]?.parentId) {
+      const pid = sides[i]!.parentId!;
+      let siblingRank = 1;
+      for (let j = 0; j < i; j++) {
+        if (sides[j]!.parentId === pid) siblingRank++;
+      }
+      ranks.unshift(siblingRank);
+      const pi = sides.findIndex((s) => s.id === pid);
+      if (pi < 0) break;
+      i = pi;
+    }
+    return ranks;
+  };
+
+  return sides.map((_, i) => {
+    const row = sides[i]!;
+    const sn = rootOrdinalById.get(rootIdForIndex(i)) ?? i + 1;
+    if (!row.parentId) return `Side ${sn}`;
+    const ranks = foldRanksFromRoot(i);
+    return `Side ${sn}: ${ranks.map((r) => `F${r}`).join(", ")}`;
+  });
+}
+
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
   if (!sides.length) return "";
   const labels: Record<BoxTrayEdge, string> = {

@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo } from "react";
+import { Suspense, useLayoutEffect, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
-import { normalizeBoxTraySides, trayFoldRowTitles } from "@/lib/boxTray";
+import { normalizeBoxTraySides, trayFoldRowPreviewLabels } from "@/lib/boxTray";
 
 /** Preview viewport height (px). */
 const PREVIEW_H = 360;
@@ -233,7 +233,7 @@ function buildBoxTrayParts(
   let stackWest = 0;
   let stackEast = 0;
 
-  const rowTitles = trayFoldRowTitles(sides);
+  const rowTitles = trayFoldRowPreviewLabels(sides);
 
   for (let i = 0; i < sides.length; i++) {
     const side = sides[i];
@@ -425,7 +425,8 @@ function PartSurfaceLabel({
   vertical: boolean;
 }) {
   const t = Math.max(thickness, 0.008);
-  const fontSize = THREE.MathUtils.clamp(spanXY * 0.072, 0.07, 0.32);
+  /** Higher floor so short labels (e.g. “Side 1”) read the same size as longer abbreviated folds on small flanges. */
+  const fontSize = THREE.MathUtils.clamp(spanXY * 0.072, 0.125, 0.34);
   return (
     <Text
       position={[0, 0, t / 2 + 0.028]}
@@ -494,11 +495,14 @@ function PreviewRig({
   minSpanInches,
   colorHex,
   mapUrl,
+  zoomMul,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
   colorHex: string;
   mapUrl?: string;
+  /** &gt; 1 moves the camera closer (zoom in). */
+  zoomMul: number;
 }) {
   const { camera, size } = useThree();
   const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
@@ -509,6 +513,8 @@ function PreviewRig({
     return computePreviewOrbitRadius(boundingSphereRadius, minSpanInches, aspect);
   }, [boundingSphereRadius, minSpanInches, size.width, size.height]);
 
+  const cameraRadius = orbitRadius / THREE.MathUtils.clamp(zoomMul, 0.38, 3.2);
+
   useLayoutEffect(() => {
     camera.near = Math.max(0.01, orbitRadius / 2000);
     camera.far = orbitRadius * 80 + 20;
@@ -517,7 +523,7 @@ function PreviewRig({
 
   return (
     <>
-      <StickyOrbitCamera radius={orbitRadius} />
+      <StickyOrbitCamera radius={cameraRadius} />
       <Suspense fallback={null}>
         <Environment preset="apartment" environmentIntensity={0.5} />
         <group position={[-center.x, -center.y, -center.z]}>
@@ -532,8 +538,8 @@ function PreviewRig({
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.78}
-        minDistance={orbitRadius}
-        maxDistance={orbitRadius}
+        minDistance={cameraRadius}
+        maxDistance={cameraRadius}
         minPolarAngle={0.3 * Math.PI}
         maxPolarAngle={0.7 * Math.PI}
       />
@@ -546,11 +552,13 @@ function PreviewScene({
   minSpanInches,
   colorHex,
   mapUrl,
+  zoomMul,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
   colorHex: string;
   mapUrl?: string;
+  zoomMul: number;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
   const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
@@ -579,7 +587,13 @@ function PreviewScene({
       <directionalLight castShadow={false} color={PREVIEW_KEY_LIGHT} position={[6, 11, 8]} intensity={1.38} />
       <directionalLight castShadow={false} color={PREVIEW_FILL_LIGHT} position={[-6, 5, 6]} intensity={0.62} />
 
-      <PreviewRig parts={parts} minSpanInches={minSpanInches} colorHex={colorHex} mapUrl={mapUrl} />
+      <PreviewRig
+        parts={parts}
+        minSpanInches={minSpanInches}
+        colorHex={colorHex}
+        mapUrl={mapUrl}
+        zoomMul={zoomMul}
+      />
     </Canvas>
   );
 }
@@ -593,6 +607,7 @@ export function AcmPanel3DPreview({
   panelColorName,
   panelSwatchImage,
 }: AcmPanel3DPreviewProps) {
+  const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
 
   const activeParts = useMemo(
@@ -636,21 +651,52 @@ export function AcmPanel3DPreview({
         Fold &amp; bend preview
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and{" "}
-        <span className="font-medium text-gray-700">Side 1, Side 2, …</span> are labeled on each panel in the 3D view. The same edge may
-        repeat (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same
-        sign convention for matching bends. Drag to rotate.
+        Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and abbreviated side labels
+        (e.g. <span className="font-medium text-gray-700">Side 2: F1, F1, F1</span>) appear on each panel. The same edge may repeat
+        (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same sign
+        convention for matching bends. Drag to rotate.
       </p>
 
       <div
-        className="mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"
+        className="relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"
         style={{ height: PREVIEW_H, maxWidth: 520 }}
       >
+        <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-lg border border-gray-200/90 bg-white/95 p-0.5 shadow-sm backdrop-blur-sm">
+          <button
+            type="button"
+            className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+            aria-label="Zoom preview out"
+            onClick={() =>
+              setPreviewZoomMul((z) => THREE.MathUtils.clamp(z / 1.14, 0.42, 3.1))
+            }
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+            aria-label="Reset preview zoom"
+            onClick={() => setPreviewZoomMul(1)}
+          >
+            1×
+          </button>
+          <button
+            type="button"
+            className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+            aria-label="Zoom preview in"
+            onClick={() =>
+              setPreviewZoomMul((z) => THREE.MathUtils.clamp(z * 1.14, 0.42, 3.1))
+            }
+          >
+            +
+          </button>
+        </div>
         <PreviewScene
           parts={activeParts}
           minSpanInches={Math.max(panelWidthIn, panelHeightIn)}
           colorHex={hex}
           mapUrl={mapUrl}
+          zoomMul={previewZoomMul}
         />
       </div>
 
@@ -658,7 +704,7 @@ export function AcmPanel3DPreview({
         {caption}
       </p>
       <p className="mt-2 text-center text-xs text-gray-400">
-        Drag to rotate the view (zoom is fixed).
+        Drag to rotate. Use + / − on the preview to zoom; 1× resets zoom.
       </p>
     </section>
   );
