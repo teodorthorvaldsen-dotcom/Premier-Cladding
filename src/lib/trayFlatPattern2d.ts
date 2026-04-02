@@ -85,9 +85,7 @@ export function buildTrayFlatRects(widthIn: number, lengthIn: number, sides: Box
 
   if (n.length === 0) return rects;
 
-  const parts: BuiltFlat[] = [
-    { key: "base", pos: { x: 0, y: L / 2 }, args: [W, L, 0] },
-  ];
+  const parts: BuiltFlat[] = [{ key: "base", pos: { x: 0, y: L / 2 }, args: [W, L, 0] }];
 
   let stackSouth = 0;
   let stackNorth = 0;
@@ -276,9 +274,7 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
   let startK = "";
   let startPt: Vec2 | null = null;
 
-  const adjKeys = Array.from(adj.keys());
-  for (let i = 0; i < adjKeys.length; i++) {
-    const k = adjKeys[i];
+  Array.from(adj.keys()).forEach((k) => {
     const parts = k.split(",");
     const sx = Number(parts[0]);
     const sy = Number(parts[1]);
@@ -287,8 +283,7 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
       startK = k;
       startPt = { x: sx, y: sy };
     }
-  }
-
+  });
   if (!startPt || !adj.has(startK)) return [];
 
   const start: Vec2 = { x: startPt.x, y: startPt.y };
