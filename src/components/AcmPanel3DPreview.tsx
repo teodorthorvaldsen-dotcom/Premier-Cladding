@@ -81,6 +81,47 @@ function partFromHinge(
   };
 }
 
+/** World-space half-diagonal of the union AABB of all oriented box parts (for framing). */
+function boundingHalfDiagonalParts(parts: BuiltPart[]): number {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+  const euler = new THREE.Euler(0, 0, 0, EULER_ORDER);
+  const quat = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const corner = new THREE.Vector3();
+
+  for (const p of parts) {
+    euler.set(p.rotation[0], p.rotation[1], p.rotation[2], EULER_ORDER);
+    quat.setFromEuler(euler);
+    pos.set(p.position[0], p.position[1], p.position[2]);
+    const hx = p.args[0] / 2;
+    const hy = p.args[1] / 2;
+    const hz = p.args[2] / 2;
+    for (let i = 0; i < 8; i++) {
+      const sx = i & 1 ? hx : -hx;
+      const sy = i & 2 ? hy : -hy;
+      const sz = i & 4 ? hz : -hz;
+      corner.set(sx, sy, sz).applyQuaternion(quat).add(pos);
+      minX = Math.min(minX, corner.x);
+      minY = Math.min(minY, corner.y);
+      minZ = Math.min(minZ, corner.z);
+      maxX = Math.max(maxX, corner.x);
+      maxY = Math.max(maxY, corner.y);
+      maxZ = Math.max(maxZ, corner.z);
+    }
+  }
+
+  if (!Number.isFinite(minX)) return inchesToWorld(12);
+  const dx = maxX - minX;
+  const dy = maxY - minY;
+  const dz = maxZ - minZ;
+  return 0.5 * Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 function buildBoxTrayParts(
   widthIn: number,
   lengthIn: number,
@@ -334,13 +375,10 @@ function PreviewScene({
   colorHex: string;
   mapUrl?: string;
 }) {
-  let maxWorld = inchesToWorld(Math.max(minSpanInches, 12));
-  for (const p of parts) {
-    const [px, py] = p.position;
-    const [ax, ay] = p.args;
-    maxWorld = Math.max(maxWorld, Math.abs(px) + ax / 2, Math.abs(py) + ay / 2, Math.abs(p.position[2]) + p.args[2] / 2);
-  }
-  const camDistance = Math.max(7, maxWorld * 4.2);
+  const halfDiag = boundingHalfDiagonalParts(parts);
+  const floor = inchesToWorld(Math.max(minSpanInches, 12) / 2) * Math.SQRT2;
+  const frameRadius = Math.max(halfDiag, floor) * 1.14;
+  const camDistance = Math.max(7, frameRadius * 5.25);
   /** Closest orbit distance — preview stays here (no zoom). */
   const orbitRadius = camDistance * 0.58;
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(orbitRadius);

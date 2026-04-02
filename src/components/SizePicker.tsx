@@ -48,7 +48,7 @@ function newSideId(): string {
 }
 
 function newBoxSideRow(edge: BoxTrayEdge): BoxTraySideRow {
-  return { id: newSideId(), edge, flangeHeightIn: 6, angleDeg: 90 };
+  return { id: newSideId(), edge, flangeHeightIn: 1, angleDeg: 90 };
 }
 
 interface SizePickerProps {

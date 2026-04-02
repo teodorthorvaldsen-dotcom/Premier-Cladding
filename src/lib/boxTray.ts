@@ -6,6 +6,24 @@ const MAX_FLANGE_IN = 120;
 /** Configurator + preview allow many rows; multiple rows may share the same edge (stacked returns). */
 export const MAX_TRAY_SIDE_ROWS = 16;
 
+function newTraySideId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** One return per edge: 1″ height, 90° bend (defaults match “90°” in the form; use Reverse or − for the other direction). */
+export function defaultFullTraySides(): BoxTraySideRow[] {
+  const edges: BoxTrayEdge[] = ["south", "north", "west", "east"];
+  return edges.map((edge) => ({
+    id: newTraySideId(),
+    edge,
+    flangeHeightIn: 1,
+    angleDeg: 90,
+  }));
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
