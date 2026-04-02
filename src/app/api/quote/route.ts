@@ -8,10 +8,10 @@ import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 
 const BOX_EDGE_EMAIL_LABEL: Record<BoxTrayEdge, string> = {
-  south: "Front (y = 0)",
-  north: "Back (y = length)",
-  west: "Left (x = −W/2)",
-  east: "Right (x = +W/2)",
+  south: "Front",
+  north: "Back",
+  west: "Left",
+  east: "Right",
 };
 
 const QUOTES_JSONL_PATH = path.join(process.cwd(), "data", "quotes.jsonl");
