@@ -3,8 +3,21 @@ import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 
 const MAX_FLANGE_IN = 120;
 
-/** Configurator + preview allow many rows; multiple rows may share the same edge (stacked returns). */
+/** Configurator + preview allow many rows; multiple rows may appear when cycling slots (stacked returns). */
 export const MAX_TRAY_SIDE_ROWS = 16;
+
+/** List position → edge: Side 1 front, 2 back, 3 left, 4 right, then repeats for row 5+. */
+export const TRAY_SLOT_EDGE_ORDER: BoxTrayEdge[] = ["south", "north", "west", "east"];
+
+export function trayEdgeForSlotIndex(slotIndex: number): BoxTrayEdge {
+  return TRAY_SLOT_EDGE_ORDER[slotIndex % TRAY_SLOT_EDGE_ORDER.length]!;
+}
+
+/** Default bend sign for slot: +90° on front/back, −90° on left/right (one cycle). */
+export function trayDefaultAngleDegForSlot(slotIndex: number): number {
+  const m = slotIndex % 4;
+  return m >= 2 ? -90 : 90;
+}
 
 function newTraySideId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -13,20 +26,13 @@ function newTraySideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** One return per edge: front/back 1″ @ +90°; left/right 1″ @ −90° (reverse bend, flanges along ±X). */
+/** One return per slot: front/back 1″ @ +90°; left/right 1″ @ −90°. */
 export function defaultFullTraySides(): BoxTraySideRow[] {
-  const edges: BoxTrayEdge[] = ["south", "north", "west", "east"];
-  const angles: Record<BoxTrayEdge, number> = {
-    south: 90,
-    north: 90,
-    west: -90,
-    east: -90,
-  };
-  return edges.map((edge) => ({
+  return [0, 1, 2, 3].map((i) => ({
     id: newTraySideId(),
-    edge,
+    edge: trayEdgeForSlotIndex(i),
     flangeHeightIn: 1,
-    angleDeg: angles[edge],
+    angleDeg: trayDefaultAngleDegForSlot(i),
   }));
 }
 
@@ -34,24 +40,25 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-const VALID_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
-
-function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
-  return typeof x === "string" && (VALID_EDGES as string[]).includes(x);
-}
-
 /**
- * Clamps each row; **preserves order** and **allows duplicate edges** (same edge listed multiple times = stacked flanges in 3D).
+ * Clamps each row, **preserves order**, assigns **edge from list index** (Side 1→front … Side 4→right, then repeats).
  */
 export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
   const out: BoxTraySideRow[] = [];
   for (const row of raw) {
-    if (!isBoxTrayEdge(row.edge)) continue;
+    if (row == null || typeof row !== "object") continue;
+    const idx = out.length;
+    const edge = trayEdgeForSlotIndex(idx);
     const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
-    out.push({ ...row, flangeHeightIn: h, angleDeg: a });
+    const id =
+      typeof (row as BoxTraySideRow).id === "string" && (row as BoxTraySideRow).id.length > 0
+        ? (row as BoxTraySideRow).id
+        : newTraySideId();
+    out.push({ id, edge, flangeHeightIn: h, angleDeg: a });
+    if (out.length >= MAX_TRAY_SIDE_ROWS) break;
   }
-  return out.slice(0, MAX_TRAY_SIDE_ROWS);
+  return out;
 }
 
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
