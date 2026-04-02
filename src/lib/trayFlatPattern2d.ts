@@ -275,15 +275,17 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
 
   let startK = "";
   let startPt: Vec2 | null = null;
-  for (const k of adj.keys()) {
+
+  Array.from(adj.keys()).forEach((k) => {
     const parts = k.split(",");
     const sx = Number(parts[0]);
     const sy = Number(parts[1]);
-    if (!startPt || sy < startPt.y - 1e-9 || (Math.abs(sy - startPt.y) < 1e-9 && sx < startPt.x)) {
-      startPt = { x: sx, y: sy };
+
+    if (!startPt || sy < startPt.y || (sy === startPt.y && sx < startPt.x)) {
       startK = k;
+      startPt = { x: sx, y: sy };
     }
-  }
+  });
   if (!startPt || !adj.has(startK)) return [];
 
   const poly: Vec2[] = [{ x: startPt.x, y: startPt.y }];
