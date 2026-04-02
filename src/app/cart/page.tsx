@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { PanelPreviewModal } from "@/components/PanelPreviewModal";
+import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import {
   allWidths,
   colors,
@@ -79,10 +82,12 @@ function CartLine({
   item,
   onRemove,
   onQuantityChange,
+  onOpenInteractivePreview,
 }: {
   item: CartItem;
   onRemove: () => void;
   onQuantityChange: (qty: number) => void;
+  onOpenInteractivePreview: () => void;
 }) {
   const color = colors.find((c) => c.id === item.colorId);
   const imageSrc = swatchImageSrc(color);
@@ -92,14 +97,28 @@ function CartLine({
     <li className="flex flex-col gap-4 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 flex-1 gap-3">
         <div className="flex shrink-0 flex-col gap-2">
-          {item.previewImageDataUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- data URL from WebGL capture
-            <img
-              src={item.previewImageDataUrl}
-              alt=""
-              className="h-24 w-40 rounded-lg border border-gray-200 object-cover bg-[#f4f5f7]"
-            />
-          ) : null}
+          <button
+            type="button"
+            onClick={onOpenInteractivePreview}
+            className="group relative block rounded-lg border border-gray-200 bg-[#f4f5f7] text-left shadow-sm transition hover:border-gray-400 hover:shadow focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            aria-label="Open enlarged 3D preview — drag to rotate, zoom with plus and minus"
+          >
+            {item.previewImageDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- data URL from WebGL capture
+              <img
+                src={item.previewImageDataUrl}
+                alt=""
+                className="h-24 w-40 rounded-lg object-cover"
+              />
+            ) : (
+              <span className="flex h-24 w-40 items-center justify-center px-2 text-center text-[11px] font-medium text-gray-600">
+                3D preview
+              </span>
+            )}
+            <span className="absolute bottom-1 left-1 right-1 rounded bg-black/55 px-1 py-0.5 text-center text-[10px] font-medium text-white opacity-90 backdrop-blur-sm group-hover:bg-black/65">
+              Click — zoom &amp; rotate
+            </span>
+          </button>
           <div
             className="relative h-10 w-10 overflow-hidden rounded border border-gray-300 bg-gray-100"
             aria-hidden
@@ -123,6 +142,7 @@ function CartLine({
               </pre>
             </details>
           ) : null}
+          <RevitTrayExportBlock item={item} />
           <p className="text-xs text-gray-500">
             {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
           </p>
@@ -179,6 +199,8 @@ const SMALL_ORDER_FEE = 125;
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity } = useCart();
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
+  const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const subtotal = items.reduce(
     (sum, i) => sum + cartItemLineTotal(i),
     0
@@ -208,6 +230,11 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <PanelPreviewModal
+        item={previewItem}
+        open={previewItemId !== null}
+        onClose={() => setPreviewItemId(null)}
+      />
       <div className="mb-12">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Your Cart</h1>
         <p className="mt-2 text-[15px] text-gray-500">Review your items and totals.</p>
@@ -219,6 +246,7 @@ export default function CartPage() {
             item={item}
             onRemove={() => removeItem(item.id)}
             onQuantityChange={(qty) => updateQuantity(item.id, qty)}
+            onOpenInteractivePreview={() => setPreviewItemId(item.id)}
           />
         ))}
       </ul>

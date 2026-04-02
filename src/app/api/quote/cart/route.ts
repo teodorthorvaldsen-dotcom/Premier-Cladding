@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
+import type { BoxTraySideRow } from "@/types/boxTray";
 
 interface CartQuoteItem {
   widthIn: number;
@@ -85,8 +88,18 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
       const specBlock = i.trayBuildSpec
         ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(i.trayBuildSpec)}</pre>`
         : "";
+      let revitBlock = "";
+      try {
+        if (Array.isArray(i.boxTraySides)) {
+          const tray = normalizeBoxTraySides(i.boxTraySides as BoxTraySideRow[]);
+          const code = formatRevitTrayExportJson(i.widthIn, i.heightIn, tray);
+          revitBlock = `<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;color:#3730a3;">Revit / BIM JSON (all-cladding-tray-panel/v1)</summary><pre style="margin-top:6px;padding:8px;background:#eef2ff;border-radius:6px;font-size:10px;line-height:1.3;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto">${escapeHtml(code)}</pre></details>`;
+        }
+      } catch {
+        revitBlock = "";
+      }
       return `<tr>
-          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${i.widthIn}" × ${i.heightIn} in · Qty ${i.quantity}${extra}${specBlock}</td>
+          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${i.widthIn}" × ${i.heightIn} in · Qty ${i.quantity}${extra}${specBlock}${revitBlock}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(i.unitPrice * i.quantity)}</td>

@@ -736,3 +736,84 @@ export function AcmPanel3DPreview({
     </section>
   );
 }
+
+/**
+ * Stand-alone interactive 3D viewer (e.g. cart/checkout lightbox). Same orbit + zoom as the configurator preview.
+ */
+export function TrayInteractivePreview({
+  panelWidthIn,
+  panelHeightIn,
+  panelDepthIn,
+  boxSides = [],
+  panelColorHex,
+  panelSwatchImage,
+  heightPx = 420,
+  className = "",
+}: {
+  panelWidthIn: number;
+  panelHeightIn: number;
+  panelDepthIn: number;
+  boxSides?: BoxTraySideRow[];
+  panelColorHex: string;
+  panelSwatchImage?: string;
+  heightPx?: number;
+  className?: string;
+}) {
+  const [previewZoomMul, setPreviewZoomMul] = useState(1);
+  const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSides), [boxSides]);
+  const activeParts = useMemo(
+    () => buildBoxTrayParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), sidesNorm),
+    [panelWidthIn, panelHeightIn, panelDepthIn, sidesNorm]
+  );
+  const hex =
+    panelColorHex && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(panelColorHex.trim())
+      ? panelColorHex.trim()
+      : "#c8cdd3";
+  const mapUrl =
+    panelSwatchImage && panelSwatchImage.length > 0 ? panelSwatchImage : undefined;
+
+  return (
+    <div
+      className={`relative w-full max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-[#f4f5f7] ${className}`}
+      style={{ height: heightPx }}
+    >
+      <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-lg border border-gray-200/90 bg-white/95 p-0.5 shadow-sm backdrop-blur-sm">
+        <button
+          type="button"
+          className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+          aria-label="Zoom preview out"
+          onClick={() =>
+            setPreviewZoomMul((z) => THREE.MathUtils.clamp(z / 1.14, 0.42, 3.1))
+          }
+        >
+          −
+        </button>
+        <button
+          type="button"
+          className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+          aria-label="Reset preview zoom"
+          onClick={() => setPreviewZoomMul(1)}
+        >
+          1×
+        </button>
+        <button
+          type="button"
+          className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+          aria-label="Zoom preview in"
+          onClick={() =>
+            setPreviewZoomMul((z) => THREE.MathUtils.clamp(z * 1.14, 0.42, 3.1))
+          }
+        >
+          +
+        </button>
+      </div>
+      <PreviewScene
+        parts={activeParts}
+        minSpanInches={Math.max(panelWidthIn, panelHeightIn)}
+        colorHex={hex}
+        mapUrl={mapUrl}
+        zoomMul={previewZoomMul}
+      />
+    </div>
+  );
+}
