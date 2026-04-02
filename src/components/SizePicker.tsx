@@ -14,6 +14,9 @@ import { clampAngleDeg } from "@/lib/panelBends";
 
 const ALL_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
 
+/** “Add side” picks left/right before front/back so the 3rd/4th returns are x-axis when the first two were y-axis. */
+const EDGE_ADD_PRIORITY: BoxTrayEdge[] = ["west", "east", "south", "north"];
+
 const EDGE_LABELS: Record<BoxTrayEdge, string> = {
   south: "Front (y = 0, spans width)",
   north: "Back (y = length)",
@@ -144,7 +147,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
 
   const usedEdges = new Set(value.boxSides.map((s) => s.edge));
   const canAddSide = value.boxSides.length < MAX_TRAY_SIDE_ROWS;
-  const nextEdgeToAdd = ALL_EDGES.find((e) => !usedEdges.has(e)) ?? "west";
+  const nextEdgeToAdd = EDGE_ADD_PRIORITY.find((e) => !usedEdges.has(e)) ?? "west";
 
   const addSide = () => {
     if (!canAddSide) return;
@@ -194,8 +197,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
         in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
-        returns; several may use the same edge (stacked). New rows pick a free edge when possible, otherwise default to
-        left.
+        returns; several may use the same edge (stacked). New rows prefer a free left or right edge, then front or
+        back; otherwise they default to left.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>
