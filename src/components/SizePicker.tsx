@@ -295,8 +295,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
             Rows 1–4 start as Front, Back, Left, Right; <span className="font-medium text-gray-700">Add side</span> continues the pattern. Use{" "}
-            <span className="font-medium text-gray-700">Add fold on this edge</span> for an extra return on the same edge (e.g. second fold on
-            Side 1). Set depth and angle; <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
+            <span className="font-medium text-gray-700">Add fold on this edge</span> on a side or on a fold to chain returns from that
+            segment’s free edge (names like <span className="font-medium text-gray-700">Side 1 Fold 1 Fold 1</span>). Set depth and angle;{" "}
+            <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
           </p>
 
           {value.boxSides.length === 0 ? (

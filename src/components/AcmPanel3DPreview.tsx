@@ -245,13 +245,25 @@ function buildBoxTrayParts(
 
     const prevSide = i > 0 ? sides[i - 1] : undefined;
     const prevBuilt = parts[parts.length - 1];
+    /** Only continue the bend from the previous *segment* when this row is its direct child (or legacy no-id stacks). */
+    const explicitChildOfPrev =
+      typeof side.parentId === "string" &&
+      side.parentId.length > 0 &&
+      prevSide !== undefined &&
+      side.parentId === prevSide.id;
+    const legacySameEdgeNoParent =
+      !side.parentId &&
+      !!prevSide &&
+      !prevSide.parentId &&
+      side.edge === prevSide.edge;
     const isCompoundGeom =
       i > 0 &&
       !!prevSide &&
       prevBuilt &&
       prevBuilt.key !== "base" &&
       prevBuilt.edge === side.edge &&
-      side.edge === prevSide.edge;
+      side.edge === prevSide.edge &&
+      (explicitChildOfPrev || legacySameEdgeNoParent);
 
     if (isCompoundGeom) {
       const qP = quatFromPartRotation(prevBuilt.rotation);
