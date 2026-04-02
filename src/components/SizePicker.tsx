@@ -196,7 +196,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
         in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
         returns. Edge is fixed by side order: 1 Front, 2 Back, 3 Left, 4 Right, then the pattern repeats for stacked
-        returns. New sides use the default angle for that position (+90° on front/back, −90° on left/right).
+        returns. New sides default to 90° on every edge.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>

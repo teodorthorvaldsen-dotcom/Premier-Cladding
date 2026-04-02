@@ -13,10 +13,9 @@ export function trayEdgeForSlotIndex(slotIndex: number): BoxTrayEdge {
   return TRAY_SLOT_EDGE_ORDER[slotIndex % TRAY_SLOT_EDGE_ORDER.length]!;
 }
 
-/** Default bend sign for slot: +90° on front/back, −90° on left/right (one cycle). */
-export function trayDefaultAngleDegForSlot(slotIndex: number): number {
-  const m = slotIndex % 4;
-  return m >= 2 ? -90 : 90;
+/** Default bend for every tray return slot (+90°, same for all edges). */
+export function trayDefaultAngleDegForSlot(_slotIndex: number): number {
+  return 90;
 }
 
 function newTraySideId(): string {
@@ -26,7 +25,7 @@ function newTraySideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** One return per slot: front/back 1″ @ +90°; left/right 1″ @ −90°. */
+/** One return per slot: 1″ @ +90° on each edge. */
 export function defaultFullTraySides(): BoxTraySideRow[] {
   return [0, 1, 2, 3].map((i) => ({
     id: newTraySideId(),
