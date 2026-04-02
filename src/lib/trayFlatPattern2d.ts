@@ -276,7 +276,9 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
   let startK = "";
   let startPt: Vec2 | null = null;
 
-  Array.from(adj.keys()).forEach((k) => {
+  const adjKeys = Array.from(adj.keys());
+  for (let i = 0; i < adjKeys.length; i++) {
+    const k = adjKeys[i];
     const parts = k.split(",");
     const sx = Number(parts[0]);
     const sy = Number(parts[1]);
@@ -285,7 +287,8 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
       startK = k;
       startPt = { x: sx, y: sy };
     }
-  });
+  }
+
   if (!startPt || !adj.has(startK)) return [];
 
   const start: Vec2 = { x: startPt.x, y: startPt.y };
