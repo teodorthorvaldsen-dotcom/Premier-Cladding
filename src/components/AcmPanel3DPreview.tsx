@@ -297,23 +297,27 @@ function PartSurfaceLabel({
   label,
   thickness,
   spanXY,
+  vertical,
 }: {
   label: string;
   thickness: number;
   spanXY: number;
+  /** Side 3 / 4 (and repeating left/right in the tray cycle): run text along the flange length. */
+  vertical: boolean;
 }) {
   const t = Math.max(thickness, 0.008);
   const fontSize = THREE.MathUtils.clamp(spanXY * 0.072, 0.07, 0.32);
   return (
     <Text
       position={[0, 0, t / 2 + 0.028]}
+      rotation={vertical ? [0, 0, Math.PI / 2] : [0, 0, 0]}
       fontSize={fontSize}
       color="#111827"
       outlineWidth={fontSize * 0.14}
       outlineColor="#f9fafb"
       anchorX="center"
       anchorY="middle"
-      maxWidth={spanXY * 0.88}
+      maxWidth={vertical ? spanXY * 1.1 : spanXY * 0.88}
     >
       {label}
     </Text>
@@ -352,6 +356,11 @@ function FoldedPanelMesh({
                 label={p.label}
                 thickness={p.args[2]}
                 spanXY={Math.max(p.args[0], p.args[1])}
+                vertical={
+                  p.key !== "base" &&
+                  partIdx >= 1 &&
+                  (partIdx % 4 === 3 || partIdx % 4 === 0)
+                }
               />
             </Suspense>
           </group>
