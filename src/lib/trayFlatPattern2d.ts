@@ -261,16 +261,17 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
   }
 
   const adj = new Map<string, Vec2[]>();
-  for (const e of edgeMap.values()) {
+
+  Array.from(edgeMap.values()).forEach((e) => {
     const pa = { x: e.ax, y: e.ay };
     const pb = { x: e.bx, y: e.by };
     const la = adj.get(e.a) ?? [];
-    la.push(pb);
-    adj.set(e.a, la);
     const lb = adj.get(e.b) ?? [];
+    la.push(pb);
     lb.push(pa);
+    adj.set(e.a, la);
     adj.set(e.b, lb);
-  }
+  });
 
   let startK = "";
   let startPt: Vec2 | null = null;
