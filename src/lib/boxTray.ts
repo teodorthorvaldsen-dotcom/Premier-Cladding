@@ -49,10 +49,7 @@ export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
     const idx = out.length;
     const edge = trayEdgeForSlotIndex(idx);
     const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
-    let a = clampAngleDeg(Number(row.angleDeg) || 0);
-    if ((edge === "west" || edge === "east") && a === -90) {
-      a = 90;
-    }
+    const a = clampAngleDeg(Number(row.angleDeg) || 0);
     const id =
       typeof (row as BoxTraySideRow).id === "string" && (row as BoxTraySideRow).id.length > 0
         ? (row as BoxTraySideRow).id
