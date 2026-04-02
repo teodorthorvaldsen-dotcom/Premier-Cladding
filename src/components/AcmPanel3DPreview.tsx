@@ -1,8 +1,8 @@
 "use client";
 
-import { type ReactNode, Suspense, useLayoutEffect, useMemo } from "react";
+import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Billboard, Center, Edges, Environment, Line, OrbitControls, Text, useTexture } from "@react-three/drei";
+import { Billboard, Edges, Environment, Line, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
@@ -25,9 +25,14 @@ function StickyOrbitCamera({ radius }: { radius: number }) {
   useLayoutEffect(() => {
     const p = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(radius);
     camera.position.set(p.x, p.y, p.z);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    const upd = (controls as { update?: () => void } | null)?.update;
-    upd?.();
+    const ctl = controls as { target?: THREE.Vector3; update?: () => void } | null | undefined;
+    if (ctl?.target) {
+      ctl.target.set(0, 0, 0);
+    }
+    ctl?.update?.();
   }, [radius, camera, controls]);
   return null;
 }
@@ -81,8 +86,11 @@ function partFromHinge(
   };
 }
 
-/** World-space half-diagonal of the union AABB of all oriented box parts (for framing). */
-function boundingHalfDiagonalParts(parts: BuiltPart[]): number {
+/** AABB center + bounding-sphere radius (max corner distance from center) for all mesh parts. */
+function meshBoundsFromParts(parts: BuiltPart[]): {
+  center: THREE.Vector3;
+  boundingSphereRadius: number;
+} {
   let minX = Infinity;
   let minY = Infinity;
   let minZ = Infinity;
@@ -115,11 +123,27 @@ function boundingHalfDiagonalParts(parts: BuiltPart[]): number {
     }
   }
 
-  if (!Number.isFinite(minX)) return inchesToWorld(12);
-  const dx = maxX - minX;
-  const dy = maxY - minY;
-  const dz = maxZ - minZ;
-  return 0.5 * Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (!Number.isFinite(minX)) {
+    return { center: new THREE.Vector3(0, 0, 0), boundingSphereRadius: inchesToWorld(12) };
+  }
+  const center = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+  let boundingSphereRadius = 0;
+  for (const p of parts) {
+    euler.set(p.rotation[0], p.rotation[1], p.rotation[2], EULER_ORDER);
+    quat.setFromEuler(euler);
+    pos.set(p.position[0], p.position[1], p.position[2]);
+    const hx = p.args[0] / 2;
+    const hy = p.args[1] / 2;
+    const hz = p.args[2] / 2;
+    for (let i = 0; i < 8; i++) {
+      const sx = i & 1 ? hx : -hx;
+      const sy = i & 2 ? hy : -hy;
+      const sz = i & 4 ? hz : -hz;
+      corner.set(sx, sy, sz).applyQuaternion(quat).add(pos);
+      boundingSphereRadius = Math.max(boundingSphereRadius, center.distanceTo(corner));
+    }
+  }
+  return { center, boundingSphereRadius };
 }
 
 const PREVIEW_VFOV = 38;
@@ -129,12 +153,12 @@ const PREVIEW_VFOV = 38;
  * No large minimum distance — small panels stay zoomed-in and centered.
  */
 function computePreviewOrbitRadius(
-  halfDiag: number,
+  meshSphereRadius: number,
   minSpanInches: number,
   aspect: number
 ): number {
   const floorR = inchesToWorld(Math.max(minSpanInches, 8) * 0.25);
-  const meshR = Math.max(halfDiag, floorR, 0.06);
+  const meshR = Math.max(meshSphereRadius, floorR, 0.06);
   /** Leader lines / billboards sit outside mesh AABB */
   const fitR = meshR * 1.52 + inchesToWorld(3.5);
   const vFov = THREE.MathUtils.degToRad(PREVIEW_VFOV);
@@ -386,22 +410,28 @@ function FoldedPanelMesh({
   );
 }
 
-/** Camera + controls react to canvas size so framing stays correct on resize. */
-function PreviewFraming({
+const PREVIEW_ASPECT_FALLBACK = 520 / PREVIEW_H;
+
+/** Centers mesh at origin every time `parts` change (no async Center helper); camera always looks at (0,0,0). */
+function PreviewRig({
   parts,
   minSpanInches,
-  children,
+  colorHex,
+  mapUrl,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
-  children: ReactNode;
+  colorHex: string;
+  mapUrl?: string;
 }) {
   const { camera, size } = useThree();
-  const halfDiag = useMemo(() => boundingHalfDiagonalParts(parts), [parts]);
+  const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
   const orbitRadius = useMemo(() => {
-    const aspect = size.width / Math.max(size.height, 1);
-    return computePreviewOrbitRadius(halfDiag, minSpanInches, aspect);
-  }, [halfDiag, minSpanInches, size.width, size.height]);
+    const w = size.width > 2 ? size.width : PREVIEW_ASPECT_FALLBACK * PREVIEW_H;
+    const h = size.height > 2 ? size.height : PREVIEW_H;
+    const aspect = w / Math.max(h, 1);
+    return computePreviewOrbitRadius(boundingSphereRadius, minSpanInches, aspect);
+  }, [boundingSphereRadius, minSpanInches, size.width, size.height]);
 
   useLayoutEffect(() => {
     camera.near = Math.max(0.01, orbitRadius / 2000);
@@ -412,7 +442,12 @@ function PreviewFraming({
   return (
     <>
       <StickyOrbitCamera radius={orbitRadius} />
-      {children}
+      <Suspense fallback={null}>
+        <Environment preset="apartment" environmentIntensity={0.5} />
+        <group position={[-center.x, -center.y, -center.z]}>
+          <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
+        </group>
+      </Suspense>
       <OrbitControls
         makeDefault
         enablePan={false}
@@ -423,8 +458,8 @@ function PreviewFraming({
         rotateSpeed={0.78}
         minDistance={orbitRadius}
         maxDistance={orbitRadius}
-        minPolarAngle={0.22 * Math.PI}
-        maxPolarAngle={0.78 * Math.PI}
+        minPolarAngle={0.3 * Math.PI}
+        maxPolarAngle={0.7 * Math.PI}
       />
     </>
   );
@@ -468,14 +503,7 @@ function PreviewScene({
       <directionalLight castShadow={false} color={PREVIEW_KEY_LIGHT} position={[6, 11, 8]} intensity={1.38} />
       <directionalLight castShadow={false} color={PREVIEW_FILL_LIGHT} position={[-6, 5, 6]} intensity={0.62} />
 
-      <PreviewFraming parts={parts} minSpanInches={minSpanInches}>
-        <Suspense fallback={null}>
-          <Environment preset="apartment" environmentIntensity={0.5} />
-          <Center precise>
-            <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
-          </Center>
-        </Suspense>
-      </PreviewFraming>
+      <PreviewRig parts={parts} minSpanInches={minSpanInches} colorHex={colorHex} mapUrl={mapUrl} />
     </Canvas>
   );
 }
