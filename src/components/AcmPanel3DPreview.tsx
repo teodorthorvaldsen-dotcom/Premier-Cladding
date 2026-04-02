@@ -312,9 +312,10 @@ function PartSurfaceLabel({
       position={[0, 0, t / 2 + 0.028]}
       rotation={vertical ? [0, 0, Math.PI / 2] : [0, 0, 0]}
       fontSize={fontSize}
-      color="#111827"
-      outlineWidth={fontSize * 0.14}
-      outlineColor="#f9fafb"
+      color="#000000"
+      fontWeight={700}
+      outlineWidth={fontSize * 0.16}
+      outlineColor="#ffffff"
       anchorX="center"
       anchorY="middle"
       maxWidth={vertical ? spanXY * 1.1 : spanXY * 0.88}
