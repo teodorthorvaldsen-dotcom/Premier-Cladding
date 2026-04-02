@@ -186,7 +186,8 @@ function buildBoxTrayParts(
         break;
       }
       case "west": {
-        const ry = THREE.MathUtils.degToRad(deg);
+        /** Invert vs former math so +90° matches front/back “inward” convention; −90° tips the other way. */
+        const ry = -THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(0, ry, 0, EULER_ORDER);
         const hingeX = -W / 2 - stackWest;
         p = partFromHinge(
@@ -201,7 +202,7 @@ function buildBoxTrayParts(
         break;
       }
       case "east": {
-        const ry = -THREE.MathUtils.degToRad(deg);
+        const ry = THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(0, ry, 0, EULER_ORDER);
         const hingeX = W / 2 + stackEast;
         p = partFromHinge(
@@ -487,7 +488,8 @@ export function AcmPanel3DPreview({
       <p className="mt-0.5 text-xs text-gray-500">
         Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and{" "}
         <span className="font-medium text-gray-700">Side 1, Side 2, …</span> sit beside the model with leader lines pointing in. The same
-        edge may repeat (stacked flanges). Positive° tips toward +Z (outward in the default view); negative° tips inward. Drag to rotate.
+        edge may repeat (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right
+        use the same sign convention for matching bends. Drag to rotate.
       </p>
 
       <div
