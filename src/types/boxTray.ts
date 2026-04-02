@@ -8,4 +8,6 @@ export interface BoxTraySideRow {
   flangeHeightIn: number;
   /** Signed bend °: positive tips the flap toward +Z (outward); negative toward −Z. */
   angleDeg: number;
+  /** When set, this return continues from the free edge of the parent row (same edge); UI nests under that side. */
+  parentId?: string | null;
 }

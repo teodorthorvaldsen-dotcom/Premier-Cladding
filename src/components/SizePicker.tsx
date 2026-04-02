@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CUSTOM_WIDTH_MAX_IN,
   CUSTOM_WIDTH_MIN_IN,
@@ -29,7 +29,7 @@ export interface SizeSelection {
   widthIn: number;
   lengthIn: number;
   /**
-   * Tray returns in list order. The same edge may appear more than once (stacked returns); 3D offsets them along that edge.
+   * Tray returns in list order. Extra folds on one edge use `parentId` and are stored consecutively; preview chains them from the free edge of the previous return.
    */
   boxSides: BoxTraySideRow[];
 }
@@ -50,8 +50,40 @@ function newSideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function newBoxSideRow(edge: BoxTrayEdge, angleDeg = 90): BoxTraySideRow {
-  return { id: newSideId(), edge, flangeHeightIn: 1, angleDeg };
+function newBoxSideRow(edge: BoxTrayEdge, angleDeg = 90, parentId?: string): BoxTraySideRow {
+  return {
+    id: newSideId(),
+    edge,
+    flangeHeightIn: 1,
+    angleDeg,
+    ...(parentId ? { parentId } : {}),
+  };
+}
+
+function collectSubtreeIds(all: BoxTraySideRow[], rootId: string): Set<string> {
+  const out = new Set<string>([rootId]);
+  let growing = true;
+  while (growing) {
+    growing = false;
+    for (const s of all) {
+      if (s.parentId && out.has(s.parentId) && !out.has(s.id)) {
+        out.add(s.id);
+        growing = true;
+      }
+    }
+  }
+  return out;
+}
+
+function lastDescendantIndex(all: BoxTraySideRow[], startIndex: number): number {
+  const root = all[startIndex];
+  if (!root) return startIndex;
+  const subtree = collectSubtreeIds(all, root.id);
+  let max = startIndex;
+  for (let i = startIndex; i < all.length; i++) {
+    if (subtree.has(all[i]!.id)) max = i;
+  }
+  return max;
 }
 
 interface SizePickerProps {
@@ -159,18 +191,17 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
   /** Stack another return on the same edge as this row (extra fold on Side 1–4, etc.). */
   const addFoldOnSameEdgeAfter = (afterIndex: number) => {
     if (!canAddSide) return;
-    const anchor = value.boxSides[afterIndex];
-    if (!anchor) return;
-    const next = [
-      ...value.boxSides.slice(0, afterIndex + 1),
-      newBoxSideRow(anchor.edge, 90),
-      ...value.boxSides.slice(afterIndex + 1),
-    ];
+    const leafIdx = lastDescendantIndex(value.boxSides, afterIndex);
+    const leaf = value.boxSides[leafIdx];
+    if (!leaf) return;
+    const row = newBoxSideRow(leaf.edge, 90, leaf.id);
+    const next = [...value.boxSides.slice(0, leafIdx + 1), row, ...value.boxSides.slice(leafIdx + 1)];
     pushSides(next);
   };
 
   const removeSide = (id: string) => {
-    pushSides(value.boxSides.filter((s) => s.id !== id));
+    const drop = collectSubtreeIds(value.boxSides, id);
+    pushSides(value.boxSides.filter((s) => !drop.has(s.id)));
   };
 
   const commitRow = (index: number) => {
@@ -269,101 +300,142 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             <p className="mt-3 text-[13px] text-gray-600">No sides — flat panel.</p>
           ) : (
             <ul className="mt-3 space-y-4">
-              {value.boxSides.map((side, index) => (
-                <li key={side.id} className="rounded-lg border border-gray-200 bg-white p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-gray-700">Side {index + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeSide(side.id)}
-                      className="rounded text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="mb-3">
-                    <p className="text-[11px] font-medium text-gray-600">Edge</p>
-                    <p
-                      className="mt-1 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2.5 text-[15px] text-gray-800"
-                      aria-label={`Edge: ${EDGE_LABELS[side.edge]}`}
-                    >
-                      {EDGE_LABELS[side.edge]}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => addFoldOnSameEdgeAfter(index)}
-                      disabled={!canAddSide}
-                      className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Add fold on this edge
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label
-                        className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`side-h-${side.id}`}
+              {value.boxSides
+                .map((s, i) => (!s.parentId ? i : -1))
+                .filter((i): i is number => i >= 0)
+                .map((rootIndex) => {
+                  const renderNode = (index: number, isRoot: boolean): ReactNode => {
+                    const side = value.boxSides[index];
+                    if (!side) return null;
+                    const childIndices = value.boxSides
+                      .map((s, i) => (s.parentId === side.id ? i : -1))
+                      .filter((i) => i >= 0)
+                      .sort((a, b) => a - b);
+                    return (
+                      <div
+                        className={isRoot ? undefined : "mt-4 border-l-2 border-gray-200/90 pl-3"}
+                        key={side.id}
                       >
-                        Return height (in)
-                      </label>
-                      <input
-                        id={`side-h-${side.id}`}
-                        type="number"
-                        inputMode="decimal"
-                        min={0.01}
-                        max={120}
-                        step={0.01}
-                        value={sideDrafts[index]?.height ?? String(side.flangeHeightIn)}
-                        onChange={(e) =>
-                          setSideDrafts((prev) => {
-                            const copy = [...prev];
-                            copy[index] = { ...copy[index], height: e.target.value };
-                            return copy;
-                          })
-                        }
-                        onBlur={() => commitRow(index)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        className="block text-[11px] font-medium text-gray-600"
-                        htmlFor={`side-a-${side.id}`}
-                      >
-                        Angle (°)
-                      </label>
-                      <input
-                        id={`side-a-${side.id}`}
-                        type="number"
-                        inputMode="decimal"
-                        min={-180}
-                        max={180}
-                        step={0.1}
-                        value={sideDrafts[index]?.angle ?? angleInputStr(side.angleDeg)}
-                        onChange={(e) =>
-                          setSideDrafts((prev) => {
-                            const copy = [...prev];
-                            copy[index] = { ...copy[index], angle: e.target.value };
-                            return copy;
-                          })
-                        }
-                        onBlur={() => commitRow(index)}
-                        className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => reverseRowBend(side.id)}
-                        className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[12px] font-medium text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                      >
-                        Reverse bend
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-gray-700">
+                            {isRoot ? `Side ${index + 1}` : "Additional return"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeSide(side.id)}
+                            className="rounded text-[12px] font-medium text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        {isRoot ? (
+                          <div className="mb-3">
+                            <p className="text-[11px] font-medium text-gray-600">Edge</p>
+                            <p
+                              className="mt-1 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2.5 text-[15px] text-gray-800"
+                              aria-label={`Edge: ${EDGE_LABELS[side.edge]}`}
+                            >
+                              {EDGE_LABELS[side.edge]}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => addFoldOnSameEdgeAfter(index)}
+                              disabled={!canAddSide}
+                              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Add fold on this edge
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="mb-2 text-[11px] text-gray-500">
+                            Same edge as side ({EDGE_LABELS[side.edge]})
+                          </p>
+                        )}
+                        {!isRoot ? (
+                          <button
+                            type="button"
+                            onClick={() => addFoldOnSameEdgeAfter(index)}
+                            disabled={!canAddSide}
+                            className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Add fold on this edge
+                          </button>
+                        ) : null}
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label
+                              className="block text-[11px] font-medium text-gray-600"
+                              htmlFor={`side-h-${side.id}`}
+                            >
+                              Return height (in)
+                            </label>
+                            <input
+                              id={`side-h-${side.id}`}
+                              type="number"
+                              inputMode="decimal"
+                              min={0.01}
+                              max={120}
+                              step={0.01}
+                              value={sideDrafts[index]?.height ?? String(side.flangeHeightIn)}
+                              onChange={(e) =>
+                                setSideDrafts((prev) => {
+                                  const copy = [...prev];
+                                  copy[index] = { ...copy[index], height: e.target.value };
+                                  return copy;
+                                })
+                              }
+                              onBlur={() => commitRow(index)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                              }}
+                              className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              className="block text-[11px] font-medium text-gray-600"
+                              htmlFor={`side-a-${side.id}`}
+                            >
+                              Angle (°)
+                            </label>
+                            <input
+                              id={`side-a-${side.id}`}
+                              type="number"
+                              inputMode="decimal"
+                              min={-180}
+                              max={180}
+                              step={0.1}
+                              value={sideDrafts[index]?.angle ?? angleInputStr(side.angleDeg)}
+                              onChange={(e) =>
+                                setSideDrafts((prev) => {
+                                  const copy = [...prev];
+                                  copy[index] = { ...copy[index], angle: e.target.value };
+                                  return copy;
+                                })
+                              }
+                              onBlur={() => commitRow(index)}
+                              className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => reverseRowBend(side.id)}
+                              className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[12px] font-medium text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                            >
+                              Reverse bend
+                            </button>
+                          </div>
+                        </div>
+                        {childIndices.map((ci) => renderNode(ci, false))}
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <li key={value.boxSides[rootIndex]!.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                      {renderNode(rootIndex, true)}
+                    </li>
+                  );
+                })}
             </ul>
           )}
         </div>

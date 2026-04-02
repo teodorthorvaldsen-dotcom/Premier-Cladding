@@ -90,6 +90,43 @@ function partFromHinge(
   };
 }
 
+function quatFromPartRotation(rot: [number, number, number]): THREE.Quaternion {
+  return new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(rot[0], rot[1], rot[2], EULER_ORDER)
+  );
+}
+
+/** Midpoint of the outer free edge of the flange (away from the crease), in mesh-local space. */
+function outerTipLocal(edge: BoxTrayEdge, args: [number, number, number]): THREE.Vector3 {
+  switch (edge) {
+    case "south":
+      return new THREE.Vector3(0, args[1] / 2, 0);
+    case "north":
+      return new THREE.Vector3(0, -args[1] / 2, 0);
+    case "west":
+      return new THREE.Vector3(args[0] / 2, 0, 0);
+    case "east":
+      return new THREE.Vector3(-args[0] / 2, 0, 0);
+    default:
+      return new THREE.Vector3();
+  }
+}
+
+function hingeLocalForEdge(edge: BoxTrayEdge, H: number): THREE.Vector3 {
+  switch (edge) {
+    case "south":
+      return new THREE.Vector3(0, H / 2, 0);
+    case "north":
+      return new THREE.Vector3(0, -H / 2, 0);
+    case "west":
+      return new THREE.Vector3(H / 2, 0, 0);
+    case "east":
+      return new THREE.Vector3(-H / 2, 0, 0);
+    default:
+      return new THREE.Vector3();
+  }
+}
+
 /** AABB center + bounding-sphere radius (max corner distance from center) for all mesh parts. */
 function meshBoundsFromParts(parts: BuiltPart[]): {
   center: THREE.Vector3;
@@ -203,6 +240,67 @@ function buildBoxTrayParts(
     const deg = side.angleDeg;
     const rowLabel = `Side ${i + 1}`;
     let p: BuiltPart;
+
+    const prevSide = i > 0 ? sides[i - 1] : undefined;
+    const prevBuilt = parts[parts.length - 1];
+    const isCompoundGeom =
+      i > 0 &&
+      !!prevSide &&
+      prevBuilt &&
+      prevBuilt.key !== "base" &&
+      prevBuilt.edge === side.edge &&
+      side.edge === prevSide.edge;
+
+    if (isCompoundGeom) {
+      const qP = quatFromPartRotation(prevBuilt.rotation);
+      const posP = new THREE.Vector3(
+        prevBuilt.position[0],
+        prevBuilt.position[1],
+        prevBuilt.position[2]
+      );
+      const tipLocal = outerTipLocal(side.edge, prevBuilt.args);
+      const hingeWorld = tipLocal.clone().applyQuaternion(qP).add(posP);
+
+      const qAdd = new THREE.Quaternion();
+      switch (side.edge) {
+        case "south":
+          qAdd.setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(deg), 0, 0, EULER_ORDER));
+          break;
+        case "north":
+          qAdd.setFromEuler(
+            new THREE.Euler(-THREE.MathUtils.degToRad(deg), 0, 0, EULER_ORDER)
+          );
+          break;
+        case "west":
+          qAdd.setFromEuler(
+            new THREE.Euler(0, -THREE.MathUtils.degToRad(deg), 0, EULER_ORDER)
+          );
+          break;
+        case "east":
+          qAdd.setFromEuler(
+            new THREE.Euler(0, THREE.MathUtils.degToRad(deg), 0, EULER_ORDER)
+          );
+          break;
+        default:
+          break;
+      }
+      const qC = qP.clone().multiply(qAdd);
+      const eulerC = new THREE.Euler().setFromQuaternion(qC, EULER_ORDER);
+      const hingeLocalChild = hingeLocalForEdge(side.edge, H);
+      const argsCh: [number, number, number] =
+        side.edge === "south" || side.edge === "north" ? [W, H, t] : [H, L, t];
+      p = partFromHinge(
+        side.id,
+        hingeWorld,
+        hingeLocalChild,
+        eulerC,
+        argsCh,
+        rowLabel,
+        side.edge
+      );
+      parts.push(p);
+      continue;
+    }
 
     switch (side.edge) {
       case "south": {

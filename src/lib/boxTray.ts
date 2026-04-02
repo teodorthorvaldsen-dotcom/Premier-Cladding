@@ -61,7 +61,13 @@ export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
       typeof (row as BoxTraySideRow).id === "string" && (row as BoxTraySideRow).id.length > 0
         ? (row as BoxTraySideRow).id
         : newTraySideId();
-    out.push({ id, edge, flangeHeightIn: h, angleDeg: a });
+    const rawParent = (row as BoxTraySideRow).parentId;
+    let parentId: string | undefined;
+    if (typeof rawParent === "string" && rawParent.length > 0) {
+      const parentRow = out.find((r) => r.id === rawParent);
+      if (parentRow && parentRow.edge === edge) parentId = rawParent;
+    }
+    out.push({ id, edge, flangeHeightIn: h, angleDeg: a, ...(parentId ? { parentId } : {}) });
     if (out.length >= MAX_TRAY_SIDE_ROWS) break;
   }
   return out;
