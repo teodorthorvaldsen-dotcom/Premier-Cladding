@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo } from "react";
+import { type ReactNode, Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Billboard, Center, Edges, Environment, Line, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -120,6 +120,28 @@ function boundingHalfDiagonalParts(parts: BuiltPart[]): number {
   const dy = maxY - minY;
   const dz = maxZ - minZ;
   return 0.5 * Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+const PREVIEW_VFOV = 38;
+
+/**
+ * Camera distance so the assembly (plus callout margin) stays in frame at any rotation (sphere fit).
+ * No large minimum distance — small panels stay zoomed-in and centered.
+ */
+function computePreviewOrbitRadius(
+  halfDiag: number,
+  minSpanInches: number,
+  aspect: number
+): number {
+  const floorR = inchesToWorld(Math.max(minSpanInches, 8) * 0.25);
+  const meshR = Math.max(halfDiag, floorR, 0.06);
+  /** Leader lines / billboards sit outside mesh AABB */
+  const fitR = meshR * 1.52 + inchesToWorld(3.5);
+  const vFov = THREE.MathUtils.degToRad(PREVIEW_VFOV);
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * Math.max(aspect, 0.25));
+  const distV = fitR / Math.sin(vFov / 2);
+  const distH = fitR / Math.sin(hFov / 2);
+  return Math.max(distV, distH, 0.12);
 }
 
 function buildBoxTrayParts(
@@ -259,7 +281,7 @@ function PartRadialCallout({
   const layout = useMemo(() => {
     const pos = new THREE.Vector3(...part.position);
     const extent = Math.max(part.args[0], part.args[1], part.args[2]);
-    const fontSize = THREE.MathUtils.clamp(extent * 0.09, 0.08, 0.3);
+    const fontSize = THREE.MathUtils.clamp(extent * 0.1, 0.13, 0.42);
 
     /** Main face: lead from middle of broad face along +Z (not +Y), so “back” edge callouts aren’t stacked far above. */
     if (part.key === "base") {
@@ -364,59 +386,33 @@ function FoldedPanelMesh({
   );
 }
 
-function PreviewScene({
+/** Camera + controls react to canvas size so framing stays correct on resize. */
+function PreviewFraming({
   parts,
   minSpanInches,
-  colorHex,
-  mapUrl,
+  children,
 }: {
   parts: BuiltPart[];
-  /** Floor for camera distance (typically max(width, length)). */
   minSpanInches: number;
-  colorHex: string;
-  mapUrl?: string;
+  children: ReactNode;
 }) {
-  const halfDiag = boundingHalfDiagonalParts(parts);
-  const floor = inchesToWorld(Math.max(minSpanInches, 12) / 2) * Math.SQRT2;
-  const frameRadius = Math.max(halfDiag, floor) * 1.14;
-  const camDistance = Math.max(7, frameRadius * 5.25);
-  /** Closest orbit distance — preview stays here (no zoom). */
-  const orbitRadius = camDistance * 0.58;
-  const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(orbitRadius);
-  const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
+  const { camera, size } = useThree();
+  const halfDiag = useMemo(() => boundingHalfDiagonalParts(parts), [parts]);
+  const orbitRadius = useMemo(() => {
+    const aspect = size.width / Math.max(size.height, 1);
+    return computePreviewOrbitRadius(halfDiag, minSpanInches, aspect);
+  }, [halfDiag, minSpanInches, size.width, size.height]);
+
+  useLayoutEffect(() => {
+    camera.near = Math.max(0.01, orbitRadius / 2000);
+    camera.far = orbitRadius * 80 + 20;
+    camera.updateProjectionMatrix();
+  }, [camera, orbitRadius]);
 
   return (
-    <Canvas
-      dpr={[1, 2]}
-      camera={{
-        position: cameraPosition,
-        fov: 38,
-        near: 0.1,
-        far: camDistance * 25,
-      }}
-      shadows={false}
-      style={{ width: "100%", height: "100%", display: "block" }}
-      gl={{
-        antialias: true,
-        toneMapping: THREE.NeutralToneMapping,
-        toneMappingExposure: 1.08,
-        outputColorSpace: THREE.SRGBColorSpace,
-      }}
-    >
+    <>
       <StickyOrbitCamera radius={orbitRadius} />
-      <color attach="background" args={["#f4f5f7"]} />
-      <hemisphereLight color="#ffffff" groundColor="#ebe6e1" intensity={0.48} />
-      <ambientLight intensity={0.32} color="#fefefe" />
-      <directionalLight castShadow={false} color={PREVIEW_KEY_LIGHT} position={[6, 11, 8]} intensity={1.38} />
-      <directionalLight castShadow={false} color={PREVIEW_FILL_LIGHT} position={[-6, 5, 6]} intensity={0.62} />
-
-      <Suspense fallback={null}>
-        <Environment preset="apartment" environmentIntensity={0.5} />
-        <Center precise>
-          <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
-        </Center>
-      </Suspense>
-
+      {children}
       <OrbitControls
         makeDefault
         enablePan={false}
@@ -427,9 +423,59 @@ function PreviewScene({
         rotateSpeed={0.78}
         minDistance={orbitRadius}
         maxDistance={orbitRadius}
-        minPolarAngle={0.38 * Math.PI}
-        maxPolarAngle={0.58 * Math.PI}
+        minPolarAngle={0.22 * Math.PI}
+        maxPolarAngle={0.78 * Math.PI}
       />
+    </>
+  );
+}
+
+function PreviewScene({
+  parts,
+  minSpanInches,
+  colorHex,
+  mapUrl,
+}: {
+  parts: BuiltPart[];
+  minSpanInches: number;
+  colorHex: string;
+  mapUrl?: string;
+}) {
+  const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
+  const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
+
+  return (
+    <Canvas
+      dpr={[1, 2]}
+      camera={{
+        position: cameraPosition,
+        fov: PREVIEW_VFOV,
+        near: 0.1,
+        far: 200,
+      }}
+      shadows={false}
+      style={{ width: "100%", height: "100%", display: "block" }}
+      gl={{
+        antialias: true,
+        toneMapping: THREE.NeutralToneMapping,
+        toneMappingExposure: 1.08,
+        outputColorSpace: THREE.SRGBColorSpace,
+      }}
+    >
+      <color attach="background" args={["#f4f5f7"]} />
+      <hemisphereLight color="#ffffff" groundColor="#ebe6e1" intensity={0.48} />
+      <ambientLight intensity={0.32} color="#fefefe" />
+      <directionalLight castShadow={false} color={PREVIEW_KEY_LIGHT} position={[6, 11, 8]} intensity={1.38} />
+      <directionalLight castShadow={false} color={PREVIEW_FILL_LIGHT} position={[-6, 5, 6]} intensity={0.62} />
+
+      <PreviewFraming parts={parts} minSpanInches={minSpanInches}>
+        <Suspense fallback={null}>
+          <Environment preset="apartment" environmentIntensity={0.5} />
+          <Center precise>
+            <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
+          </Center>
+        </Suspense>
+      </PreviewFraming>
     </Canvas>
   );
 }
