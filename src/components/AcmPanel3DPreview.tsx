@@ -2,7 +2,7 @@
 
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Billboard, Edges, Environment, Line, OrbitControls, Text, useTexture } from "@react-three/drei";
+import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
@@ -292,83 +292,31 @@ function SwatchTexturedMaterial({ mapUrl }: { mapUrl: string }) {
   );
 }
 
-/** Leader line from part center outward; label sits past the line so it stays off the sheet metal. */
-function PartRadialCallout({
-  part,
-  partIdx,
-  partsCount,
+/** Label on the outer broad face of each box (+Z local = sheet “top” before hinge rotation). */
+function PartSurfaceLabel({
+  label,
+  thickness,
+  spanXY,
 }: {
-  part: BuiltPart;
-  partIdx: number;
-  partsCount: number;
+  label: string;
+  thickness: number;
+  spanXY: number;
 }) {
-  const layout = useMemo(() => {
-    const pos = new THREE.Vector3(...part.position);
-    const extent = Math.max(part.args[0], part.args[1], part.args[2]);
-    const fontSize = THREE.MathUtils.clamp(extent * 0.1, 0.13, 0.42);
-
-    /** Main face: lead from middle of broad face along +Z (not +Y), so “back” edge callouts aren’t stacked far above. */
-    if (part.key === "base") {
-      const t = part.args[2];
-      const dir = new THREE.Vector3(0, 0, 1);
-      const surfaceZ = t / 2 + 0.02;
-      const outward = extent * 0.38;
-      const start = pos.clone().add(new THREE.Vector3(0, 0, surfaceZ));
-      const end = pos.clone().add(new THREE.Vector3(0, 0, surfaceZ + outward));
-      const textPos = end.clone().addScaledVector(dir, fontSize * 0.65);
-      return {
-        linePoints: [start, end] as [THREE.Vector3, THREE.Vector3],
-        textPos: [textPos.x, textPos.y, textPos.z] as [number, number, number],
-        fontSize,
-        span: extent,
-      };
-    }
-
-    const dir = pos.lengthSq() < 1e-10 ? new THREE.Vector3(0, 1, 0) : pos.clone().normalize();
-    const fanRaw = (partIdx - (partsCount - 1) / 2) * 0.05;
-    const perp = new THREE.Vector3(-dir.y, dir.x, 0);
-    if (perp.lengthSq() < 1e-10) perp.set(1, 0, 0);
-    perp.multiplyScalar(fanRaw);
-    const inner = extent * 0.2;
-    const outer = extent * 0.55;
-    const start = pos.clone().addScaledVector(dir, inner).add(perp);
-    const end = pos.clone().addScaledVector(dir, outer).add(perp);
-    const textPos = end.clone().addScaledVector(dir, fontSize * 0.65);
-    return {
-      linePoints: [start, end] as [THREE.Vector3, THREE.Vector3],
-      textPos: [textPos.x, textPos.y, textPos.z] as [number, number, number],
-      fontSize,
-      span: extent,
-    };
-  }, [
-    part.key,
-    part.position[0],
-    part.position[1],
-    part.position[2],
-    part.args[0],
-    part.args[1],
-    part.args[2],
-    partIdx,
-    partsCount,
-  ]);
-
+  const t = Math.max(thickness, 0.008);
+  const fontSize = THREE.MathUtils.clamp(spanXY * 0.072, 0.07, 0.32);
   return (
-    <group>
-      <Line points={layout.linePoints} color="#4b5563" lineWidth={2} opacity={0.92} transparent />
-      <Billboard position={layout.textPos} follow={true}>
-        <Text
-          fontSize={layout.fontSize}
-          color="#111827"
-          outlineWidth={layout.fontSize * 0.14}
-          outlineColor="#f9fafb"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={layout.span * 2.4}
-        >
-          {part.label}
-        </Text>
-      </Billboard>
-    </group>
+    <Text
+      position={[0, 0, t / 2 + 0.028]}
+      fontSize={fontSize}
+      color="#111827"
+      outlineWidth={fontSize * 0.14}
+      outlineColor="#f9fafb"
+      anchorX="center"
+      anchorY="middle"
+      maxWidth={spanXY * 0.88}
+    >
+      {label}
+    </Text>
   );
 }
 
@@ -381,7 +329,6 @@ function FoldedPanelMesh({
   colorHex: string;
   mapUrl?: string;
 }) {
-  const n = parts.length;
   return (
     <group>
       {parts.map((p, partIdx) => (
@@ -400,10 +347,14 @@ function FoldedPanelMesh({
               )}
               <Edges color="#555" threshold={12} />
             </mesh>
+            <Suspense fallback={null}>
+              <PartSurfaceLabel
+                label={p.label}
+                thickness={p.args[2]}
+                spanXY={Math.max(p.args[0], p.args[1])}
+              />
+            </Suspense>
           </group>
-          <Suspense fallback={null}>
-            <PartRadialCallout part={p} partIdx={partIdx} partsCount={n} />
-          </Suspense>
         </group>
       ))}
     </group>
@@ -561,9 +512,9 @@ export function AcmPanel3DPreview({
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
         Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and{" "}
-        <span className="font-medium text-gray-700">Side 1, Side 2, …</span> sit beside the model with leader lines pointing in. The same
-        edge may repeat (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right
-        use the same sign convention for matching bends. Drag to rotate.
+        <span className="font-medium text-gray-700">Side 1, Side 2, …</span> are labeled on each panel in the 3D view. The same edge may
+        repeat (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same
+        sign convention for matching bends. Drag to rotate.
       </p>
 
       <div
