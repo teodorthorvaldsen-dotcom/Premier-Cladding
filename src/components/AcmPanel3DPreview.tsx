@@ -96,20 +96,19 @@ function quatFromPartRotation(rot: [number, number, number]): THREE.Quaternion {
   );
 }
 
-/** Midpoint of the outer free edge of the flange (away from the crease), in mesh-local space. */
+/** Return depth (in mesh units) for this flange box: args are [W,H,t] on south/north, [H,L,t] on west/east. */
+function returnDepthFromArgs(edge: BoxTrayEdge, args: [number, number, number]): number {
+  return edge === "south" || edge === "north" ? args[1] : args[0];
+}
+
+/**
+ * Midpoint of the outer free edge of the flange (opposite the crease), in mesh-local space.
+ * Must be the negation of `hingeLocalForEdge` — the previous bug used the crease point, so every compound
+ * fold shared the base hinge and fanned from one line.
+ */
 function outerTipLocal(edge: BoxTrayEdge, args: [number, number, number]): THREE.Vector3 {
-  switch (edge) {
-    case "south":
-      return new THREE.Vector3(0, args[1] / 2, 0);
-    case "north":
-      return new THREE.Vector3(0, -args[1] / 2, 0);
-    case "west":
-      return new THREE.Vector3(args[0] / 2, 0, 0);
-    case "east":
-      return new THREE.Vector3(-args[0] / 2, 0, 0);
-    default:
-      return new THREE.Vector3();
-  }
+  const H = returnDepthFromArgs(edge, args);
+  return hingeLocalForEdge(edge, H).clone().multiplyScalar(-1);
 }
 
 function hingeLocalForEdge(edge: BoxTrayEdge, H: number): THREE.Vector3 {
