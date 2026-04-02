@@ -211,8 +211,8 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
     ys.add(round6(r.minY));
     ys.add(round6(r.maxY));
   }
-  const xArr = [...xs].sort((a, b) => a - b);
-  const yArr = [...ys].sort((a, b) => a - b);
+  const xArr = Array.from(xs).sort((a, b) => a - b);
+  const yArr = Array.from(ys).sort((a, b) => a - b);
   const nx = xArr.length - 1;
   const ny = yArr.length - 1;
   if (nx <= 0 || ny <= 0) {
