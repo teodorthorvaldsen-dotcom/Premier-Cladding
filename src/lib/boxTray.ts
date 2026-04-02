@@ -73,89 +73,96 @@ export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
   return out;
 }
 
-/**
- * Display titles for configurator + 3D: `Side 1`, `Side 2`, … for roots; each child is
- * `{parentTitle} Fold {k}` where k is 1-based order among siblings (e.g. `Side 1 Fold 1 Fold 1`).
- */
-export function trayFoldRowTitles(sides: BoxTraySideRow[]): string[] {
+function rootOrdinalMap(sides: BoxTraySideRow[]): Map<string, number> {
   const rootIdsInOrder: string[] = [];
   for (const s of sides) {
     if (!s.parentId) rootIdsInOrder.push(s.id);
   }
   const rootOrdinalById = new Map<string, number>();
   rootIdsInOrder.forEach((id, i) => rootOrdinalById.set(id, i + 1));
+  return rootOrdinalById;
+}
 
-  const titles: string[] = [];
-  for (let i = 0; i < sides.length; i++) {
-    const row = sides[i]!;
-    if (!row.parentId) {
-      titles[i] = `Side ${rootOrdinalById.get(row.id) ?? i + 1}`;
-      continue;
-    }
+function rootIdForIndex(sides: BoxTraySideRow[], rowIndex: number): string {
+  let i = rowIndex;
+  const seen = new Set<string>();
+  for (;;) {
+    const row = sides[i];
+    if (!row) return sides[rowIndex]!.id;
+    if (!row.parentId) return row.id;
+    if (seen.has(row.id)) return row.id;
+    seen.add(row.id);
     const pi = sides.findIndex((s) => s.id === row.parentId);
-    if (pi < 0) {
-      titles[i] = `Side ${i + 1}`;
-      continue;
-    }
-    let siblingRank = 1;
-    for (let j = 0; j < i; j++) {
-      if (sides[j]!.parentId === row.parentId) siblingRank++;
-    }
-    titles[i] = `${titles[pi]} Fold ${siblingRank}`;
+    if (pi < 0) return row.id;
+    i = pi;
   }
-  return titles;
+}
+
+/** Indices from tray root row down to `rowIndex` (inclusive). */
+function chainIndicesFromRoot(sides: BoxTraySideRow[], rowIndex: number): number[] {
+  const up: number[] = [];
+  let i: number | undefined = rowIndex;
+  while (i !== undefined && i >= 0 && sides[i]) {
+    up.push(i);
+    const pid = sides[i]!.parentId;
+    if (!pid) break;
+    i = sides.findIndex((s) => s.id === pid);
+    if (i < 0) break;
+  }
+  return up.reverse();
 }
 
 /**
- * Short labels for 3D face text only, e.g. `Side 2: F1, F1, F1` instead of `Side 2 Fold 1 Fold 1 Fold 1`.
+ * F-index path: linear chains use F1,F2,F3 by depth; multiple folds off the same parent use sibling rank;
+ * after a branch, a single-child continuation uses F1 for the first nested fold off that segment.
  */
-export function trayFoldRowPreviewLabels(sides: BoxTraySideRow[]): string[] {
-  const rootIdsInOrder: string[] = [];
-  for (const s of sides) {
-    if (!s.parentId) rootIdsInOrder.push(s.id);
+function foldPathFNumbers(sides: BoxTraySideRow[], rowIndex: number): number[] {
+  const chain = chainIndicesFromRoot(sides, rowIndex);
+  if (chain.length <= 1) return [];
+  const out: number[] = [];
+  let onlyChildChainSinceRoot = true;
+  for (let d = 1; d < chain.length; d++) {
+    const idx = chain[d]!;
+    const pid = sides[idx]!.parentId!;
+    const sibs = sides
+      .map((s, j) => (s.parentId === pid ? j : -1))
+      .filter((j) => j >= 0)
+      .sort((a, b) => a - b);
+    const rank = sibs.indexOf(idx) + 1;
+    if (d === 1) {
+      out.push(rank);
+      if (sibs.length > 1) onlyChildChainSinceRoot = false;
+    } else if (sibs.length > 1) {
+      onlyChildChainSinceRoot = false;
+      out.push(rank);
+    } else if (onlyChildChainSinceRoot) {
+      out.push(d);
+    } else {
+      out.push(1);
+    }
   }
-  const rootOrdinalById = new Map<string, number>();
-  rootIdsInOrder.forEach((id, i) => rootOrdinalById.set(id, i + 1));
+  return out;
+}
 
-  const rootIdForIndex = (rowIndex: number): string => {
-    let i = rowIndex;
-    const seen = new Set<string>();
-    for (;;) {
-      const row = sides[i];
-      if (!row) return sides[rowIndex]!.id;
-      if (!row.parentId) return row.id;
-      if (seen.has(row.id)) return row.id;
-      seen.add(row.id);
-      const pi = sides.findIndex((s) => s.id === row.parentId);
-      if (pi < 0) return row.id;
-      i = pi;
-    }
-  };
+function formatTrayFoldTitle(rootOrdinalById: Map<string, number>, sides: BoxTraySideRow[], i: number): string {
+  const row = sides[i]!;
+  const sn = rootOrdinalById.get(rootIdForIndex(sides, i)) ?? i + 1;
+  if (!row.parentId) return `Side ${sn}`;
+  const nums = foldPathFNumbers(sides, i);
+  return `Side ${sn}: ${nums.map((n) => `F${n}`).join(", ")}`;
+}
 
-  const foldRanksFromRoot = (rowIndex: number): number[] => {
-    const ranks: number[] = [];
-    let i = rowIndex;
-    while (sides[i]?.parentId) {
-      const pid = sides[i]!.parentId!;
-      let siblingRank = 1;
-      for (let j = 0; j < i; j++) {
-        if (sides[j]!.parentId === pid) siblingRank++;
-      }
-      ranks.unshift(siblingRank);
-      const pi = sides.findIndex((s) => s.id === pid);
-      if (pi < 0) break;
-      i = pi;
-    }
-    return ranks;
-  };
+/**
+ * Configurator + 3D labels: `Side 2`, `Side 2: F1, F2, F3` (linear), `Side 2: F2, F1` (fold off second top fold), etc.
+ */
+export function trayFoldRowTitles(sides: BoxTraySideRow[]): string[] {
+  const rootOrdinalById = rootOrdinalMap(sides);
+  return sides.map((_, i) => formatTrayFoldTitle(rootOrdinalById, sides, i));
+}
 
-  return sides.map((_, i) => {
-    const row = sides[i]!;
-    const sn = rootOrdinalById.get(rootIdForIndex(i)) ?? i + 1;
-    if (!row.parentId) return `Side ${sn}`;
-    const ranks = foldRanksFromRoot(i);
-    return `Side ${sn}: ${ranks.map((r) => `F${r}`).join(", ")}`;
-  });
+/** Same as {@link trayFoldRowTitles} (face text matches form). */
+export function trayFoldRowPreviewLabels(sides: BoxTraySideRow[]): string[] {
+  return trayFoldRowTitles(sides);
 }
 
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {

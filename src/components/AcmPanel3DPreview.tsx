@@ -652,7 +652,7 @@ export function AcmPanel3DPreview({
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
         Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and abbreviated side labels
-        (e.g. <span className="font-medium text-gray-700">Side 2: F1, F1, F1</span>) appear on each panel. The same edge may repeat
+        (e.g. <span className="font-medium text-gray-700">Side 2: F1, F2, F1</span>) appear on each panel. The same edge may repeat
         (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same sign
         convention for matching bends. Drag to rotate.
       </p>
