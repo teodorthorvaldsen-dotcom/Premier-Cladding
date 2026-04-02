@@ -39,15 +39,22 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+const VALID_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
+
+function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
+  return typeof x === "string" && (VALID_EDGES as string[]).includes(x);
+}
+
 /**
- * Clamps each row, **preserves order**, assigns **edge from list index** (Side 1→front … Side 4→right, then repeats).
+ * Clamps each row, **preserves order**, keeps **`edge` from the row** when valid so stacked folds on Side 1–4 stay on the same edge.
+ * If `edge` is missing or invalid, falls back to the legacy slot pattern (Side 1→front …).
  */
 export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
   const out: BoxTraySideRow[] = [];
   for (const row of raw) {
     if (row == null || typeof row !== "object") continue;
     const idx = out.length;
-    const edge = trayEdgeForSlotIndex(idx);
+    const edge = isBoxTrayEdge(row.edge) ? row.edge : trayEdgeForSlotIndex(idx);
     const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
     const id =

@@ -4,7 +4,7 @@ import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import type { BoxTraySideRow } from "@/types/boxTray";
+import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 
 /** Preview viewport height (px). */
@@ -50,6 +50,8 @@ export interface AcmPanel3DPreviewProps {
 
 type BuiltPart = {
   key: string;
+  /** Return edge for labels; base has none. */
+  edge?: BoxTrayEdge;
   position: [number, number, number];
   rotation: [number, number, number];
   args: [number, number, number];
@@ -73,12 +75,14 @@ function partFromHinge(
   hingeLocal: THREE.Vector3,
   euler: THREE.Euler,
   args: [number, number, number],
-  label: string
+  label: string,
+  edge: BoxTrayEdge
 ): BuiltPart {
   const q = new THREE.Quaternion().setFromEuler(euler);
   const pos = hingeWorld.clone().sub(hingeLocal.clone().applyQuaternion(q));
   return {
     key,
+    edge,
     position: [pos.x, pos.y, pos.z],
     rotation: [euler.x, euler.y, euler.z],
     args,
@@ -211,7 +215,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(0, H / 2, 0),
           e,
           [W, H, t],
-          rowLabel
+          rowLabel,
+          "south"
         );
         stackSouth += H;
         break;
@@ -226,7 +231,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(0, -H / 2, 0),
           e,
           [W, H, t],
-          rowLabel
+          rowLabel,
+          "north"
         );
         stackNorth += H;
         break;
@@ -242,7 +248,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(H / 2, 0, 0),
           e,
           [H, L, t],
-          rowLabel
+          rowLabel,
+          "west"
         );
         stackWest += H;
         break;
@@ -257,7 +264,8 @@ function buildBoxTrayParts(
           new THREE.Vector3(-H / 2, 0, 0),
           e,
           [H, L, t],
-          rowLabel
+          rowLabel,
+          "east"
         );
         stackEast += H;
         break;
@@ -357,11 +365,7 @@ function FoldedPanelMesh({
                 label={p.label}
                 thickness={p.args[2]}
                 spanXY={Math.max(p.args[0], p.args[1])}
-                vertical={
-                  p.key !== "base" &&
-                  partIdx >= 1 &&
-                  (partIdx % 4 === 3 || partIdx % 4 === 0)
-                }
+                vertical={p.key !== "base" && (p.edge === "west" || p.edge === "east")}
               />
             </Suspense>
           </group>

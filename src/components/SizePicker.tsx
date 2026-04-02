@@ -156,6 +156,19 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     ]);
   };
 
+  /** Stack another return on the same edge as this row (extra fold on Side 1–4, etc.). */
+  const addFoldOnSameEdgeAfter = (afterIndex: number) => {
+    if (!canAddSide) return;
+    const anchor = value.boxSides[afterIndex];
+    if (!anchor) return;
+    const next = [
+      ...value.boxSides.slice(0, afterIndex + 1),
+      newBoxSideRow(anchor.edge, 90),
+      ...value.boxSides.slice(afterIndex + 1),
+    ];
+    pushSides(next);
+  };
+
   const removeSide = (id: string) => {
     pushSides(value.boxSides.filter((s) => s.id !== id));
   };
@@ -195,8 +208,8 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
       <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
         Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
         in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
-        returns. Edge is fixed by side order: 1 Front, 2 Back, 3 Left, 4 Right, then the pattern repeats for stacked
-        returns. New sides default to 90° on every edge.
+        returns. First four rows default to Front, Back, Left, Right; you can add another fold on any row on the same
+        edge (stacked returns). New rows default to 90°.
       </p>
       <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
         <div>
@@ -247,8 +260,9 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             </button>
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">
-            Edge follows side number (1 Front, 2 Back, 3 Left, 4 Right, then repeats). Set return depth and angle. Use{" "}
-            <span className="font-medium text-gray-700">Reverse bend</span> or edit the angle to flip a flange.
+            Rows 1–4 start as Front, Back, Left, Right; <span className="font-medium text-gray-700">Add side</span> continues the pattern. Use{" "}
+            <span className="font-medium text-gray-700">Add fold on this edge</span> for an extra return on the same edge (e.g. second fold on
+            Side 1). Set depth and angle; <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
           </p>
 
           {value.boxSides.length === 0 ? (
@@ -271,10 +285,18 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                     <p className="text-[11px] font-medium text-gray-600">Edge</p>
                     <p
                       className="mt-1 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2.5 text-[15px] text-gray-800"
-                      aria-label={`Edge: ${EDGE_LABELS[trayEdgeForSlotIndex(index)]}`}
+                      aria-label={`Edge: ${EDGE_LABELS[side.edge]}`}
                     >
-                      {EDGE_LABELS[trayEdgeForSlotIndex(index)]}
+                      {EDGE_LABELS[side.edge]}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => addFoldOnSameEdgeAfter(index)}
+                      disabled={!canAddSide}
+                      className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Add fold on this edge
+                    </button>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
