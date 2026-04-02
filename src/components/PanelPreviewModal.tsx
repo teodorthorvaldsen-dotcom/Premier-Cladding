@@ -58,7 +58,7 @@ export function PanelPreviewModal({
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-gray-900">
-            {item.widthIn}" × {item.heightIn}" preview — drag to rotate
+            {item.widthIn}&quot; × {item.heightIn}&quot; preview — drag to rotate
           </p>
           <button
             type="button"
