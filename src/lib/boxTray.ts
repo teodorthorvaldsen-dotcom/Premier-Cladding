@@ -73,6 +73,61 @@ export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
   return out;
 }
 
+/**
+ * Display titles for the configurator and 3D labels: roots are `Side 1`, `Side 2`, … (by root order);
+ * stacked returns are `Side N, Fold 1`, `Side N, Fold 2`, … (depth along the parent chain).
+ */
+export function trayFoldRowTitles(sides: BoxTraySideRow[]): string[] {
+  const rootIdsInOrder: string[] = [];
+  for (const s of sides) {
+    if (!s.parentId) rootIdsInOrder.push(s.id);
+  }
+  const rootOrdinalById = new Map<string, number>();
+  rootIdsInOrder.forEach((id, i) => rootOrdinalById.set(id, i + 1));
+
+  const parentIndex = (rowIndex: number): number => {
+    const pid = sides[rowIndex]?.parentId;
+    if (typeof pid !== "string" || !pid.length) return -1;
+    return sides.findIndex((x) => x.id === pid);
+  };
+
+  const rootIdForIndex = (rowIndex: number): string => {
+    let i = rowIndex;
+    const seen = new Set<string>();
+    for (;;) {
+      const row = sides[i];
+      if (!row) return sides[rowIndex]!.id;
+      if (seen.has(row.id)) return row.id;
+      seen.add(row.id);
+      const pi = parentIndex(i);
+      if (pi < 0) return row.id;
+      i = pi;
+    }
+  };
+
+  const depthFromRoot = (rowIndex: number): number => {
+    let d = 0;
+    let i = rowIndex;
+    const seen = new Set<string>();
+    for (;;) {
+      const pi = parentIndex(i);
+      if (pi < 0) return d;
+      if (seen.has(sides[i]!.id)) return d;
+      seen.add(sides[i]!.id);
+      d++;
+      i = pi;
+    }
+  };
+
+  return sides.map((_, i) => {
+    const rid = rootIdForIndex(i);
+    const sn = rootOrdinalById.get(rid) ?? i + 1;
+    const depth = depthFromRoot(i);
+    if (depth === 0) return `Side ${sn}`;
+    return `Side ${sn}, Fold ${depth}`;
+  });
+}
+
 export function formatBoxTraySummary(sides: BoxTraySideRow[]): string {
   if (!sides.length) return "";
   const labels: Record<BoxTrayEdge, string> = {

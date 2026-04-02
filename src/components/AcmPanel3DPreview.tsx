@@ -5,7 +5,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
-import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { normalizeBoxTraySides, trayFoldRowTitles } from "@/lib/boxTray";
 
 /** Preview viewport height (px). */
 const PREVIEW_H = 360;
@@ -234,11 +234,13 @@ function buildBoxTrayParts(
   let stackWest = 0;
   let stackEast = 0;
 
+  const rowTitles = trayFoldRowTitles(sides);
+
   for (let i = 0; i < sides.length; i++) {
     const side = sides[i];
     const H = inchesToWorld(Math.max(side.flangeHeightIn, 0.01));
     const deg = side.angleDeg;
-    const rowLabel = `Side ${i + 1}`;
+    const rowLabel = rowTitles[i] ?? `Side ${i + 1}`;
     let p: BuiltPart;
 
     const prevSide = i > 0 ? sides[i - 1] : undefined;

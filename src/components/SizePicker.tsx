@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   CUSTOM_WIDTH_MAX_IN,
   CUSTOM_WIDTH_MIN_IN,
@@ -14,6 +14,7 @@ import {
   normalizeBoxTraySides,
   trayDefaultAngleDegForSlot,
   trayEdgeForSlotIndex,
+  trayFoldRowTitles,
 } from "@/lib/boxTray";
 import { clampAngleDeg } from "@/lib/panelBends";
 
@@ -188,16 +189,18 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     ]);
   };
 
-  /** Stack another return on the same edge as this row (extra fold on Side 1–4, etc.). */
+  /** New return attaches to the row whose control fired this (root side or an intermediate fold). */
   const addFoldOnSameEdgeAfter = (afterIndex: number) => {
     if (!canAddSide) return;
+    const anchor = value.boxSides[afterIndex];
+    if (!anchor) return;
     const leafIdx = lastDescendantIndex(value.boxSides, afterIndex);
-    const leaf = value.boxSides[leafIdx];
-    if (!leaf) return;
-    const row = newBoxSideRow(leaf.edge, 90, leaf.id);
+    const row = newBoxSideRow(anchor.edge, 90, anchor.id);
     const next = [...value.boxSides.slice(0, leafIdx + 1), row, ...value.boxSides.slice(leafIdx + 1)];
     pushSides(next);
   };
+
+  const foldRowTitles = useMemo(() => trayFoldRowTitles(value.boxSides), [value.boxSides]);
 
   const removeSide = (id: string) => {
     const drop = collectSubtreeIds(value.boxSides, id);
@@ -318,7 +321,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                       >
                         <div className="mb-2 flex items-center justify-between gap-2">
                           <span className="text-xs font-medium text-gray-700">
-                            {isRoot ? `Side ${index + 1}` : "Additional return"}
+                            {foldRowTitles[index] ?? `Side ${index + 1}`}
                           </span>
                           <button
                             type="button"
@@ -348,7 +351,7 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                           </div>
                         ) : (
                           <p className="mb-2 text-[11px] text-gray-500">
-                            Same edge as side ({EDGE_LABELS[side.edge]})
+                            Continues on {EDGE_LABELS[side.edge]} (free edge of this return)
                           </p>
                         )}
                         {!isRoot ? (
