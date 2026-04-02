@@ -288,9 +288,10 @@ export function outerOutlineFromRects(rects: InchesRect[]): Vec2[] {
   });
   if (!startPt || !adj.has(startK)) return [];
 
-  const poly: Vec2[] = [{ x: startPt.x, y: startPt.y }];
+  const start: Vec2 = { x: startPt.x, y: startPt.y };
+  const poly: Vec2[] = [{ x: start.x, y: start.y }];
   let curK = startK;
-  let cur: Vec2 = { ...startPt };
+  let cur: Vec2 = { ...start };
   let prev: Vec2 = { x: cur.x - 1, y: cur.y };
 
   const pickNext = (at: Vec2, from: Vec2, neighbors: Vec2[]): Vec2 | null => {
