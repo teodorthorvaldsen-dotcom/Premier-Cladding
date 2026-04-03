@@ -25,22 +25,7 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
-export function PortalOrderDetailView({
-  order,
-  showCadExport,
-}: {
-  order: OrderRecord;
-  /** DXF/CSV export — internal use only; not shown to customer portal logins. */
-  showCadExport: boolean;
-}) {
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const orderedQty = order.lineItem.quantity;
-
-  const item = order.lineItem;
-  const lineTotal = cartItemLineTotal(item);
-  const totalSqFt = item.areaFt2 * item.quantity;
-  const thumbSrc = item.previewImageDataUrl ?? order.previewImageSrc;
-
+function OrderTimelineSection({ orderedQty }: { orderedQty: number }) {
   const timeline = planOrderTimelineDays(orderedQty);
   const t = timeline.totalDays;
   const pct = (days: number) => (t > 0 ? (days / t) * 100 : 0);
@@ -49,6 +34,104 @@ export function PortalOrderDetailView({
   const pFab = pct(timeline.fabricationDays);
   const pShip = pct(timeline.shippingDays);
   const minPctLabel = 9;
+
+  return (
+    <section className="mt-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
+      <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Estimated timeline</h2>
+      <p className="mt-2 text-[14px] text-gray-600">
+        Built automatically from your order: <strong>{orderedQty}</strong> panel{orderedQty === 1 ? "" : "s"} at{" "}
+        <strong>{PANELS_PER_PRODUCTION_DAY} panels per calendar day</strong>. Includes{" "}
+        <strong>{ORDER_FINALIZATION_CALENDAR_DAYS} days</strong> order finalization (quote &amp; sign-off),{" "}
+        <strong>{MATERIAL_LEAD_CALENDAR_DAYS} days</strong> to order and receive materials, fabrication time, and{" "}
+        <strong>{SHIPPING_CALENDAR_DAYS} days</strong> for shipping.
+      </p>
+
+      <div className="mt-6 space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+        <p className="text-[12px] font-medium text-gray-700">Hover segments for phase details.</p>
+        <div
+          className="flex h-11 w-full cursor-help overflow-hidden rounded-lg shadow-inner"
+          role="img"
+          aria-label="Timeline by phase length"
+        >
+          <div
+            className="flex min-w-0 items-center justify-center bg-slate-700 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+            style={{ width: `${pFinal}%` }}
+            title={`Order finalization: ${timeline.orderFinalizationDays} calendar days (estimate, finalized cost, deposit)`}
+          >
+            {pFinal >= minPctLabel ? `${timeline.orderFinalizationDays}d` : ""}
+          </div>
+          <div
+            className="flex min-w-0 items-center justify-center bg-slate-600 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+            style={{ width: `${pMat}%` }}
+            title={`Materials: ${timeline.materialLeadDays} calendar days (order & receive at shop)`}
+          >
+            {pMat >= minPctLabel ? `${timeline.materialLeadDays}d` : ""}
+          </div>
+          <div
+            className="flex min-w-0 items-center justify-center bg-slate-500 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+            style={{ width: `${pFab}%` }}
+            title={`Fabrication: ${timeline.fabricationDays} day${timeline.fabricationDays === 1 ? "" : "s"} (${orderedQty} panels ÷ ${PANELS_PER_PRODUCTION_DAY} per day)`}
+          >
+            {pFab >= minPctLabel ? `${timeline.fabricationDays}d` : ""}
+          </div>
+          <div
+            className="flex min-w-0 items-center justify-center bg-slate-400 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+            style={{ width: `${pShip}%` }}
+            title={`Shipping: ${timeline.shippingDays} calendar days (transit to you)`}
+          >
+            {pShip >= minPctLabel ? `${timeline.shippingDays}d` : ""}
+          </div>
+        </div>
+        <ul className="space-y-2 text-[13px] text-gray-800">
+          <li>
+            <span className="font-medium text-gray-900">Order finalization:</span>{" "}
+            {timeline.orderFinalizationDays} calendar days — estimate, inventory check, finalized cost, signature
+            &amp; deposit
+          </li>
+          <li>
+            <span className="font-medium text-gray-900">Materials:</span> {timeline.materialLeadDays} calendar days —
+            order materials and receive at our shop
+          </li>
+          <li>
+            <span className="font-medium text-gray-900">Fabrication:</span> {timeline.fabricationDays} calendar day
+            {timeline.fabricationDays === 1 ? "" : "s"} — {orderedQty} panel{orderedQty === 1 ? "" : "s"} at{" "}
+            {PANELS_PER_PRODUCTION_DAY}/day (rounded up)
+          </li>
+          <li>
+            <span className="font-medium text-gray-900">Shipping:</span> {timeline.shippingDays} calendar days — transit
+            to your jobsite or address
+          </li>
+          <li className="border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900">
+            End-to-end (illustrative): {timeline.totalDays} calendar day{timeline.totalDays === 1 ? "" : "s"}
+          </li>
+        </ul>
+        <p className="text-[11px] leading-snug text-gray-500">
+          Illustrative calendar-day model only — actual dates depend on queue, carrier, and your quote. Confirmed
+          schedule is on your written quote.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+export function PortalOrderDetailView({
+  order,
+  showCadExport,
+  showOrderTimeline,
+}: {
+  order: OrderRecord;
+  /** DXF/CSV export — internal use only; not shown to customer portal logins. */
+  showCadExport: boolean;
+  /** Estimated timeline — customer-facing only; hidden for employee logins. */
+  showOrderTimeline: boolean;
+}) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const orderedQty = order.lineItem.quantity;
+
+  const item = order.lineItem;
+  const lineTotal = cartItemLineTotal(item);
+  const totalSqFt = item.areaFt2 * item.quantity;
+  const thumbSrc = item.previewImageDataUrl ?? order.previewImageSrc;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -186,77 +269,7 @@ export function PortalOrderDetailView({
         </ol>
       </section>
 
-      <section className="mt-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
-        <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Estimated timeline</h2>
-        <p className="mt-2 text-[14px] text-gray-600">
-          Built automatically from your order: <strong>{orderedQty}</strong> panel{orderedQty === 1 ? "" : "s"} at{" "}
-          <strong>{PANELS_PER_PRODUCTION_DAY} panels per calendar day</strong>. Includes{" "}
-          <strong>{ORDER_FINALIZATION_CALENDAR_DAYS} days</strong> order finalization (quote &amp; sign-off),{" "}
-          <strong>{MATERIAL_LEAD_CALENDAR_DAYS} days</strong> to order and receive materials, fabrication time, and{" "}
-          <strong>{SHIPPING_CALENDAR_DAYS} days</strong> for shipping.
-        </p>
-
-        <div className="mt-6 space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
-          <p className="text-[12px] font-medium text-gray-700">Hover segments for phase details.</p>
-          <div className="flex h-11 w-full cursor-help overflow-hidden rounded-lg shadow-inner" role="img" aria-label="Timeline by phase length">
-            <div
-              className="flex min-w-0 items-center justify-center bg-slate-700 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
-              style={{ width: `${pFinal}%` }}
-              title={`Order finalization: ${timeline.orderFinalizationDays} calendar days (estimate, finalized cost, deposit)`}
-            >
-              {pFinal >= minPctLabel ? `${timeline.orderFinalizationDays}d` : ""}
-            </div>
-            <div
-              className="flex min-w-0 items-center justify-center bg-slate-600 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
-              style={{ width: `${pMat}%` }}
-              title={`Materials: ${timeline.materialLeadDays} calendar days (order & receive at shop)`}
-            >
-              {pMat >= minPctLabel ? `${timeline.materialLeadDays}d` : ""}
-            </div>
-            <div
-              className="flex min-w-0 items-center justify-center bg-slate-500 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
-              style={{ width: `${pFab}%` }}
-              title={`Fabrication: ${timeline.fabricationDays} day${timeline.fabricationDays === 1 ? "" : "s"} (${orderedQty} panels ÷ ${PANELS_PER_PRODUCTION_DAY} per day)`}
-            >
-              {pFab >= minPctLabel ? `${timeline.fabricationDays}d` : ""}
-            </div>
-            <div
-              className="flex min-w-0 items-center justify-center bg-slate-400 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
-              style={{ width: `${pShip}%` }}
-              title={`Shipping: ${timeline.shippingDays} calendar days (transit to you)`}
-            >
-              {pShip >= minPctLabel ? `${timeline.shippingDays}d` : ""}
-            </div>
-          </div>
-          <ul className="space-y-2 text-[13px] text-gray-800">
-            <li>
-              <span className="font-medium text-gray-900">Order finalization:</span>{" "}
-              {timeline.orderFinalizationDays} calendar days — estimate, inventory check, finalized cost, signature
-              &amp; deposit
-            </li>
-            <li>
-              <span className="font-medium text-gray-900">Materials:</span> {timeline.materialLeadDays} calendar days —
-              order materials and receive at our shop
-            </li>
-            <li>
-              <span className="font-medium text-gray-900">Fabrication:</span> {timeline.fabricationDays} calendar day
-              {timeline.fabricationDays === 1 ? "" : "s"} — {orderedQty} panel{orderedQty === 1 ? "" : "s"} at{" "}
-              {PANELS_PER_PRODUCTION_DAY}/day (rounded up)
-            </li>
-            <li>
-              <span className="font-medium text-gray-900">Shipping:</span> {timeline.shippingDays} calendar days — transit
-              to your jobsite or address
-            </li>
-            <li className="border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900">
-              End-to-end (illustrative): {timeline.totalDays} calendar day{timeline.totalDays === 1 ? "" : "s"}
-            </li>
-          </ul>
-          <p className="text-[11px] leading-snug text-gray-500">
-            Illustrative calendar-day model only — actual dates depend on queue, carrier, and your quote. Confirmed
-            schedule is on your written quote.
-          </p>
-        </div>
-      </section>
+      {showOrderTimeline ? <OrderTimelineSection orderedQty={orderedQty} /> : null}
     </div>
   );
 }

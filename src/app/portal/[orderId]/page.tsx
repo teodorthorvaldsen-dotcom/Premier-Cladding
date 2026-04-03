@@ -24,5 +24,11 @@ export default async function PortalOrderDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <PortalOrderDetailView order={order} showCadExport={user.role === "employee"} />;
+  return (
+    <PortalOrderDetailView
+      order={order}
+      showCadExport={user.role === "employee"}
+      showOrderTimeline={user.role !== "employee"}
+    />
+  );
 }
