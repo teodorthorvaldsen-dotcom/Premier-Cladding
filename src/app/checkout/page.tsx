@@ -6,13 +6,7 @@ import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
-import {
-  allWidths,
-  colors,
-  finishes,
-  thicknesses,
-} from "@/data/acm";
-import { formatBoxTrayReproductionOneLine, normalizeBoxTraySides } from "@/lib/boxTray";
+import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 const ORDER_STEPS = [
@@ -33,21 +27,6 @@ function formatUSD(n: number): string {
     currency: "USD",
     minimumFractionDigits: 2,
   }).format(n);
-}
-
-function describeItem(item: CartItem): string {
-  const widthLabel = item.standardId
-    ? allWidths.find((w) => w.id === item.standardId)?.label ?? `${item.widthIn}"`
-    : `${item.widthIn}"`;
-  const sizeLabel = `${widthLabel} × ${item.heightIn} in`;
-  const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
-  const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
-  const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
-  const repro =
-    item.trayBuildSpec?.split("\n")[0] ??
-    (trayNorm.length > 0 ? formatBoxTrayReproductionOneLine(trayNorm) : "");
-  const parts = [sizeLabel, repro, color, thickness, item.panelTypeLabel].filter(Boolean);
-  return parts.join(" · ");
 }
 
 export default function CheckoutPage() {
@@ -197,7 +176,7 @@ export default function CheckoutPage() {
                   </button>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {describeItem(item)} <span className="text-gray-500">× {item.quantity}</span>
+                      {describeCartLineItem(item)} <span className="text-gray-500">× {item.quantity}</span>
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
                       {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
