@@ -7,19 +7,8 @@ import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
+import { ORDER_PROCESS_STEPS } from "@/lib/orderProcess";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
-
-const ORDER_STEPS = [
-  "We receive your order.",
-  "A copy is sent to us at allcladdingsolutions@gmail.com.",
-  "Email confirmation is sent to you.",
-  "We check inventory and prepare your estimate.",
-  "We send you the finalized cost for your signature.",
-  "We order materials and ship to our shop.",
-  "Panels are fabricated.",
-  "Once complete, you have 5 business days to pay the final deposit.",
-  "Upon receipt of payment, we ship to you.",
-];
 
 function formatUSD(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -207,7 +196,7 @@ export default function CheckoutPage() {
       <section className="mb-10 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-6 md:p-8">
         <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Order process</h2>
         <ol className="mt-4 list-decimal space-y-2 pl-4 text-[14px] text-gray-700">
-          {ORDER_STEPS.map((step, i) => (
+          {ORDER_PROCESS_STEPS.map((step, i) => (
             <li key={i}>{step}</li>
           ))}
         </ol>

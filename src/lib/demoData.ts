@@ -19,34 +19,11 @@ export type ShippingAddress = {
   postalCode: string;
 };
 
-/** Flat-pattern / fabrication dimensions (mirrors configurator → DXF-style output). */
-export type CadSegment = {
-  label: string;
-  lengthIn: number;
-  angleDeg?: number;
-};
-
-export type CadMeasurements = {
-  nominal: {
-    widthIn: number;
-    heightIn: number;
-    depthIn?: number;
-    unit: string;
-  };
-  flatPattern: {
-    boundingWidthIn: number;
-    boundingLengthIn: number;
-    segments: CadSegment[];
-    notes?: string[];
-  };
-  thicknessMm: number;
-  dxfUnits: "inches";
-};
-
 export type OrderRecord = {
   id: string;
   customerId: string;
   customerName: string;
+  companyName: string;
   customerEmail: string;
   customerPhone: string;
   shippingAddress: ShippingAddress;
@@ -63,7 +40,6 @@ export type OrderRecord = {
   color: string;
   /** Fallback thumbnail when `lineItem.previewImageDataUrl` is absent. */
   previewImageSrc: string;
-  cadMeasurements: CadMeasurements;
   /** Cart-shaped configuration for checkout-parity UI (preview modal, DXF/CSV export). */
   lineItem: CartItem;
 };
@@ -97,6 +73,7 @@ export const demoOrders: OrderRecord[] = [
     id: "ORD-1001",
     customerId: "c1",
     customerName: "Lauren Customer",
+    companyName: "Summit Facade Group LLC",
     customerEmail: "lauren.customer@example.com",
     customerPhone: "(555) 014-2201",
     shippingAddress: {
@@ -139,33 +116,12 @@ export const demoOrders: OrderRecord[] = [
       ],
       trayBuildSpec: ord1001TraySpec,
     },
-    cadMeasurements: {
-      nominal: { widthIn: 62, heightIn: 96, depthIn: 30, unit: "in" },
-      thicknessMm: 4,
-      dxfUnits: "inches",
-      flatPattern: {
-        boundingWidthIn: 86,
-        boundingLengthIn: 150,
-        segments: [
-          { label: "Face — width", lengthIn: 62 },
-          { label: "Face — height", lengthIn: 96 },
-          { label: "South return (Row 1)", lengthIn: 30, angleDeg: 90 },
-          { label: "North return (Row 3)", lengthIn: 24, angleDeg: 90 },
-          { label: "West return", lengthIn: 12, angleDeg: 90 },
-          { label: "East return", lengthIn: 12, angleDeg: 90 },
-          { label: "Nested stiffener (Row 5)", lengthIn: 6, angleDeg: 45 },
-        ],
-        notes: [
-          "Flat pattern derived from tray unfold (0° bends) for CNC / waterjet.",
-          "Outline matches site 3D tray stacking; confirm bend allowances before production.",
-        ],
-      },
-    },
   },
   {
     id: "ORD-1002",
     customerId: "c1",
     customerName: "Lauren Customer",
+    companyName: "Summit Facade Group LLC",
     customerEmail: "lauren.customer@example.com",
     customerPhone: "(555) 014-2201",
     shippingAddress: {
@@ -201,22 +157,6 @@ export const demoOrders: OrderRecord[] = [
       panelTypeLabel: "Basic Rectangular",
       boxTraySides: [],
       trayBuildSpec: `Row 1: Face blank | Edge: — | Return height: — | Single-plane window trim (field-verify jamb reveal)`,
-    },
-    cadMeasurements: {
-      nominal: { widthIn: 36, heightIn: 84, unit: "in" },
-      thicknessMm: 4,
-      dxfUnits: "inches",
-      flatPattern: {
-        boundingWidthIn: 36,
-        boundingLengthIn: 84,
-        segments: [
-          { label: "Trim face — width", lengthIn: 36 },
-          { label: "Trim face — height", lengthIn: 84 },
-          { label: "Miter reference — leg A", lengthIn: 18, angleDeg: 45 },
-          { label: "Miter reference — leg B", lengthIn: 18, angleDeg: 45 },
-        ],
-        notes: ["Single-plane blank; verify field dimensions before release."],
-      },
     },
   },
 ];

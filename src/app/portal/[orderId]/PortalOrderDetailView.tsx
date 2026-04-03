@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import type { OrderRecord } from "@/lib/demoData";
+import {
+  ESTIMATE_AND_PAYMENT_CALENDAR_DAYS,
+  ORDER_PROCESS_STEPS,
+  PANELS_PER_PRODUCTION_DAY,
+  planTimelineDays,
+} from "@/lib/orderProcess";
 import { cartItemLineTotal } from "@/types/cart";
 
 function formatUSD(n: number): string {
@@ -17,6 +23,8 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
+const SLIDER_MAX_PANELS = 500;
+
 export function PortalOrderDetailView({
   order,
   showCadExport,
@@ -26,11 +34,18 @@ export function PortalOrderDetailView({
   showCadExport: boolean;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const orderedQty = order.lineItem.quantity;
+  const [scenarioQty, setScenarioQty] = useState(orderedQty);
+
   const item = order.lineItem;
   const lineTotal = cartItemLineTotal(item);
   const totalSqFt = item.areaFt2 * item.quantity;
-  const cad = order.cadMeasurements;
   const thumbSrc = item.previewImageDataUrl ?? order.previewImageSrc;
+
+  const timeline = useMemo(() => planTimelineDays(scenarioQty), [scenarioQty]);
+  const estimatePct =
+    timeline.totalDays > 0 ? (timeline.estimateDays / timeline.totalDays) * 100 : 50;
+  const fabPct = 100 - estimatePct;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -61,7 +76,11 @@ export function PortalOrderDetailView({
         <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Customer &amp; shipping</h2>
         <dl className="mt-4 space-y-3 text-[14px] text-gray-800">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-gray-500">Name</dt>
+            <dt className="text-xs uppercase tracking-wide text-gray-500">Company name</dt>
+            <dd className="mt-0.5 font-medium text-gray-900">{order.companyName}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-gray-500">Contact name</dt>
             <dd className="mt-0.5 font-medium text-gray-900">{order.customerName}</dd>
           </div>
           <div>
@@ -79,6 +98,8 @@ export function PortalOrderDetailView({
           <div>
             <dt className="text-xs uppercase tracking-wide text-gray-500">Ship to</dt>
             <dd className="mt-0.5">
+              <span className="font-medium text-gray-900">{order.companyName}</span>
+              <br />
               {order.shippingAddress.line1}
               {order.shippingAddress.line2 ? (
                 <>
@@ -132,49 +153,6 @@ export function PortalOrderDetailView({
                     </pre>
                   ) : null}
 
-                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50/90 p-3">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
-                      Flat pattern (CAD schedule)
-                    </h3>
-                    <p className="mt-1 text-[11px] text-gray-600">
-                      Nominal {cad.nominal.widthIn} × {cad.nominal.heightIn} {cad.nominal.unit}
-                      {cad.nominal.depthIn != null ? ` · return depth ${cad.nominal.depthIn} ${cad.nominal.unit}` : ""} ·{" "}
-                      {cad.thicknessMm} mm core · DXF units: {cad.dxfUnits}
-                    </p>
-                    <p className="mt-2 text-[11px] text-gray-600">
-                      Bounding blank: {cad.flatPattern.boundingWidthIn} × {cad.flatPattern.boundingLengthIn} in (overall)
-                    </p>
-                    <div className="mt-2 overflow-x-auto rounded-md border border-gray-200 bg-white">
-                      <table className="min-w-full text-left font-mono text-[10px] leading-tight text-gray-800">
-                        <thead className="bg-gray-100 text-[9px] uppercase tracking-wide text-gray-600">
-                          <tr>
-                            <th className="px-2 py-1.5 font-medium">Feature</th>
-                            <th className="px-2 py-1.5 font-medium">in</th>
-                            <th className="px-2 py-1.5 font-medium">°</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {cad.flatPattern.segments.map((row, i) => (
-                            <tr key={`${row.label}-${i}`}>
-                              <td className="px-2 py-1.5">{row.label}</td>
-                              <td className="px-2 py-1.5 tabular-nums">{row.lengthIn}</td>
-                              <td className="px-2 py-1.5 text-gray-600">
-                                {row.angleDeg != null ? row.angleDeg : "—"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    {cad.flatPattern.notes?.length ? (
-                      <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[10px] text-gray-600">
-                        {cad.flatPattern.notes.map((n) => (
-                          <li key={n}>{n}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-
                   {showCadExport ? <RevitTrayExportBlock item={item} /> : null}
                 </div>
               </div>
@@ -191,6 +169,96 @@ export function PortalOrderDetailView({
         <p className="mt-2 text-[14px] text-gray-500">
           Final cost will be confirmed in your written quote after we check inventory and prepare the estimate.
         </p>
+      </section>
+
+      <section className="mt-10 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-6 md:p-8">
+        <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Order process</h2>
+        <p className="mt-2 text-[14px] text-gray-600">
+          Same steps you see at checkout — from request through fabrication and shipping.
+        </p>
+        <ol className="mt-4 list-decimal space-y-2 pl-4 text-[14px] text-gray-700">
+          {ORDER_PROCESS_STEPS.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mt-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
+        <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Estimated timeline</h2>
+        <p className="mt-2 text-[14px] text-gray-600">
+          Planning model: <strong>{ESTIMATE_AND_PAYMENT_CALENDAR_DAYS} calendar days</strong> for estimating, finalized
+          cost, and deposit, then <strong>{PANELS_PER_PRODUCTION_DAY} panels per day</strong> fabrication capacity.
+          Adjust the slider to see how quantity changes build time (your order is{" "}
+          <strong>{orderedQty}</strong> panel{orderedQty === 1 ? "" : "s"}).
+        </p>
+
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="portal-timeline-qty" className="text-sm font-medium text-gray-900">
+              Panels for timeline
+            </label>
+            <span className="tabular-nums text-sm text-gray-600">{scenarioQty} panels</span>
+          </div>
+          <input
+            id="portal-timeline-qty"
+            type="range"
+            min={1}
+            max={SLIDER_MAX_PANELS}
+            value={scenarioQty}
+            onChange={(e) => setScenarioQty(Number(e.target.value))}
+            className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-gray-900"
+          />
+          <div className="mt-1 flex justify-between text-[11px] text-gray-500">
+            <span>1</span>
+            <span>{SLIDER_MAX_PANELS}</span>
+          </div>
+          {scenarioQty !== orderedQty ? (
+            <button
+              type="button"
+              onClick={() => setScenarioQty(orderedQty)}
+              className="mt-2 text-[13px] font-medium text-gray-900 underline-offset-2 hover:underline"
+            >
+              Reset to my order ({orderedQty} panels)
+            </button>
+          ) : null}
+        </div>
+
+        <div className="mt-6 space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+          <div className="flex h-10 w-full overflow-hidden rounded-lg">
+            <div
+              className="flex items-center justify-center bg-slate-600 text-[11px] font-medium text-white"
+              style={{ width: `${estimatePct}%` }}
+              title="Quote & deposit phase"
+            >
+              {estimatePct > 12 ? `${timeline.estimateDays}d` : ""}
+            </div>
+            <div
+              className="flex items-center justify-center bg-slate-400 text-[11px] font-medium text-white"
+              style={{ width: `${fabPct}%` }}
+              title="Fabrication phase"
+            >
+              {fabPct > 12 ? `${timeline.fabricationDays}d` : ""}
+            </div>
+          </div>
+          <ul className="space-y-2 text-[13px] text-gray-800">
+            <li>
+              <span className="font-medium text-gray-900">Quote, inventory &amp; deposit:</span>{" "}
+              {timeline.estimateDays} days
+            </li>
+            <li>
+              <span className="font-medium text-gray-900">Fabrication:</span> {timeline.fabricationDays} day
+              {timeline.fabricationDays === 1 ? "" : "s"} at {PANELS_PER_PRODUCTION_DAY}/day (
+              {scenarioQty} panel{scenarioQty === 1 ? "" : "s"})
+            </li>
+            <li className="border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900">
+              Combined (before shipping): {timeline.totalDays} calendar day{timeline.totalDays === 1 ? "" : "s"}
+            </li>
+          </ul>
+          <p className="text-[11px] leading-snug text-gray-500">
+            Illustrative only — excludes material lead times, queue, and shipping. Final schedule is confirmed on your
+            written quote.
+          </p>
+        </div>
       </section>
     </div>
   );
