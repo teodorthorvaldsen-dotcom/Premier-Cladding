@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { getSessionUser } from "@/lib/auth";
@@ -19,9 +20,12 @@ export default async function PortalPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="mb-8 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Portal</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Order portal</h1>
           <p className="mt-1 text-sm text-gray-600">
             Signed in as {user.name} ({user.role})
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Select an order to open customer details, panel preview, and CAD measurements.
           </p>
         </div>
 
@@ -30,19 +34,25 @@ export default async function PortalPage() {
 
       <div className="grid gap-4">
         {orders.map((order) => (
-          <div
+          <Link
             key={order.id}
-            className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+            href={`/portal/${encodeURIComponent(order.id)}`}
+            className="group block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm outline-none ring-black transition hover:border-gray-300 hover:shadow-md focus-visible:ring-2"
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">{order.projectName}</h2>
+                <h2 className="text-xl font-semibold text-gray-900 group-hover:underline">
+                  {order.projectName}
+                </h2>
                 <p className="text-sm text-gray-500">Order ID: {order.id}</p>
                 <p className="text-sm text-gray-500">Customer: {order.customerName}</p>
               </div>
 
-              <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
-                {order.status}
+              <div className="flex flex-col items-start gap-2 md:items-end">
+                <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+                  {order.status}
+                </div>
+                <span className="text-sm font-medium text-gray-900">View details →</span>
               </div>
             </div>
 
@@ -86,7 +96,7 @@ export default async function PortalPage() {
                 <p className="mt-1 text-base font-semibold">{order.color}</p>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
