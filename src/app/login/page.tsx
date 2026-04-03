@@ -152,6 +152,11 @@ export default function LoginPage() {
             <p className="font-medium">Demo accounts</p>
             <p className="mt-2">Customer: customer@example.com / customer123</p>
             <p>Employee: employee@example.com / employee123</p>
+            <p className="mt-3 text-gray-600">
+              After cloning or on deploy, <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">npm install</code>{" "}
+              creates <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">data/portal-registry.json</code> with
+              these accounts (bcrypt). If that file is missing, the same logins still work via in-app demo data.
+            </p>
           </div>
         </div>
 

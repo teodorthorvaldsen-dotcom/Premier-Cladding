@@ -38,7 +38,7 @@ export function findDemoUser(email: string, password: string) {
 }
 
 /**
- * Demo accounts first (plain-text passwords in demoData), then file-backed registry.
+ * File-backed registry first (bcrypt, seeded on npm install), then plain-text demo users in demoData.
  * Registry is loaded via dynamic import so this module never pulls `fs`/bcrypt at load time
  * (avoids breaking login in Edge or when persistence isn’t available).
  */
@@ -46,6 +46,21 @@ export async function authenticatePortalUser(
   email: string,
   password: string
 ): Promise<SessionUser | null> {
+  try {
+    const { verifyRegistryPortalLogin } = await import("@/lib/portalPersistence");
+    const fromRegistry = verifyRegistryPortalLogin(email, password);
+    if (fromRegistry) {
+      return {
+        id: fromRegistry.id,
+        email: fromRegistry.email,
+        role: fromRegistry.role,
+        name: fromRegistry.name,
+        ...(fromRegistry.customerId ? { customerId: fromRegistry.customerId } : {}),
+      };
+    }
+  } catch {
+    /* persistence unavailable */
+  }
   const demo = findDemoUser(email, password);
   if (demo) {
     return {
@@ -56,10 +71,5 @@ export async function authenticatePortalUser(
       customerId: demo.customerId,
     };
   }
-  try {
-    const { verifyRegisteredCustomer } = await import("@/lib/portalPersistence");
-    return verifyRegisteredCustomer(email, password);
-  } catch {
-    return null;
-  }
+  return null;
 }

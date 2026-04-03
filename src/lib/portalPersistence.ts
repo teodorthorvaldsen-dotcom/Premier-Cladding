@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import bcrypt from "bcryptjs";
 import { demoUsers } from "@/lib/demoData";
-import type { OrderRecord } from "@/lib/demoData";
+import type { OrderRecord, Role } from "@/lib/demoData";
 
 const DATA_DIR = join(process.cwd(), "data");
 const REGISTRY_FILE = join(DATA_DIR, "portal-registry.json");
@@ -19,7 +19,15 @@ type StoredCustomer = {
   createdAt: string;
 };
 
-type RegistryFileShape = { customers: StoredCustomer[] };
+type StoredEmployee = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  createdAt: string;
+};
+
+type RegistryFileShape = { customers: StoredCustomer[]; employees: StoredEmployee[] };
 type OrdersFileShape = { orders: OrderRecord[] };
 
 function ensureDataDir() {
@@ -31,15 +39,16 @@ function ensureDataDir() {
 function readRegistry(): RegistryFileShape {
   ensureDataDir();
   if (!existsSync(REGISTRY_FILE)) {
-    return { customers: [] };
+    return { customers: [], employees: [] };
   }
   try {
     const raw = readFileSync(REGISTRY_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as RegistryFileShape;
-    if (!Array.isArray(parsed.customers)) return { customers: [] };
-    return parsed;
+    const parsed = JSON.parse(raw) as Partial<RegistryFileShape>;
+    const customers = Array.isArray(parsed.customers) ? parsed.customers : [];
+    const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
+    return { customers, employees };
   } catch {
-    return { customers: [] };
+    return { customers: [], employees: [] };
   }
 }
 
@@ -79,32 +88,42 @@ export function findDemoCustomerIdByEmail(email: string): string | undefined {
   return u?.customerId;
 }
 
-export type VerifiedRegisteredCustomer = {
+export type RegistryPortalSession = {
   id: string;
   email: string;
-  role: "customer";
+  role: Role;
   name: string;
-  customerId: string;
+  customerId?: string;
 };
 
-export function verifyRegisteredCustomer(
+/** File-backed portal users (bcrypt). Used on deploy after npm install seeds the registry. */
+export function verifyRegistryPortalLogin(
   email: string,
   password: string
-): VerifiedRegisteredCustomer | null {
+): RegistryPortalSession | null {
   try {
     const n = email.trim().toLowerCase();
-    const { customers } = readRegistry();
-    const row = customers.find((c) => c.email.toLowerCase() === n);
-    if (!row) return null;
-    const ok = bcrypt.compareSync(password, row.passwordHash);
-    if (!ok) return null;
-    return {
-      id: row.id,
-      email: row.email,
-      role: "customer",
-      name: row.name,
-      customerId: row.customerId,
-    };
+    const { customers, employees } = readRegistry();
+    const cust = customers.find((c) => c.email.toLowerCase() === n);
+    if (cust && bcrypt.compareSync(password, cust.passwordHash)) {
+      return {
+        id: cust.id,
+        email: cust.email,
+        role: "customer",
+        name: cust.name,
+        customerId: cust.customerId,
+      };
+    }
+    const emp = employees.find((e) => e.email.toLowerCase() === n);
+    if (emp && bcrypt.compareSync(password, emp.passwordHash)) {
+      return {
+        id: emp.id,
+        email: emp.email,
+        role: "employee",
+        name: emp.name,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
