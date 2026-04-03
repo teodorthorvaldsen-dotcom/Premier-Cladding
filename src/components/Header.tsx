@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { id: "custom-shop-drawings", href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
   { id: "consultation", href: "/consultation", label: "Consultation" },
   { id: "about", href: "/about", label: "About" },
+  { id: "portal", href: "/login", label: "Order portal" },
   { id: "cart", href: "/cart", label: "Cart" },
 ] as const;
 
