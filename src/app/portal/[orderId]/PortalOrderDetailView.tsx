@@ -17,7 +17,14 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
-export function PortalOrderDetailView({ order }: { order: OrderRecord }) {
+export function PortalOrderDetailView({
+  order,
+  showCadExport,
+}: {
+  order: OrderRecord;
+  /** DXF/CSV export — internal use only; not shown to customer portal logins. */
+  showCadExport: boolean;
+}) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const item = order.lineItem;
   const lineTotal = cartItemLineTotal(item);
@@ -168,7 +175,7 @@ export function PortalOrderDetailView({ order }: { order: OrderRecord }) {
                     ) : null}
                   </div>
 
-                  <RevitTrayExportBlock item={item} />
+                  {showCadExport ? <RevitTrayExportBlock item={item} /> : null}
                 </div>
               </div>
             </div>
