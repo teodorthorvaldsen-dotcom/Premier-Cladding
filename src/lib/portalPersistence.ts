@@ -91,19 +91,23 @@ export function verifyRegisteredCustomer(
   email: string,
   password: string
 ): VerifiedRegisteredCustomer | null {
-  const n = email.trim().toLowerCase();
-  const { customers } = readRegistry();
-  const row = customers.find((c) => c.email.toLowerCase() === n);
-  if (!row) return null;
-  const ok = bcrypt.compareSync(password, row.passwordHash);
-  if (!ok) return null;
-  return {
-    id: row.id,
-    email: row.email,
-    role: "customer",
-    name: row.name,
-    customerId: row.customerId,
-  };
+  try {
+    const n = email.trim().toLowerCase();
+    const { customers } = readRegistry();
+    const row = customers.find((c) => c.email.toLowerCase() === n);
+    if (!row) return null;
+    const ok = bcrypt.compareSync(password, row.passwordHash);
+    if (!ok) return null;
+    return {
+      id: row.id,
+      email: row.email,
+      role: "customer",
+      name: row.name,
+      customerId: row.customerId,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** Standalone registration; fails if email already in registry or is a reserved demo email. */

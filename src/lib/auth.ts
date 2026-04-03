@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { verifyRegisteredCustomer } from "@/lib/portalPersistence";
 import { demoUsers, type Role } from "./demoData";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
@@ -38,8 +37,15 @@ export function findDemoUser(email: string, password: string) {
   );
 }
 
-/** Demo accounts plus customers registered via checkout or /api/portal/register. */
-export function authenticatePortalUser(email: string, password: string): SessionUser | null {
+/**
+ * Demo accounts first (plain-text passwords in demoData), then file-backed registry.
+ * Registry is loaded via dynamic import so this module never pulls `fs`/bcrypt at load time
+ * (avoids breaking login in Edge or when persistence isn’t available).
+ */
+export async function authenticatePortalUser(
+  email: string,
+  password: string
+): Promise<SessionUser | null> {
   const demo = findDemoUser(email, password);
   if (demo) {
     return {
@@ -50,5 +56,10 @@ export function authenticatePortalUser(email: string, password: string): Session
       customerId: demo.customerId,
     };
   }
-  return verifyRegisteredCustomer(email, password);
+  try {
+    const { verifyRegisteredCustomer } = await import("@/lib/portalPersistence");
+    return verifyRegisteredCustomer(email, password);
+  } catch {
+    return null;
+  }
 }

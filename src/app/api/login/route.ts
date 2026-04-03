@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticatePortalUser, signToken } from "@/lib/auth";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const email = String(body.email || "").trim();
     const password = String(body.password || "").trim();
 
-    const user = authenticatePortalUser(email, password);
+    const user = await authenticatePortalUser(email, password);
 
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
@@ -18,7 +20,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       role: user.role,
       name: user.name,
-      customerId: user.customerId,
+      ...(user.customerId ? { customerId: user.customerId } : {}),
     });
 
     const response = NextResponse.json({ success: true });
