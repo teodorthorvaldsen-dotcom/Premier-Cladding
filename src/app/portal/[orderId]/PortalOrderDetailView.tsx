@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import type { OrderRecord } from "@/lib/demoData";
 import {
-  ESTIMATE_AND_PAYMENT_CALENDAR_DAYS,
+  MATERIAL_LEAD_CALENDAR_DAYS,
+  ORDER_FINALIZATION_CALENDAR_DAYS,
   ORDER_PROCESS_STEPS,
   PANELS_PER_PRODUCTION_DAY,
-  planTimelineDays,
+  planOrderTimelineDays,
+  SHIPPING_CALENDAR_DAYS,
 } from "@/lib/orderProcess";
 import { cartItemLineTotal } from "@/types/cart";
 
@@ -23,8 +25,6 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
-const SLIDER_MAX_PANELS = 500;
-
 export function PortalOrderDetailView({
   order,
   showCadExport,
@@ -35,17 +35,20 @@ export function PortalOrderDetailView({
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const orderedQty = order.lineItem.quantity;
-  const [scenarioQty, setScenarioQty] = useState(orderedQty);
 
   const item = order.lineItem;
   const lineTotal = cartItemLineTotal(item);
   const totalSqFt = item.areaFt2 * item.quantity;
   const thumbSrc = item.previewImageDataUrl ?? order.previewImageSrc;
 
-  const timeline = useMemo(() => planTimelineDays(scenarioQty), [scenarioQty]);
-  const estimatePct =
-    timeline.totalDays > 0 ? (timeline.estimateDays / timeline.totalDays) * 100 : 50;
-  const fabPct = 100 - estimatePct;
+  const timeline = planOrderTimelineDays(orderedQty);
+  const t = timeline.totalDays;
+  const pct = (days: number) => (t > 0 ? (days / t) * 100 : 0);
+  const pFinal = pct(timeline.orderFinalizationDays);
+  const pMat = pct(timeline.materialLeadDays);
+  const pFab = pct(timeline.fabricationDays);
+  const pShip = pct(timeline.shippingDays);
+  const minPctLabel = 9;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -186,77 +189,71 @@ export function PortalOrderDetailView({
       <section className="mt-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
         <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Estimated timeline</h2>
         <p className="mt-2 text-[14px] text-gray-600">
-          Planning model: <strong>{ESTIMATE_AND_PAYMENT_CALENDAR_DAYS} calendar days</strong> for estimating, finalized
-          cost, and deposit, then <strong>{PANELS_PER_PRODUCTION_DAY} panels per day</strong> fabrication capacity.
-          Adjust the slider to see how quantity changes build time (your order is{" "}
-          <strong>{orderedQty}</strong> panel{orderedQty === 1 ? "" : "s"}).
+          Built automatically from your order: <strong>{orderedQty}</strong> panel{orderedQty === 1 ? "" : "s"} at{" "}
+          <strong>{PANELS_PER_PRODUCTION_DAY} panels per calendar day</strong>. Includes{" "}
+          <strong>{ORDER_FINALIZATION_CALENDAR_DAYS} days</strong> order finalization (quote &amp; sign-off),{" "}
+          <strong>{MATERIAL_LEAD_CALENDAR_DAYS} days</strong> to order and receive materials, fabrication time, and{" "}
+          <strong>{SHIPPING_CALENDAR_DAYS} days</strong> for shipping.
         </p>
 
-        <div className="mt-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label htmlFor="portal-timeline-qty" className="text-sm font-medium text-gray-900">
-              Panels for timeline
-            </label>
-            <span className="tabular-nums text-sm text-gray-600">{scenarioQty} panels</span>
-          </div>
-          <input
-            id="portal-timeline-qty"
-            type="range"
-            min={1}
-            max={SLIDER_MAX_PANELS}
-            value={scenarioQty}
-            onChange={(e) => setScenarioQty(Number(e.target.value))}
-            className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-gray-900"
-          />
-          <div className="mt-1 flex justify-between text-[11px] text-gray-500">
-            <span>1</span>
-            <span>{SLIDER_MAX_PANELS}</span>
-          </div>
-          {scenarioQty !== orderedQty ? (
-            <button
-              type="button"
-              onClick={() => setScenarioQty(orderedQty)}
-              className="mt-2 text-[13px] font-medium text-gray-900 underline-offset-2 hover:underline"
-            >
-              Reset to my order ({orderedQty} panels)
-            </button>
-          ) : null}
-        </div>
-
         <div className="mt-6 space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
-          <div className="flex h-10 w-full overflow-hidden rounded-lg">
+          <p className="text-[12px] font-medium text-gray-700">Hover segments for phase details.</p>
+          <div className="flex h-11 w-full cursor-help overflow-hidden rounded-lg shadow-inner" role="img" aria-label="Timeline by phase length">
             <div
-              className="flex items-center justify-center bg-slate-600 text-[11px] font-medium text-white"
-              style={{ width: `${estimatePct}%` }}
-              title="Quote & deposit phase"
+              className="flex min-w-0 items-center justify-center bg-slate-700 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+              style={{ width: `${pFinal}%` }}
+              title={`Order finalization: ${timeline.orderFinalizationDays} calendar days (estimate, finalized cost, deposit)`}
             >
-              {estimatePct > 12 ? `${timeline.estimateDays}d` : ""}
+              {pFinal >= minPctLabel ? `${timeline.orderFinalizationDays}d` : ""}
             </div>
             <div
-              className="flex items-center justify-center bg-slate-400 text-[11px] font-medium text-white"
-              style={{ width: `${fabPct}%` }}
-              title="Fabrication phase"
+              className="flex min-w-0 items-center justify-center bg-slate-600 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+              style={{ width: `${pMat}%` }}
+              title={`Materials: ${timeline.materialLeadDays} calendar days (order & receive at shop)`}
             >
-              {fabPct > 12 ? `${timeline.fabricationDays}d` : ""}
+              {pMat >= minPctLabel ? `${timeline.materialLeadDays}d` : ""}
+            </div>
+            <div
+              className="flex min-w-0 items-center justify-center bg-slate-500 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+              style={{ width: `${pFab}%` }}
+              title={`Fabrication: ${timeline.fabricationDays} day${timeline.fabricationDays === 1 ? "" : "s"} (${orderedQty} panels ÷ ${PANELS_PER_PRODUCTION_DAY} per day)`}
+            >
+              {pFab >= minPctLabel ? `${timeline.fabricationDays}d` : ""}
+            </div>
+            <div
+              className="flex min-w-0 items-center justify-center bg-slate-400 text-[10px] font-semibold text-white transition-opacity hover:opacity-95"
+              style={{ width: `${pShip}%` }}
+              title={`Shipping: ${timeline.shippingDays} calendar days (transit to you)`}
+            >
+              {pShip >= minPctLabel ? `${timeline.shippingDays}d` : ""}
             </div>
           </div>
           <ul className="space-y-2 text-[13px] text-gray-800">
             <li>
-              <span className="font-medium text-gray-900">Quote, inventory &amp; deposit:</span>{" "}
-              {timeline.estimateDays} days
+              <span className="font-medium text-gray-900">Order finalization:</span>{" "}
+              {timeline.orderFinalizationDays} calendar days — estimate, inventory check, finalized cost, signature
+              &amp; deposit
             </li>
             <li>
-              <span className="font-medium text-gray-900">Fabrication:</span> {timeline.fabricationDays} day
-              {timeline.fabricationDays === 1 ? "" : "s"} at {PANELS_PER_PRODUCTION_DAY}/day (
-              {scenarioQty} panel{scenarioQty === 1 ? "" : "s"})
+              <span className="font-medium text-gray-900">Materials:</span> {timeline.materialLeadDays} calendar days —
+              order materials and receive at our shop
+            </li>
+            <li>
+              <span className="font-medium text-gray-900">Fabrication:</span> {timeline.fabricationDays} calendar day
+              {timeline.fabricationDays === 1 ? "" : "s"} — {orderedQty} panel{orderedQty === 1 ? "" : "s"} at{" "}
+              {PANELS_PER_PRODUCTION_DAY}/day (rounded up)
+            </li>
+            <li>
+              <span className="font-medium text-gray-900">Shipping:</span> {timeline.shippingDays} calendar days — transit
+              to your jobsite or address
             </li>
             <li className="border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900">
-              Combined (before shipping): {timeline.totalDays} calendar day{timeline.totalDays === 1 ? "" : "s"}
+              End-to-end (illustrative): {timeline.totalDays} calendar day{timeline.totalDays === 1 ? "" : "s"}
             </li>
           </ul>
           <p className="text-[11px] leading-snug text-gray-500">
-            Illustrative only — excludes material lead times, queue, and shipping. Final schedule is confirmed on your
-            written quote.
+            Illustrative calendar-day model only — actual dates depend on queue, carrier, and your quote. Confirmed
+            schedule is on your written quote.
           </p>
         </div>
       </section>

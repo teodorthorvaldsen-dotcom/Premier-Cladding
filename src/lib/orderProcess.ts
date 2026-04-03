@@ -11,11 +11,17 @@ export const ORDER_PROCESS_STEPS = [
   "Upon receipt of payment, we ship to you.",
 ] as const;
 
-/** Calendar days for quoting, finalizing cost, signature, and deposit before fabrication starts. */
-export const ESTIMATE_AND_PAYMENT_CALENDAR_DAYS = 7;
+/** 1 calendar week: estimating, finalized cost, signature / deposit. */
+export const ORDER_FINALIZATION_CALENDAR_DAYS = 7;
 
-/** Shop output for timeline estimates (panels per calendar day). */
+/** 1 calendar week: order materials and receive at the shop. */
+export const MATERIAL_LEAD_CALENDAR_DAYS = 7;
+
+/** Shop capacity for timeline estimates (panels per calendar day). */
 export const PANELS_PER_PRODUCTION_DAY = 50;
+
+/** 1 calendar week: transit to customer after fabrication. */
+export const SHIPPING_CALENDAR_DAYS = 7;
 
 export function fabricationCalendarDays(panelQty: number): number {
   const q = Math.max(0, Math.floor(panelQty));
@@ -23,16 +29,28 @@ export function fabricationCalendarDays(panelQty: number): number {
   return Math.ceil(q / PANELS_PER_PRODUCTION_DAY);
 }
 
-export function planTimelineDays(panelQty: number): {
-  estimateDays: number;
+export type OrderTimelinePlan = {
+  orderFinalizationDays: number;
+  materialLeadDays: number;
   fabricationDays: number;
+  shippingDays: number;
   totalDays: number;
-} {
-  const estimateDays = ESTIMATE_AND_PAYMENT_CALENDAR_DAYS;
+};
+
+/**
+ * End-to-end illustrative timeline from order quantity (panels in this line).
+ * Order finalization + material lead + fabrication (50 panels/day) + shipping.
+ */
+export function planOrderTimelineDays(panelQty: number): OrderTimelinePlan {
+  const orderFinalizationDays = ORDER_FINALIZATION_CALENDAR_DAYS;
+  const materialLeadDays = MATERIAL_LEAD_CALENDAR_DAYS;
   const fabricationDays = fabricationCalendarDays(panelQty);
+  const shippingDays = SHIPPING_CALENDAR_DAYS;
   return {
-    estimateDays,
+    orderFinalizationDays,
+    materialLeadDays,
     fabricationDays,
-    totalDays: estimateDays + fabricationDays,
+    shippingDays,
+    totalDays: orderFinalizationDays + materialLeadDays + fabricationDays + shippingDays,
   };
 }
