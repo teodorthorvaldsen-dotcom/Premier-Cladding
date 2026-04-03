@@ -10,7 +10,7 @@ export function PortalLogoutButton() {
   async function logout() {
     setLoading(true);
     try {
-      await fetch("/api/logout", { method: "POST" });
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
       router.push("/login");
       router.refresh();
     } finally {

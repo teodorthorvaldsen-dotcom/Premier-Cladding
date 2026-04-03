@@ -25,9 +25,16 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({ success: true });
 
+    // Secure cookies are dropped on http:// even when NODE_ENV is production (e.g. local `next start`).
+    const forwardedProto = req.headers.get("x-forwarded-proto");
+    const secureCookie =
+      forwardedProto != null
+        ? forwardedProto.split(",")[0].trim() === "https"
+        : req.nextUrl.protocol === "https:";
+
     response.cookies.set("portal_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: secureCookie,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,

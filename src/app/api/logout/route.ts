@@ -1,11 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const response = NextResponse.json({ success: true });
+
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const secureCookie =
+    forwardedProto != null
+      ? forwardedProto.split(",")[0].trim() === "https"
+      : req.nextUrl.protocol === "https:";
 
   response.cookies.set("portal_token", "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookie,
     sameSite: "lax",
     expires: new Date(0),
     path: "/",
