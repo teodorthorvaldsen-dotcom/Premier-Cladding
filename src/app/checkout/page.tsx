@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
@@ -19,7 +18,6 @@ function formatUSD(n: number): string {
 }
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, clearCart } = useCart();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
@@ -28,6 +26,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"wire" | "credit">("wire");
   const [signature, setSignature] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   const subtotal = items.reduce((sum, i) => sum + cartItemLineTotal(i), 0);
   const totalSqFt = items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
@@ -51,6 +50,16 @@ export default function CheckoutPage() {
         setFormError("Please provide your electronic signature.");
         return;
       }
+      const portalPassword = String(formData.get("portalPassword") ?? "").trim();
+      const portalPasswordConfirm = String(formData.get("portalPasswordConfirm") ?? "").trim();
+      if (portalPassword.length < 8) {
+        setFormError("Order portal password must be at least 8 characters.");
+        return;
+      }
+      if (portalPassword !== portalPasswordConfirm) {
+        setFormError("Order portal passwords do not match.");
+        return;
+      }
       setFormError(null);
       setSubmitting(true);
       try {
@@ -68,12 +77,14 @@ export default function CheckoutPage() {
             notes: (formData.get("notes") as string) ?? "",
             paymentMethod,
             signature: signature.trim(),
+            portalPassword,
           }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(typeof data?.error === "string" ? data.error : "Failed to submit.");
         }
+        setSubmittedEmail(email);
         clearCart();
         setSubmitted(true);
       } catch (err) {
@@ -107,6 +118,17 @@ export default function CheckoutPage() {
         <p className="mt-3 text-base text-gray-600">
           We have received your request. You will receive a confirmation email shortly. We will review and send your finalized quote for signature.
         </p>
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left text-[15px] text-gray-700">
+          <p className="font-medium text-gray-900">Order portal</p>
+          <p className="mt-2">
+            An account for the <strong>order portal</strong> is set up (or updated) for{" "}
+            <strong>{submittedEmail}</strong> using the password you chose at checkout. To check status, open{" "}
+            <Link href="/login" className="font-medium text-gray-900 underline underline-offset-2 hover:text-gray-700">
+              Order portal login
+            </Link>
+            , sign in, then use <strong>Order portal</strong> in the site menu to view your requests.
+          </p>
+        </div>
         <Link
           href="/products/acm-panels"
           className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -275,6 +297,41 @@ export default function CheckoutPage() {
             <span className="block text-sm font-medium text-gray-900">Notes</span>
             <textarea name="notes" rows={3} className="mt-1.5 block min-h-[88px] w-full rounded-xl border border-gray-200 px-3 py-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2" placeholder="Project notes or special requests" />
           </label>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-6">
+            <h3 className="text-sm font-semibold text-gray-900">Order portal access</h3>
+            <p className="mt-1 text-xs text-gray-600">
+              Create or update your portal login so you can track this quote and future orders. Use at least 8
+              characters. You will sign in at <span className="font-medium">Order portal</span> with this email and
+              password.
+            </p>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-900">Portal password</span>
+                <input
+                  type="password"
+                  name="portalPassword"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="mt-1.5 block h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  placeholder="Minimum 8 characters"
+                />
+              </label>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-900">Confirm portal password</span>
+                <input
+                  type="password"
+                  name="portalPasswordConfirm"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="mt-1.5 block h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  placeholder="Re-enter password"
+                />
+              </label>
+            </div>
+          </div>
 
           <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-6">
             <span className="block text-sm font-medium text-gray-900">Pre-estimate agreement</span>

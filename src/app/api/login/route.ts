@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findDemoUser, signToken } from "@/lib/auth";
+import { authenticatePortalUser, signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const email = String(body.email || "").trim();
     const password = String(body.password || "").trim();
 
-    const user = findDemoUser(email, password);
+    const user = authenticatePortalUser(email, password);
 
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });

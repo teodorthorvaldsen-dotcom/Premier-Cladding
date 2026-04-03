@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { verifyRegisteredCustomer } from "@/lib/portalPersistence";
 import { demoUsers, type Role } from "./demoData";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
@@ -35,4 +36,19 @@ export function findDemoUser(email: string, password: string) {
   return demoUsers.find(
     (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
   );
+}
+
+/** Demo accounts plus customers registered via checkout or /api/portal/register. */
+export function authenticatePortalUser(email: string, password: string): SessionUser | null {
+  const demo = findDemoUser(email, password);
+  if (demo) {
+    return {
+      id: demo.id,
+      email: demo.email,
+      role: demo.role,
+      name: demo.name,
+      customerId: demo.customerId,
+    };
+  }
+  return verifyRegisteredCustomer(email, password);
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { buildPortalOrderFromCartQuote } from "@/lib/portalOrders";
+import { registerCustomerFromQuoteAndSaveOrder } from "@/lib/portalPersistence";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 
@@ -34,6 +36,7 @@ interface CartQuotePayload {
   notes: string;
   paymentMethod: "wire" | "credit";
   signature: string;
+  portalPassword: string;
 }
 
 function formatUSD(n: number): string {
@@ -165,6 +168,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const portalPassword = String(body.portalPassword ?? "").trim();
+    if (portalPassword.length < 8) {
+      return NextResponse.json(
+        { error: "Order portal password must be at least 8 characters." },
+        { status: 400 }
+      );
+    }
+
     const payload: CartQuotePayload = {
       items: body.items,
       fullName: body.fullName,
@@ -176,6 +187,7 @@ export async function POST(request: NextRequest) {
       notes: body.notes ?? "",
       paymentMethod: body.paymentMethod === "credit" ? "credit" : "wire",
       signature: body.signature.trim(),
+      portalPassword,
     };
 
     const apiKey = process.env.RESEND_API_KEY;
@@ -223,6 +235,32 @@ export async function POST(request: NextRequest) {
         { error: "Failed to send email. Please try again." },
         { status: 500 }
       );
+    }
+
+    try {
+      const orderId = `ORD-Q-${Date.now().toString(36)}`;
+      const order = buildPortalOrderFromCartQuote({
+        orderId,
+        customerId: "pending",
+        payload: {
+          fullName: payload.fullName,
+          company: payload.company,
+          email: payload.email,
+          phone: payload.phone,
+          projectCity: payload.projectCity,
+          projectState: payload.projectState,
+        },
+        items: payload.items,
+      });
+      registerCustomerFromQuoteAndSaveOrder({
+        email: payload.email,
+        fullName: payload.fullName,
+        company: payload.company,
+        portalPassword: payload.portalPassword,
+        order,
+      });
+    } catch (e) {
+      console.error("[Cart quote portal persist]", e);
     }
 
     return NextResponse.json({ ok: true });

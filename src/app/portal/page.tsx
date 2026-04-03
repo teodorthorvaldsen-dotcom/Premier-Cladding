@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { getSessionUser } from "@/lib/auth";
-import { demoOrders } from "@/lib/demoData";
+import { getPortalOrdersForUser } from "@/lib/portalOrders";
 
 export default async function PortalPage() {
   const user = await getSessionUser();
@@ -11,10 +11,7 @@ export default async function PortalPage() {
     redirect("/login");
   }
 
-  const orders =
-    user.role === "employee"
-      ? demoOrders
-      : demoOrders.filter((o) => o.customerId === user.customerId);
+  const orders = getPortalOrdersForUser(user);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -27,6 +24,13 @@ export default async function PortalPage() {
           <p className="mt-2 text-sm text-gray-500">
             Select an order to open customer details, panel preview, and CAD measurements.
           </p>
+          {user.role !== "employee" ? (
+            <p className="mt-3 max-w-2xl text-sm text-gray-600">
+              <strong>Checking your request:</strong> After you submit a cart quote, sign in here with the same email
+              and the <strong>order portal password</strong> you chose at checkout. New requests appear in this list as
+              soon as your estimate submission succeeds.
+            </p>
+          ) : null}
         </div>
 
         <PortalLogoutButton />

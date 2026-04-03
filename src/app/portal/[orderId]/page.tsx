@@ -1,11 +1,13 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
-import { getDemoOrderById, type OrderRecord } from "@/lib/demoData";
+import { getSessionUser, type SessionUser } from "@/lib/auth";
+import type { OrderRecord } from "@/lib/demoData";
+import { getPortalOrderById } from "@/lib/portalOrders";
 import { PortalOrderDetailView } from "./PortalOrderDetailView";
 
-function canAccessOrder(user: { role: string; customerId?: string }, order: OrderRecord) {
+function canAccessOrder(user: SessionUser, order: OrderRecord) {
   if (user.role === "employee") return true;
-  return order.customerId === user.customerId;
+  if (order.customerId === user.customerId) return true;
+  return order.customerEmail.trim().toLowerCase() === user.email.trim().toLowerCase();
 }
 
 type PageProps = { params: { orderId: string } };
@@ -18,7 +20,7 @@ export default async function PortalOrderDetailPage({ params }: PageProps) {
 
   const { orderId: rawId } = params;
   const orderId = decodeURIComponent(rawId);
-  const order = getDemoOrderById(orderId);
+  const order = getPortalOrderById(orderId);
 
   if (!order || !canAccessOrder(user, order)) {
     notFound();
