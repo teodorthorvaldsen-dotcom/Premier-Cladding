@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PanelEmployeeComplianceForm } from "@/components/PortalEmployeeComplianceForm";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
+import PortalEmployeeComplianceForm from "./PortalEmployeeComplianceForm";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";

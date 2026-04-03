@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type Props = { orderId: string };
 
-export function PortalEmployeeComplianceForm({ orderId }: Props) {
+export default function PortalEmployeeComplianceForm({ orderId }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
