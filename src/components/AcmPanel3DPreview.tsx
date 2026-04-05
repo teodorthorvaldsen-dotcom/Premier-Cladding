@@ -54,6 +54,8 @@ export interface AcmPanel3DPreviewProps {
   panelSwatchImage?: string;
   /** WebGL canvas (for add-to-cart screenshot); set `preserveDrawingBuffer` internally. */
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
+  /** Larger viewport for the employee layout tool (still same interaction model). */
+  expandedViewport?: boolean;
 }
 
 type BuiltPart = {
@@ -621,6 +623,7 @@ export function AcmPanel3DPreview({
   panelColorName,
   panelSwatchImage,
   glCanvasRef,
+  expandedViewport = false,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -675,7 +678,11 @@ export function AcmPanel3DPreview({
 
       <div
         className="relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"
-        style={{ height: PREVIEW_H, maxWidth: 520 }}
+        style={
+          expandedViewport
+            ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
+            : { height: PREVIEW_H, maxWidth: 520 }
+        }
       >
         <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-lg border border-gray-200/90 bg-white/95 p-0.5 shadow-sm backdrop-blur-sm">
           <button
