@@ -18,11 +18,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         id="main-content"
         className={
           minimalChrome
-            ? "min-h-dvh py-4 sm:py-6"
+            ? "flex h-dvh min-h-0 flex-col overflow-hidden p-0"
             : "min-h-[calc(100dvh-5.5rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-7rem)] md:py-20 lg:py-24"
         }
       >
-        {children}
+        {minimalChrome ? (
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        ) : (
+          children
+        )}
       </main>
       {minimalChrome ? null : <Footer />}
     </CartProvider>

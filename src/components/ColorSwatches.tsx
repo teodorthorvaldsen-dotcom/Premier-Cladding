@@ -22,6 +22,7 @@ interface ColorSwatchesProps {
   onCustomColorReferenceChange: (value: string) => void;
   customColorSpecFile: File | null;
   onCustomColorSpecFileChange: (file: File | null) => void;
+  variant?: "default" | "propertiesPanel";
 }
 
 type ColorRow = (typeof colors)[number];
@@ -53,19 +54,30 @@ function SwatchGrid({
   maxCols,
   value,
   onChange,
+  compact,
 }: {
   colorIds: readonly string[];
   maxCols: number;
   value: ColorId;
   onChange: (id: ColorId) => void;
+  compact?: boolean;
 }) {
+  const gridClass = compact
+    ? "mt-2 grid w-full min-w-0 grid-cols-2 gap-x-1.5 gap-y-2 justify-items-center"
+    : "mt-4 grid gap-x-3 gap-y-5 " + gridColsClass(maxCols);
   return (
-    <div className={"mt-4 grid gap-x-3 gap-y-5 " + gridColsClass(maxCols)} role="group">
+    <div className={gridClass} role="group">
       {colorIds.map((id) => {
         const c = colorById(id);
         if (!c) return null;
         return (
-          <SwatchCell key={id} color={c} selected={value === c.id} onSelect={() => onChange(c.id)} />
+          <SwatchCell
+            key={id}
+            color={c}
+            selected={value === c.id}
+            onSelect={() => onChange(c.id)}
+            compact={compact}
+          />
         );
       })}
     </div>
@@ -76,10 +88,12 @@ function SwatchCell({
   color: c,
   selected,
   onSelect,
+  compact,
 }: {
   color: ColorRow;
   selected: boolean;
   onSelect: () => void;
+  compact?: boolean;
 }) {
   const hex = c.swatchHex ?? "#ccc";
   const swatchImage =
@@ -92,17 +106,27 @@ function SwatchCell({
       : undefined;
 
   return (
-    <div className="flex min-w-0 w-full max-w-[6.25rem] flex-col items-center gap-1.5 justify-self-center">
+    <div
+      className={
+        compact
+          ? "flex min-w-0 w-full max-w-[5.5rem] flex-col items-center gap-0.5 justify-self-center"
+          : "flex min-w-0 w-full max-w-[6.25rem] flex-col items-center gap-1.5 justify-self-center"
+      }
+    >
       <button
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
         aria-label={`${c.name} (${c.code})`}
         title={`${c.name} (${c.code})`}
-        className={`relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 sm:h-[3.25rem] sm:w-[3.25rem] ${
-          selected
-            ? "ring-2 ring-gray-900 ring-offset-2"
-            : "ring-1 ring-gray-200/80 ring-inset hover:ring-gray-300"
+        className={`relative flex flex-shrink-0 items-center justify-center overflow-hidden transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 ${
+          compact
+            ? `h-8 w-8 rounded-md ${selected ? "ring-2 ring-gray-900 ring-offset-1" : "ring-1 ring-gray-300 ring-inset hover:ring-gray-400"}`
+            : `h-11 w-11 rounded-xl sm:h-[3.25rem] sm:w-[3.25rem] ${
+                selected
+                  ? "ring-2 ring-gray-900 ring-offset-2"
+                  : "ring-1 ring-gray-200/80 ring-inset hover:ring-gray-300"
+              }`
         }`}
       >
         <span className="absolute inset-0" style={{ backgroundColor: hex }} />
@@ -112,7 +136,7 @@ function SwatchCell({
             alt=""
             fill
             className="object-cover"
-            sizes="52px"
+            sizes={compact ? "32px" : "52px"}
             draggable={false}
             aria-hidden
           />
@@ -133,17 +157,59 @@ function SwatchCell({
         )}
       </button>
       <div className="w-full min-w-0 text-center">
-        <p className="break-words text-[15px] font-semibold leading-snug text-gray-900 sm:text-xs">{c.name}</p>
-        <p className="mt-0.5 text-[14px] font-normal tabular-nums text-gray-500 sm:text-[15px]">{c.code}</p>
+        <p
+          className={
+            compact
+              ? "break-words text-[8px] font-semibold leading-tight text-gray-900"
+              : "break-words text-[15px] font-semibold leading-snug text-gray-900 sm:text-xs"
+          }
+        >
+          {c.name}
+        </p>
+        <p
+          className={
+            compact
+              ? "mt-0 text-[8px] font-normal tabular-nums text-gray-500"
+              : "mt-0.5 text-[14px] font-normal tabular-nums text-gray-500 sm:text-[15px]"
+          }
+        >
+          {c.code}
+        </p>
         {coatLabel && (
-          <p className="mt-0.5 text-[9px] font-normal capitalize leading-tight text-gray-400">{coatLabel}</p>
+          <p
+            className={
+              compact
+                ? "mt-0 text-[7px] font-normal capitalize leading-tight text-gray-400 line-clamp-1"
+                : "mt-0.5 text-[9px] font-normal capitalize leading-tight text-gray-400"
+            }
+          >
+            {coatLabel}
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-function SeriesHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+function SeriesHeader({
+  title,
+  subtitle,
+  compact,
+}: {
+  title: string;
+  subtitle?: string;
+  compact?: boolean;
+}) {
+  if (compact) {
+    return (
+      <div className="border-b border-gray-300 pb-1.5">
+        <h3 className="text-[10px] font-bold uppercase tracking-wide text-gray-700">{title}</h3>
+        {subtitle ? (
+          <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-gray-500">{subtitle}</p>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className="border-b-2 border-blue-900/45 pb-3">
       <h3 className="text-base font-bold uppercase tracking-[0.06em] text-blue-900 sm:text-lg sm:tracking-[0.07em]">
@@ -161,132 +227,192 @@ export function ColorSwatches({
   onCustomColorReferenceChange,
   customColorSpecFile,
   onCustomColorSpecFileChange,
+  variant = "default",
 }: ColorSwatchesProps) {
   const selectedColor = colors.find((c) => c.id === value);
+  const isPanel = variant === "propertiesPanel";
 
   return (
     <div className="min-w-0">
-      <label className="block text-sm font-medium text-gray-900">Color &amp; Finish</label>
-      <p className="mt-0.5 text-[15px] text-gray-500">
-        Select a standard Alfrex FR finish or custom color match. Series below follow the standard finishes catalog.
-      </p>
+      <label
+        className={
+          isPanel
+            ? "block text-xs font-semibold uppercase tracking-wide text-gray-800"
+            : "block text-sm font-medium text-gray-900"
+        }
+      >
+        Color &amp; finish
+      </label>
+      {isPanel ? (
+        <p className="mt-1 text-[10px] leading-snug text-gray-600">Alfrex FR catalog · on-screen approximations only.</p>
+      ) : (
+        <p className="mt-0.5 text-[15px] text-gray-500">
+          Select a standard Alfrex FR finish or custom color match. Series below follow the standard finishes catalog.
+        </p>
+      )}
 
-      <div className="mt-8 space-y-10" role="region" aria-label="Panel color series">
+      <div
+        className={isPanel ? "mt-3 space-y-3" : "mt-8 space-y-10"}
+        role="region"
+        aria-label="Panel color series"
+      >
+        {!isPanel ? (
+          <section>
+            <h3 className="text-sm font-medium text-gray-900">Order color swatches</h3>
+            <p className="mt-0.5 text-[15px] text-gray-500">
+              Request physical finish samples to review color and appearance under your lighting before you order panels.{" "}
+              <Link
+                href="/#questions-contact"
+                className="font-medium text-blue-900 underline decoration-blue-900/30 underline-offset-2 hover:text-blue-950"
+              >
+                Contact us
+              </Link>{" "}
+              with the finish names or JY codes you need and your ship-to address; we will confirm availability and how
+              samples are provided.
+            </p>
+          </section>
+        ) : null}
+
         <section>
-          <h3 className="text-sm font-medium text-gray-900">Order color swatches</h3>
-          <p className="mt-0.5 text-[15px] text-gray-500">
-            Request physical finish samples to review color and appearance under your lighting before you order panels.{" "}
-            <Link
-              href="/#questions-contact"
-              className="font-medium text-blue-900 underline decoration-blue-900/30 underline-offset-2 hover:text-blue-950"
-            >
-              Contact us
-            </Link>{" "}
-            with the finish names or JY codes you need and your ship-to address; we will confirm availability and how
-            samples are provided.
-          </p>
+          <SeriesHeader title="2 coat solids" subtitle="30 Year Finish Warranty" compact={isPanel} />
+          <SwatchGrid
+            colorIds={twoCoatSolidColorIds}
+            maxCols={5}
+            value={value}
+            onChange={onChange}
+            compact={isPanel}
+          />
         </section>
 
         <section>
-          <SeriesHeader
-            title="2 coat solids"
-            subtitle="30 Year Finish Warranty"
-          />
-          <SwatchGrid colorIds={twoCoatSolidColorIds} maxCols={5} value={value} onChange={onChange} />
-        </section>
-
-        <section>
-          <SeriesHeader
-            title="Vivid solids*"
-            subtitle="20 Year Limited Finish Warranty"
-          />
-          <SwatchGrid colorIds={vividSolidColorIds} maxCols={5} value={value} onChange={onChange} />
+          <SeriesHeader title="Vivid solids*" subtitle="20 Year Limited Finish Warranty" compact={isPanel} />
+          <SwatchGrid colorIds={vividSolidColorIds} maxCols={5} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
           <SeriesHeader
             title="2 coat micas"
             subtitle="30 Year Finish Warranty. Micaceous finishes can appear directional under different viewing angles and lighting."
+            compact={isPanel}
           />
-          <SwatchGrid colorIds={twoCoatMicaColorIds} maxCols={5} value={value} onChange={onChange} />
+          <SwatchGrid colorIds={twoCoatMicaColorIds} maxCols={5} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
-          <SeriesHeader
-            title="3 coat metallics"
-            subtitle="30 Year Finish Warranty"
+          <SeriesHeader title="3 coat metallics" subtitle="30 Year Finish Warranty" compact={isPanel} />
+          <SwatchGrid
+            colorIds={threeCoatMetallicColorIds}
+            maxCols={5}
+            value={value}
+            onChange={onChange}
+            compact={isPanel}
           />
-          <SwatchGrid colorIds={threeCoatMetallicColorIds} maxCols={5} value={value} onChange={onChange} />
         </section>
 
         <section>
-          <SeriesHeader
-            title="Metal series"
-            subtitle="20 Year Finish Warranty"
-          />
-          <SwatchGrid colorIds={metalSeriesColorIds} maxCols={4} value={value} onChange={onChange} />
+          <SeriesHeader title="Metal series" subtitle="20 Year Finish Warranty" compact={isPanel} />
+          <SwatchGrid colorIds={metalSeriesColorIds} maxCols={4} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
-          <SeriesHeader
-            title="Wood series"
-            subtitle="20 Year Finish Warranty"
-          />
-          <SwatchGrid colorIds={woodSeriesColorIds} maxCols={3} value={value} onChange={onChange} />
+          <SeriesHeader title="Wood series" subtitle="20 Year Finish Warranty" compact={isPanel} />
+          <SwatchGrid colorIds={woodSeriesColorIds} maxCols={3} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
-          <SeriesHeader title="Natural zinc series*" />
-          <p className="mb-3 text-[15px] italic leading-relaxed text-gray-500">
-            *Non-stocking item subject to minimum quantities. Bond integrity warranty only.
-          </p>
-          <SwatchGrid colorIds={naturalZincColorIds} maxCols={2} value={value} onChange={onChange} />
+          <SeriesHeader title="Natural zinc series*" compact={isPanel} />
+          {!isPanel ? (
+            <p className="mb-3 text-[15px] italic leading-relaxed text-gray-500">
+              *Non-stocking item subject to minimum quantities. Bond integrity warranty only.
+            </p>
+          ) : (
+            <p className="mb-1 text-[9px] italic text-gray-500">*MQ; bond integrity warranty only.</p>
+          )}
+          <SwatchGrid colorIds={naturalZincColorIds} maxCols={2} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
           <SeriesHeader
             title="Specialty series*"
             subtitle="Non-stocking / made to order — confirm availability and lead time with your quote."
+            compact={isPanel}
           />
-          <SwatchGrid colorIds={specialtyFinishColorIds} maxCols={2} value={value} onChange={onChange} />
+          <SwatchGrid colorIds={specialtyFinishColorIds} maxCols={2} value={value} onChange={onChange} compact={isPanel} />
         </section>
 
         <section>
-          <SeriesHeader title="Custom colors" />
-          <p className="mt-2 text-[15px] leading-relaxed text-gray-500 sm:text-xs">
-            To begin the custom color match process, send a physical sample (preferred), a coating manufacturer paint
-            code, or a reference such as a Pantone number, with your performance requirements. Perfect matches are not
-            always possible due to substrate, paint system, and process differences — contact us for specifics.
-          </p>
-          <div className="mt-4">
-            <SwatchGrid colorIds={["custom-color-match"]} maxCols={1} value={value} onChange={onChange} />
+          <SeriesHeader title="Custom colors" compact={isPanel} />
+          {!isPanel ? (
+            <p className="mt-2 text-[15px] leading-relaxed text-gray-500 sm:text-xs">
+              To begin the custom color match process, send a physical sample (preferred), a coating manufacturer paint
+              code, or a reference such as a Pantone number, with your performance requirements. Perfect matches are not
+              always possible due to substrate, paint system, and process differences — contact us for specifics.
+            </p>
+          ) : (
+            <p className="mt-1 text-[9px] leading-snug text-gray-500">Paint code / Pantone / sample reference.</p>
+          )}
+          <div className={isPanel ? "mt-2" : "mt-4"}>
+            <SwatchGrid
+              colorIds={["custom-color-match"]}
+              maxCols={1}
+              value={value}
+              onChange={onChange}
+              compact={isPanel}
+            />
           </div>
           {value === "custom-color-match" && (
-            <div className="mt-5 max-w-lg space-y-4 rounded-xl border border-gray-200/90 bg-gray-50/80 p-4 sm:p-5">
+            <div
+              className={
+                isPanel
+                  ? "mt-3 space-y-2 rounded border border-gray-300 bg-white p-2.5"
+                  : "mt-5 max-w-lg space-y-4 rounded-xl border border-gray-200/90 bg-gray-50/80 p-4 sm:p-5"
+              }
+            >
               <div>
-                <label htmlFor="custom-color-reference" className="block text-[15px] font-medium text-gray-900">
+                <label
+                  htmlFor="custom-color-reference"
+                  className={isPanel ? "block text-[10px] font-semibold text-gray-800" : "block text-[15px] font-medium text-gray-900"}
+                >
                   Paint code or color reference
                 </label>
-                <p className="mt-0.5 text-[15px] text-gray-500">
-                  Manufacturer paint code, Pantone number, or other standard reference (optional but helpful).
-                </p>
+                {!isPanel ? (
+                  <p className="mt-0.5 text-[15px] text-gray-500">
+                    Manufacturer paint code, Pantone number, or other standard reference (optional but helpful).
+                  </p>
+                ) : null}
                 <textarea
                   id="custom-color-reference"
                   value={customColorReference}
                   onChange={(e) => onCustomColorReferenceChange(e.target.value)}
-                  rows={3}
+                  rows={isPanel ? 2 : 3}
                   maxLength={2000}
                   placeholder="e.g. Pantone 18-1033 TCX, Sherwin-Williams SW 6258, RAL 7016…"
-                  className="mt-2 w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  className={
+                    isPanel
+                      ? "mt-1 w-full resize-y rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      : "mt-2 w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[14px] text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  }
                 />
               </div>
               <div>
-                <span className="block text-[15px] font-medium text-gray-900">Color specification (PDF)</span>
-                <p className="mt-0.5 text-[15px] text-gray-500">
-                  Upload a cutsheet or submittal if you have one (PDF only).
-                </p>
+                <span
+                  className={isPanel ? "block text-[10px] font-semibold text-gray-800" : "block text-[15px] font-medium text-gray-900"}
+                >
+                  Color specification (PDF)
+                </span>
+                {!isPanel ? (
+                  <p className="mt-0.5 text-[15px] text-gray-500">
+                    Upload a cutsheet or submittal if you have one (PDF only).
+                  </p>
+                ) : null}
                 <label className="mt-2 flex cursor-pointer flex-col gap-2 sm:flex-row sm:items-center">
-                  <span className="inline-flex w-fit rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2">
+                  <span
+                    className={
+                      isPanel
+                        ? "inline-flex w-fit rounded border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-800 transition hover:bg-gray-50 focus-within:ring-1 focus-within:ring-gray-400"
+                        : "inline-flex w-fit rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2"
+                    }
+                  >
                     <input
                       type="file"
                       accept="application/pdf,.pdf"
@@ -335,16 +461,24 @@ export function ColorSwatches({
         </section>
       </div>
 
-      <p className="mt-8 text-[15px] leading-relaxed text-gray-400">
-        On-screen swatches are approximations. Final color varies by lighting, viewing angle, and production lot.
-      </p>
+      {!isPanel ? (
+        <p className="mt-8 text-[15px] leading-relaxed text-gray-400">
+          On-screen swatches are approximations. Final color varies by lighting, viewing angle, and production lot.
+        </p>
+      ) : (
+        <p className="mt-3 text-[9px] leading-snug text-gray-500">
+          Swatches approximate; final color varies by lighting and lot.
+        </p>
+      )}
 
       {selectedColor && (
-        <p className="mt-2 text-[15px] text-gray-500">
+        <p className={isPanel ? "mt-2 text-[10px] text-gray-600" : "mt-2 text-[15px] text-gray-500"}>
           <span className="font-medium text-gray-700">Selected:</span>{" "}
           <span className="font-medium text-gray-900">{selectedColor.name}</span> ({selectedColor.code})
           {selectedColor.availability === "Made to Order" ? (
-            <span className="block text-[14px] text-amber-800/90">Made to order — lead time confirmed on quote.</span>
+            <span className={isPanel ? "block text-[9px] text-amber-800/90" : "block text-[14px] text-amber-800/90"}>
+              Made to order — lead time confirmed on quote.
+            </span>
           ) : null}
         </p>
       )}

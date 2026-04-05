@@ -92,6 +92,8 @@ interface SizePickerProps {
   value: SizeSelection;
   onChange: (s: SizeSelection) => void;
   thicknessId: ThicknessId;
+  /** Narrow Revit-style properties column */
+  variant?: "default" | "propertiesPanel";
 }
 
 function getMaxLengthIn(thicknessId: ThicknessId): number {
@@ -105,7 +107,13 @@ function clampWidth(val: number): number {
   return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(CUSTOM_WIDTH_MIN_IN, n));
 }
 
-export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
+export function SizePicker({
+  value,
+  onChange,
+  thicknessId,
+  variant = "default",
+}: SizePickerProps) {
+  const isPanel = variant === "propertiesPanel";
   const maxLength = getMaxLengthIn(thicknessId);
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
@@ -232,23 +240,44 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
     pushSides(next);
   };
 
+  const inW = isPanel
+    ? "mt-1 block h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm text-gray-900 shadow-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
+    : "mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2";
+
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900">Size</label>
-      <p className="mt-0.5 text-xs text-gray-500">
-        Width and length set the <span className="font-medium text-gray-800">flat center face</span> of the tray (always
-        that width × length in the preview). Each side you add is a return with its own height in inches and bend angle.
-        Pricing still uses full width × length (flat). Positive° bends a side outward (+Z); negative° bends inward.
-      </p>
-      <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
-        Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-        in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
-        returns. First four rows default to Front, Back, Left, Right; you can add another fold on any row on the same
-        edge (stacked returns). New rows default to 90°.
-      </p>
-      <div className="mt-3 space-y-4" role="group" aria-label="Panel width, length, and tray sides">
+      <label
+        className={
+          isPanel
+            ? "block text-xs font-semibold uppercase tracking-wide text-gray-800"
+            : "block text-sm font-medium text-gray-900"
+        }
+      >
+        Size
+      </label>
+      {isPanel ? (
+        <p className="mt-1 text-[10px] leading-snug text-gray-600">
+          Center face: width × length. Limits {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}" × {MIN_LENGTH_IN}–{maxLength}
+          " · up to {MAX_TRAY_SIDE_ROWS} returns. +° / −° as in main viewport help.
+        </p>
+      ) : (
+        <>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Width and length set the <span className="font-medium text-gray-800">flat center face</span> of the tray (always
+            that width × length in the preview). Each side you add is a return with its own height in inches and bend angle.
+            Pricing still uses full width × length (flat). Positive° bends a side outward (+Z); negative° bends inward.
+          </p>
+          <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
+            Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
+            in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
+            returns. First four rows default to Front, Back, Left, Right; you can add another fold on any row on the same
+            edge (stacked returns). New rows default to 90°.
+          </p>
+        </>
+      )}
+      <div className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"} role="group" aria-label="Panel width, length, and tray sides">
         <div>
-          <label htmlFor="width-input" className="block text-xs font-medium text-gray-700">
+          <label htmlFor="width-input" className="block text-[10px] font-medium text-gray-700">
             Width (in)
           </label>
           <input
@@ -260,12 +289,12 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             value={widthStr}
             onChange={(e) => handleWidthChange(e.target.value)}
             onBlur={() => setWidthStr(String(value.widthIn))}
-            className="mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className={inW}
             aria-label="Width in inches"
           />
         </div>
         <div>
-          <label htmlFor="length-input" className="block text-xs font-medium text-gray-700">
+          <label htmlFor="length-input" className="block text-[10px] font-medium text-gray-700">
             Length (in)
           </label>
           <input
@@ -277,12 +306,18 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
             value={lengthStr}
             onChange={(e) => handleLengthChange(e.target.value)}
             onBlur={() => setLengthStr(String(value.lengthIn))}
-            className="mt-1.5 block h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className={inW}
             aria-label="Length in inches"
           />
         </div>
 
-        <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
+        <div
+          className={
+            isPanel
+              ? "rounded border border-gray-300 bg-white p-2.5 shadow-sm"
+              : "rounded-xl border border-gray-200/80 bg-gray-50/50 p-4"
+          }
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-medium text-gray-800">Tray sides (returns)</p>
             <button
@@ -294,13 +329,19 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
               Add side
             </button>
           </div>
-          <p className="mt-1.5 text-[11px] text-gray-500">
-            Rows 1–4 start as Front, Back, Left, Right; <span className="font-medium text-gray-700">Add side</span> continues the pattern. Use{" "}
-            <span className="font-medium text-gray-700">Add fold on this edge</span> on a side or on a fold to chain returns from that
-            segment’s free edge (names like <span className="font-medium text-gray-700">Side 2: F1, F2, F3</span> or{" "}
-            <span className="font-medium text-gray-700">Side 2: F2, F1</span> off the second top fold). Set depth and angle;{" "}
-            <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
-          </p>
+          {!isPanel ? (
+            <p className="mt-1.5 text-[11px] text-gray-500">
+              Rows 1–4 start as Front, Back, Left, Right; <span className="font-medium text-gray-700">Add side</span> continues the pattern. Use{" "}
+              <span className="font-medium text-gray-700">Add fold on this edge</span> on a side or on a fold to chain returns from that
+              segment’s free edge (names like <span className="font-medium text-gray-700">Side 2: F1, F2, F3</span> or{" "}
+              <span className="font-medium text-gray-700">Side 2: F2, F1</span> off the second top fold). Set depth and angle;{" "}
+              <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
+            </p>
+          ) : (
+            <p className="mt-1 text-[9px] leading-snug text-gray-500">
+              Add returns; chain folds from a side’s free edge. Reverse bend flips direction.
+            </p>
+          )}
 
           {value.boxSides.length === 0 ? (
             <p className="mt-3 text-[13px] text-gray-600">No sides — flat panel.</p>
@@ -394,7 +435,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                               }}
-                              className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                              className={
+                                isPanel
+                                  ? "mt-1 block h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                                  : "mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                              }
                             />
                           </div>
                           <div>
@@ -420,7 +465,11 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                                 })
                               }
                               onBlur={() => commitRow(index)}
-                              className="mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                              className={
+                                isPanel
+                                  ? "mt-1 block h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                                  : "mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                              }
                             />
                             <button
                               type="button"
@@ -437,7 +486,14 @@ export function SizePicker({ value, onChange, thicknessId }: SizePickerProps) {
                   };
 
                   return (
-                    <li key={value.boxSides[rootIndex]!.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <li
+                      key={value.boxSides[rootIndex]!.id}
+                      className={
+                        isPanel
+                          ? "rounded border border-gray-200 bg-gray-50/80 p-2"
+                          : "rounded-lg border border-gray-200 bg-white p-3"
+                      }
+                    >
                       {renderNode(rootIndex, true)}
                     </li>
                   );

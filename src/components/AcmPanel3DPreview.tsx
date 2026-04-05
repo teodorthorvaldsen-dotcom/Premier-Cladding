@@ -56,6 +56,8 @@ export interface AcmPanel3DPreviewProps {
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
   /** Larger viewport for the employee layout tool (still same interaction model). */
   expandedViewport?: boolean;
+  /** Fills parent height: CAD-style workspace with minimal chrome (toolbar + status). */
+  workspaceLayout?: boolean;
 }
 
 type BuiltPart = {
@@ -624,6 +626,7 @@ export function AcmPanel3DPreview({
   panelSwatchImage,
   glCanvasRef,
   expandedViewport = false,
+  workspaceLayout = false,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -658,32 +661,55 @@ export function AcmPanel3DPreview({
   const reproductionBlock =
     sidesNorm.length > 0 ? formatBoxTrayReproductionSpec(sidesNorm) : "";
 
+  const viewportShell = workspaceLayout
+    ? "relative min-h-0 flex-1 overflow-hidden bg-[#f4f5f7]"
+    : "relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]";
+
+  const viewportStyle = workspaceLayout
+    ? undefined
+    : expandedViewport
+      ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
+      : { height: PREVIEW_H, maxWidth: 520 };
+
   return (
     <section
-      className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
+      className={
+        workspaceLayout
+          ? "flex h-full min-h-0 flex-col bg-white"
+          : "rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
+      }
       aria-labelledby="acm-panel-3d-preview-heading"
     >
-      <h2
-        id="acm-panel-3d-preview-heading"
-        className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
-      >
-        Fold &amp; bend preview
-      </h2>
-      <p className="mt-0.5 text-xs text-gray-500">
-        Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and abbreviated side labels
-        (e.g. <span className="font-medium text-gray-700">Side 2: F1, F2, F1</span>) appear on each panel. The same edge may repeat
-        (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same sign
-        convention for matching bends. Drag to rotate.
-      </p>
+      {workspaceLayout ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-300 bg-[#ececec] px-2 py-1.5">
+          <h2
+            id="acm-panel-3d-preview-heading"
+            className="text-[11px] font-bold uppercase tracking-wide text-gray-700"
+          >
+            3D view
+          </h2>
+          <p className="truncate text-[10px] text-gray-600">
+            Drag to orbit · − / 1× / + zoom
+          </p>
+        </div>
+      ) : (
+        <>
+          <h2
+            id="acm-panel-3d-preview-heading"
+            className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
+          >
+            Fold &amp; bend preview
+          </h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and abbreviated side labels
+            (e.g. <span className="font-medium text-gray-700">Side 2: F1, F2, F1</span>) appear on each panel. The same edge may repeat
+            (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same sign
+            convention for matching bends. Drag to rotate.
+          </p>
+        </>
+      )}
 
-      <div
-        className="relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]"
-        style={
-          expandedViewport
-            ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
-            : { height: PREVIEW_H, maxWidth: 520 }
-        }
-      >
+      <div className={viewportShell} style={viewportStyle}>
         <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-lg border border-gray-200/90 bg-white/95 p-0.5 shadow-sm backdrop-blur-sm">
           <button
             type="button"
@@ -724,22 +750,42 @@ export function AcmPanel3DPreview({
         />
       </div>
 
-      <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
-        {caption}
-      </p>
-      {reproductionBlock ? (
-        <details className="mt-3 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-left">
-          <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
-            Full reproduction spec (rows, edges, angles)
-          </summary>
-          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-snug text-gray-600">
-            {reproductionBlock}
-          </pre>
-        </details>
-      ) : null}
-      <p className="mt-2 text-center text-xs text-gray-400">
-        Drag to rotate. Use + / − on the preview to zoom; 1× resets zoom.
-      </p>
+      {workspaceLayout ? (
+        <div className="shrink-0 border-t border-gray-300 bg-[#e8e8e8] px-2 py-1.5">
+          <p className="truncate text-[11px] font-medium text-gray-800" title={caption}>
+            {caption}
+          </p>
+          {reproductionBlock ? (
+            <details className="mt-1 border-t border-gray-300/80 pt-1">
+              <summary className="cursor-pointer text-[10px] font-medium text-gray-600">
+                Full reproduction spec
+              </summary>
+              <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[9px] leading-snug text-gray-600">
+                {reproductionBlock}
+              </pre>
+            </details>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
+            {caption}
+          </p>
+          {reproductionBlock ? (
+            <details className="mt-3 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-left">
+              <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
+                Full reproduction spec (rows, edges, angles)
+              </summary>
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-snug text-gray-600">
+                {reproductionBlock}
+              </pre>
+            </details>
+          ) : null}
+          <p className="mt-2 text-center text-xs text-gray-400">
+            Drag to rotate. Use + / − on the preview to zoom; 1× resets zoom.
+          </p>
+        </>
+      )}
     </section>
   );
 }
