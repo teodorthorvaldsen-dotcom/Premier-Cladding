@@ -25,7 +25,7 @@ const TRUST_ITEMS = [
 ];
 
 const CAPABILITIES = [
-  { title: "ACM Panels", description: "Fire-rated aluminum composite material. Configure and quote online. Nationwide." },
+  { title: "ACM Panels", description: "Fire-rated aluminum composite material. Consultation and quotes nationwide." },
   { title: "Custom Shop Drawings", description: "Inquire about purchasing shop drawings prepared by our team." },
   { title: "Nationwide", description: "Shipping across the United States. Delivery options and pricing with your quote." },
   { title: "Installation", description: "We recommend installers that can bid your project." },
@@ -79,7 +79,7 @@ export default function HomePage() {
               ACM Panels &amp; Cladding
             </h1>
             <p className="mt-6 animate-hero-fade-in text-lg text-white/90 md:text-xl [animation-delay:0.15s]">
-              Fire-rated ACM panels. Configure online or submit drawings for consultation. Nationwide.
+              Fire-rated ACM panels. Submit drawings for consultation and quoting. Nationwide.
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
           Products &amp; services
         </h2>
         <p className="mt-2 text-[15px] text-gray-500">
-          Fire-rated ACM panels. Configure online or submit drawings for consultation.
+          Fire-rated ACM panels. Submit drawings for consultation or discuss your project with our team.
         </p>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {PRODUCT_HIGHLIGHTS.map((card) => (

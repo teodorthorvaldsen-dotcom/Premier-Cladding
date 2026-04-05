@@ -6,7 +6,10 @@ import {
   CUSTOM_WIDTH_MIN_IN,
   maxLengthByThicknessMm,
 } from "@/data/acm";
+import { getSessionUser } from "@/lib/auth";
 import { calculatePricing } from "@/lib/pricing";
+
+export const runtime = "nodejs";
 
 const MIN_LENGTH_IN = 12;
 const VALID_WIDTHS_IN = allWidths.map((w) => w.widthIn);
@@ -23,6 +26,11 @@ function clampLength(lengthIn: number, thicknessMm: number): number {
 }
 
 export async function POST(request: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser || sessionUser.role !== "employee") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {

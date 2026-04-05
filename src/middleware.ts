@@ -7,19 +7,27 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!pathname.startsWith("/portal")) {
+  if (pathname.startsWith("/portal")) {
+    const token = request.cookies.get("portal_token")?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("portal_token")?.value;
-
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (pathname === "/products/acm-panels") {
+    const token = request.cookies.get("portal_token")?.value;
+    if (!token) {
+      const url = new URL("/login", request.url);
+      url.searchParams.set("next", "/products/acm-panels");
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/portal/:path*"],
+  matcher: ["/portal/:path*", "/products/acm-panels"],
 };

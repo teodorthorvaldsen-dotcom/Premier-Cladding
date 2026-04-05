@@ -5,9 +5,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 
-const NAV_LINKS = [
-  { id: "acm-panels", href: "/products/acm-panels", label: "ACM Panel Configurator" },
+const ACM_PANEL_NAV = {
+  id: "acm-panels",
+  href: "/products/acm-panels",
+  label: "ACM Panel Configurator",
+} as const;
+
+const PUBLIC_NAV_LINKS = [
   { id: "installment-kits", href: "/installment-kit-configurator", label: "Installment Kit Configurator" },
   { id: "stock-material", href: "/stock-material", label: "Stock Material" },
   { id: "installment-videos", href: "/installment-videos", label: "Installment Videos" },
@@ -21,8 +27,11 @@ const NAV_LINKS = [
 export function Header() {
   const pathname = usePathname();
   const { totalCount } = useCart();
+  const { isEmployee } = usePortalSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
+
+  const navLinks = isEmployee ? [ACM_PANEL_NAV, ...PUBLIC_NAV_LINKS] : [...PUBLIC_NAV_LINKS];
 
   useEffect(() => {
     setMobileOpen(false);
@@ -103,7 +112,7 @@ export function Header() {
               className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
               aria-label="Main"
             >
-              {NAV_LINKS.map(({ id, href, label }) => {
+              {navLinks.map(({ id, href, label }) => {
                 const active = pathname === href;
                 return (
                   <Link
@@ -130,7 +139,7 @@ export function Header() {
               aria-label="Mobile navigation"
             >
               <ul className="space-y-1">
-                {NAV_LINKS.map(
+                {navLinks.map(
                   ({ id, href, label }) => {
                     const active = pathname === href;
                     return (

@@ -12,6 +12,7 @@ import {
   thicknesses,
 } from "@/data/acm";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 import {
   getPanelBendsFromCartItem,
   formatPanelBendsSummary,
@@ -199,6 +200,7 @@ const SMALL_ORDER_FEE = 125;
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity } = useCart();
+  const { isEmployee, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const subtotal = items.reduce(
@@ -218,12 +220,23 @@ export default function CartPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Your Cart</h1>
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
-        <Link
-          href="/products/acm-panels"
-          className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-        >
-          Configure panels
-        </Link>
+        {sessionLoading ? (
+          <p className="mt-8 text-sm text-gray-500">Loading…</p>
+        ) : isEmployee ? (
+          <Link
+            href="/products/acm-panels"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Configure panels
+          </Link>
+        ) : (
+          <Link
+            href="/consultation"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Request a consultation
+          </Link>
+        )}
       </div>
     );
   }
@@ -268,12 +281,14 @@ export default function CartPage() {
             Total: {formatUSD(grandTotal)}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link
-              href="/products/acm-panels"
-              className="inline-block text-sm text-gray-600 hover:text-gray-900"
-            >
-              Continue configuring
-            </Link>
+            {isEmployee ? (
+              <Link
+                href="/products/acm-panels"
+                className="inline-block text-sm text-gray-600 hover:text-gray-900"
+              >
+                Continue configuring
+              </Link>
+            ) : null}
             <Link
               href="/checkout"
               className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"

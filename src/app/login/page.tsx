@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+function safeNextPathAfterLogin(): string {
+  if (typeof window === "undefined") return "/portal";
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/portal";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("customer@example.com");
@@ -40,7 +47,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/portal");
+      router.push(safeNextPathAfterLogin());
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -90,7 +97,8 @@ export default function LoginPage() {
           </li>
           <li>
             Open <strong>Order portal</strong> from the site header to see your requests and open any order for
-            details.
+            details. <strong>Staff:</strong> sign in with an employee account to open the{" "}
+            <strong>ACM Panel Configurator</strong> from the menu or the order portal.
           </li>
           <li>
             No quote yet? Use <strong>Create an account</strong> to register first, then sign in — or submit a cart

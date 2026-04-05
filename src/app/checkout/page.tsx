@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { ORDER_PROCESS_STEPS } from "@/lib/orderProcess";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
@@ -19,6 +20,7 @@ function formatUSD(n: number): string {
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
+  const { isEmployee, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const [submitting, setSubmitting] = useState(false);
@@ -101,12 +103,23 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Checkout</h1>
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
-        <Link
-          href="/products/acm-panels"
-          className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-        >
-          Configure panels
-        </Link>
+        {sessionLoading ? (
+          <p className="mt-8 text-sm text-gray-500">Loading…</p>
+        ) : isEmployee ? (
+          <Link
+            href="/products/acm-panels"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Configure panels
+          </Link>
+        ) : (
+          <Link
+            href="/consultation"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Request a consultation
+          </Link>
+        )}
       </div>
     );
   }
@@ -129,12 +142,23 @@ export default function CheckoutPage() {
             , sign in, then use <strong>Order portal</strong> in the site menu to view your requests.
           </p>
         </div>
-        <Link
-          href="/products/acm-panels"
-          className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-        >
-          Return to configurator
-        </Link>
+        {sessionLoading ? (
+          <p className="mt-8 text-sm text-gray-500">Loading…</p>
+        ) : isEmployee ? (
+          <Link
+            href="/products/acm-panels"
+            className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Return to configurator
+          </Link>
+        ) : (
+          <Link
+            href="/"
+            className="mt-8 inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Back to home
+          </Link>
+        )}
       </div>
     );
   }
