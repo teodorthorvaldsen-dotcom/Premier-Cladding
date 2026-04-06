@@ -5,7 +5,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { usePortalSession } from "@/hooks/usePortalSession";
 
 const ACM_PANEL_NAV = {
   id: "acm-panels",
@@ -27,11 +26,10 @@ const PUBLIC_NAV_LINKS = [
 export function Header() {
   const pathname = usePathname();
   const { totalCount } = useCart();
-  const { isEmployee } = usePortalSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
 
-  const navLinks = isEmployee ? [ACM_PANEL_NAV, ...PUBLIC_NAV_LINKS] : [...PUBLIC_NAV_LINKS];
+  const navLinks = [ACM_PANEL_NAV, ...PUBLIC_NAV_LINKS];
 
   useEffect(() => {
     setMobileOpen(false);

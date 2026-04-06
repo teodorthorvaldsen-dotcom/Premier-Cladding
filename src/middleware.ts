@@ -15,19 +15,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/products/acm-panels") {
-    const token = request.cookies.get("portal_token")?.value;
-    if (!token) {
-      const url = new URL("/login", request.url);
-      url.searchParams.set("next", "/products/acm-panels");
-      return NextResponse.redirect(url);
-    }
-    return NextResponse.next();
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/portal/:path*", "/products/acm-panels"],
+  matcher: ["/portal/:path*"],
 };

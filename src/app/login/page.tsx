@@ -98,7 +98,7 @@ export default function LoginPage() {
           <li>
             Open <strong>Order portal</strong> from the site header to see your requests and open any order for
             details. <strong>Staff:</strong> sign in with an employee account to open the{" "}
-            <strong>ACM Panel Configurator</strong> from the menu or the order portal.
+            <strong>ACM Panel Configurator</strong> from the menu (public) or the order portal (employee workspace).
           </li>
           <li>
             No quote yet? Use <strong>Create an account</strong> to register first, then sign in — or submit a cart

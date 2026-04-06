@@ -5,7 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
-const EMPLOYEE_ACM_TOOL_PATH = "/products/acm-panels";
+const EMPLOYEE_ACM_TOOL_PATH = "/portal/acm-panels";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
