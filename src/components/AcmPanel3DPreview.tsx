@@ -7,7 +7,6 @@ import { Edges, Environment, OrbitControls, Text, useTexture } from "@react-thre
 import * as THREE from "three";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 import {
-  formatBoxTrayReproductionOneLine,
   formatBoxTrayReproductionSpec,
   normalizeBoxTraySides,
   trayFoldRowPreviewLabels,
@@ -644,22 +643,20 @@ export function AcmPanel3DPreview({
   const mapUrl =
     panelSwatchImage && panelSwatchImage.length > 0 ? panelSwatchImage : undefined;
 
-  const edgeShort: Record<string, string> = {
-    south: "front",
-    north: "back",
-    west: "left",
-    east: "right",
-  };
+  const measurementLines = useMemo(() => {
+    if (sidesNorm.length === 0) return [] as string[];
+    return formatBoxTrayReproductionSpec(sidesNorm)
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [sidesNorm]);
 
-  const caption = (() => {
-    const size = `${panelWidthIn}" × ${panelHeightIn}"`;
-    if (sidesNorm.length === 0) return `${size} flat · ${panelColorName}`;
-    const detail = formatBoxTrayReproductionOneLine(sidesNorm);
-    return `${size} tray · ${detail} · ${panelColorName}`;
-  })();
+  const sizeHeadline =
+    sidesNorm.length === 0
+      ? `${panelWidthIn}" × ${panelHeightIn}" flat`
+      : `${panelWidthIn}" × ${panelHeightIn}" tray`;
 
-  const reproductionBlock =
-    sidesNorm.length > 0 ? formatBoxTrayReproductionSpec(sidesNorm) : "";
+  const measurementsTitle = `${sizeHeadline} · ${panelColorName}`;
 
   const viewportShell = workspaceLayout
     ? "relative min-h-0 flex-1 overflow-hidden bg-[#f4f5f7]"
@@ -750,36 +747,39 @@ export function AcmPanel3DPreview({
 
       {workspaceLayout ? (
         <div className="shrink-0 border-t border-gray-300 bg-[#e8e8e8] px-2 py-1.5">
-          <p className="truncate text-[11px] font-medium text-gray-800" title={caption}>
-            {caption}
+          <p className="text-[10px] font-semibold text-gray-900" title={measurementsTitle}>
+            {measurementsTitle}
           </p>
-          {reproductionBlock ? (
-            <details className="mt-1 border-t border-gray-300/80 pt-1">
-              <summary className="cursor-pointer text-[10px] font-medium text-gray-600">
-                Full spec
-              </summary>
-              <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[9px] leading-snug text-gray-600">
-                {reproductionBlock}
-              </pre>
-            </details>
+          {measurementLines.length > 0 ? (
+            <ol className="mt-1.5 max-h-28 list-decimal space-y-1 overflow-y-auto overscroll-contain pl-4 text-[9px] leading-snug text-gray-800 marker:text-gray-500">
+              {measurementLines.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ol>
           ) : null}
         </div>
       ) : (
-        <>
-          <p className="mt-3 border-t border-gray-100 pt-3 text-center text-[15px] font-medium text-gray-500">
-            {caption}
+        <div className="mt-3 border-t border-gray-100 pt-3">
+          <p className="text-center text-[15px] font-medium text-gray-800" title={measurementsTitle}>
+            <span className="tabular-nums">{sizeHeadline}</span>
+            <span className="text-gray-400"> · </span>
+            <span className="font-normal text-gray-600">{panelColorName}</span>
           </p>
-          {reproductionBlock ? (
-            <details className="mt-3 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-left">
-              <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
-                Full spec (rows &amp; angles)
-              </summary>
-              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-snug text-gray-600">
-                {reproductionBlock}
-              </pre>
-            </details>
+          {measurementLines.length > 0 ? (
+            <div className="mx-auto mt-3 max-w-lg">
+              <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                Returns
+              </p>
+              <ol className="list-decimal space-y-2 border border-gray-100 bg-gray-50/90 px-4 py-3 text-left text-[13px] text-gray-800 sm:px-5 marker:font-semibold marker:text-gray-500">
+                {measurementLines.map((line, i) => (
+                  <li key={i} className="leading-snug">
+                    {line}
+                  </li>
+                ))}
+              </ol>
+            </div>
           ) : null}
-        </>
+        </div>
       )}
     </section>
   );

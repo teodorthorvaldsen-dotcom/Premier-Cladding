@@ -72,11 +72,11 @@ export const demoUsers: UserRecord[] = [
   },
 ];
 
-const ord1001TraySpec = `Row 1: Side 1 | Edge: Front | Return height: 30" | Angle: 90° | root return off flat center (Side slot order)
-Row 2: Side 2 | Edge: Right | Return height: 18" | Angle: 90° | continues from Side 1
-Row 3: Side 3 | Edge: Back | Return height: 14" | Angle: 90° | stacked return
-Row 4: Side 4 | Edge: Left | Return height: 12" | Angle: 90° | closes perimeter
-Row 5: Side 1 (nested) | Edge: Front | Return height: 6" | Angle: 45° | dog-ear stiffener`;
+const ord1001TraySpec = `Side 1 · Front · 30" @ 90°
+Side 2 · Right · 18" @ 90°
+Side 3 · Back · 14" @ 90°
+Side 4 · Left · 12" @ 90°
+Side 1 (nested) · Front · 6" @ 45° · from Side 1`;
 
 export const demoOrders: OrderRecord[] = [
   {

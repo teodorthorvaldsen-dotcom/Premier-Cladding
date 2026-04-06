@@ -188,7 +188,7 @@ const EDGE_LABELS_EN: Record<BoxTrayEdge, string> = {
 };
 
 /**
- * Multi-line manufacturing / reproduction note: list order, label, edge, return depth, angle, parent row.
+ * Multi-line tray measurements: one concise row per return (edge, height, angle; nested folds note parent only).
  */
 export function formatBoxTrayReproductionSpec(sides: BoxTraySideRow[]): string {
   const n = normalizeBoxTraySides(sides);
@@ -198,17 +198,20 @@ export function formatBoxTrayReproductionSpec(sides: BoxTraySideRow[]): string {
     .map((row, i) => {
       const edge = EDGE_LABELS_EN[row.edge];
       const ang = Number.isInteger(row.angleDeg) ? `${row.angleDeg}` : row.angleDeg.toFixed(1);
-      const parentIdx = row.parentId ? n.findIndex((r) => r.id === row.parentId) : -1;
-      const parentRef =
-        parentIdx >= 0
-          ? `continues from ${titles[parentIdx]!} (${EDGE_LABELS_EN[n[parentIdx]!.edge]} row #${parentIdx + 1})`
-          : "root return off flat center (Side slot order)";
-      return `Row ${i + 1}: ${titles[i]!} | Edge: ${edge} | Return height: ${row.flangeHeightIn}" | Angle: ${ang}° | ${parentRef}`;
+      const sideLabel = titles[i]!;
+      let line = `${sideLabel} · ${edge} · ${row.flangeHeightIn}" @ ${ang}°`;
+      if (row.parentId) {
+        const parentIdx = n.findIndex((r) => r.id === row.parentId);
+        if (parentIdx >= 0) {
+          line += ` · from ${titles[parentIdx]!}`;
+        }
+      }
+      return line;
     })
     .join("\n");
 }
 
-/** Single-line summary for tight UI (e.g. caption). */
+/** Single-line summary for tight UI (e.g. cart description). */
 export function formatBoxTrayReproductionOneLine(sides: BoxTraySideRow[]): string {
   const spec = formatBoxTrayReproductionSpec(sides);
   return spec.replace(/\n/g, " · ");
