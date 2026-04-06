@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LoginStaffJobPanel } from "@/components/LoginStaffJobPanel";
 
 function safeNextPathAfterLogin(): string {
   if (typeof window === "undefined") return "/portal";
@@ -246,6 +247,8 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+
+      <LoginStaffJobPanel />
     </div>
   );
 }

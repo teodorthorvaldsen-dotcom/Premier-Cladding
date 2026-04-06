@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import PortalSubcontractorComplianceForm from "./PortalSubcontractorComplianceForm";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
@@ -200,8 +199,6 @@ export function PortalOrderDetailView({
           </div>
         </dl>
       </section>
-
-      {showCadExport ? <PortalSubcontractorComplianceForm orderId={order.id} /> : null}
 
       <section className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">

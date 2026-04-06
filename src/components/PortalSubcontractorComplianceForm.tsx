@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type Props = { orderId: string };
+type Props = { orderIds: string[] };
 
-export default function PortalSubcontractorComplianceForm({ orderId }: Props) {
+export default function PortalSubcontractorComplianceForm({ orderIds }: Props) {
+  const [orderId, setOrderId] = useState(orderIds[0] ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (orderIds.length > 0 && !orderIds.includes(orderId)) {
+      setOrderId(orderIds[0] ?? "");
+    }
+  }, [orderIds, orderId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,15 +50,40 @@ export default function PortalSubcontractorComplianceForm({ orderId }: Props) {
   const dateInputClass =
     "mt-1.5 block h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2";
 
+  if (orderIds.length === 0) {
+    return (
+      <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        No orders are available yet. Upload compliance documents here once orders appear in the Orders tab.
+      </p>
+    );
+  }
+
   return (
     <section className="mb-10 rounded-2xl border border-gray-200/80 bg-gray-50/50 p-6 md:p-8">
       <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">
         Insurance &amp; business license
       </h2>
       <p className="mt-2 text-[14px] text-gray-600">
-        Subcontractors and admins. Upload PDF certificates for this order. General liability and workers comp each
-        require an expiration date.
+        Subcontractors: upload PDF certificates for the selected order. General liability and workers comp each require an
+        expiration date.
       </p>
+
+      {orderIds.length > 1 ? (
+        <label className="mt-6 block max-w-md">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Order</span>
+          <select
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-[15px] text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            {orderIds.map((id) => (
+              <option key={id} value={id}>
+                {id}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       <form onSubmit={(ev) => void handleSubmit(ev)} className="mt-6 space-y-8">
         <fieldset className="space-y-3 border-0 p-0">

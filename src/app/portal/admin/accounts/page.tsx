@@ -15,7 +15,7 @@ function formatDate(iso: string): string {
 export default async function PortalAdminAccountsPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login?next=/portal/admin/accounts");
-  if (user.role !== "admin") redirect("/portal");
+  if (user.role !== "admin" && user.role !== "subcontractor") redirect("/portal");
 
   const accounts = listRegistryAccounts();
   const allOrders = getPortalOrdersForUser(user);
@@ -30,7 +30,7 @@ export default async function PortalAdminAccountsPage() {
       <div className="mb-8 flex flex-col gap-2 rounded-2xl bg-white p-6 shadow-sm">
         <h1 className="text-3xl font-semibold text-gray-900">Accounts</h1>
         <p className="text-sm text-gray-600">
-          Admin view. Click an account to see details and orders.
+          Staff view. Click an account to see details and orders.
         </p>
       </div>
 

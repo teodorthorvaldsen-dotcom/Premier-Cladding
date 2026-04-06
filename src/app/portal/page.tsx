@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { JobProgressBar } from "@/components/JobProgressBar";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
+import { PortalStaffDashboard } from "@/components/PortalStaffDashboard";
 import { getSessionUser } from "@/lib/auth";
+import { JOB_STAGE_LABEL } from "@/lib/jobStage";
+import { listRegistryAccounts } from "@/lib/portalPersistence";
 import { getPortalOrdersForUser } from "@/lib/portalOrders";
 
 export default async function PortalPage() {
@@ -12,6 +16,42 @@ export default async function PortalPage() {
   }
 
   const orders = getPortalOrdersForUser(user);
+  const isStaff = user.role === "subcontractor" || user.role === "admin";
+
+  if (isStaff) {
+    const accounts = listRegistryAccounts();
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-gray-900">Order portal</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Signed in as {user.name} ({user.role})
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              Select an order to open customer details, panel preview, and CAD measurements.
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/portal/acm-panels"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 bg-white px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Open ACM panel workspace
+              </Link>
+            </div>
+          </div>
+
+          <PortalLogoutButton />
+        </div>
+
+        <PortalStaffDashboard
+          orders={orders}
+          accounts={accounts}
+          showInsuranceTab={user.role === "subcontractor"}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -24,31 +64,11 @@ export default async function PortalPage() {
           <p className="mt-2 text-sm text-gray-500">
             Select an order to open customer details, panel preview, and CAD measurements.
           </p>
-          {user.role === "customer" ? (
-            <p className="mt-3 max-w-2xl text-sm text-gray-600">
-              <strong>Checking your request:</strong> After you submit a cart quote, sign in here with the same email
-              and the <strong>order portal password</strong> you chose at checkout. New requests appear in this list as
-              soon as your estimate submission succeeds.
-            </p>
-          ) : null}
-          {(user.role === "subcontractor" || user.role === "admin") && (
-            <div className="mt-4 flex flex-wrap gap-3">
-              {user.role === "admin" ? (
-                <Link
-                  href="/portal/admin/accounts"
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 bg-white px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-                >
-                  Manage accounts
-                </Link>
-              ) : null}
-              <Link
-                href="/portal/acm-panels"
-                className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 bg-white px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-              >
-                Open ACM panel workspace
-              </Link>
-            </div>
-          )}
+          <p className="mt-3 max-w-2xl text-sm text-gray-600">
+            <strong>Checking your request:</strong> After you submit a cart quote, sign in here with the same email and the{" "}
+            <strong>order portal password</strong> you chose at checkout. New requests appear in this list as soon as your
+            estimate submission succeeds.
+          </p>
         </div>
 
         <PortalLogoutButton />
@@ -63,9 +83,7 @@ export default async function PortalPage() {
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 group-hover:underline">
-                  {order.projectName}
-                </h2>
+                <h2 className="text-xl font-semibold text-gray-900 group-hover:underline">{order.projectName}</h2>
                 <p className="text-sm text-gray-500">Order ID: {order.id}</p>
                 <p className="text-sm text-gray-500">Customer: {order.customerName}</p>
               </div>
@@ -75,6 +93,14 @@ export default async function PortalPage() {
                   {order.status}
                 </div>
                 <span className="text-sm font-medium text-gray-900">View details →</span>
+              </div>
+            </div>
+
+            <div className="mt-4 max-w-md">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Production progress</p>
+              <p className="mt-1 text-sm text-gray-600">{JOB_STAGE_LABEL[order.jobStage ?? "ordering"]}</p>
+              <div className="mt-2">
+                <JobProgressBar stage={order.jobStage ?? "ordering"} />
               </div>
             </div>
 

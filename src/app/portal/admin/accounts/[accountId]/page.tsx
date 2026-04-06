@@ -19,7 +19,7 @@ export default async function PortalAdminAccountDetailPage({
 }) {
   const viewer = await getSessionUser();
   if (!viewer) redirect("/login?next=/portal/admin/accounts");
-  if (viewer.role !== "admin") redirect("/portal");
+  if (viewer.role !== "admin" && viewer.role !== "subcontractor") redirect("/portal");
 
   const accountId = decodeURIComponent(params.accountId);
   const account = getRegistryAccountById(accountId);

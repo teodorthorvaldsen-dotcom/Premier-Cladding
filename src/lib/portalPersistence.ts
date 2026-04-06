@@ -4,10 +4,12 @@ import { join } from "path";
 import bcrypt from "bcryptjs";
 import { demoUsers } from "@/lib/demoData";
 import type { OrderRecord, Role } from "@/lib/demoData";
+import { JOB_STAGES, type JobStage } from "@/lib/jobStage";
 
 const DATA_DIR = join(process.cwd(), "data");
 const REGISTRY_FILE = join(DATA_DIR, "portal-registry.json");
 const ORDERS_FILE = join(DATA_DIR, "portal-quote-orders.json");
+const JOB_STAGES_FILE = join(DATA_DIR, "order-job-stages.json");
 
 type StoredCustomer = {
   id: string;
@@ -342,4 +344,36 @@ export function registerCustomerFromQuoteAndSaveOrder(input: {
 
 export function loadDynamicOrders(): OrderRecord[] {
   return readDynamicOrders().orders;
+}
+
+function isJobStage(s: string): s is JobStage {
+  return (JOB_STAGES as readonly string[]).includes(s);
+}
+
+/** Persisted production workflow stages by order id (demo + dynamic orders). */
+export function loadPersistedJobStages(): Record<string, JobStage> {
+  ensureDataDir();
+  if (!existsSync(JOB_STAGES_FILE)) {
+    return {};
+  }
+  try {
+    const raw = readFileSync(JOB_STAGES_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, JobStage> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string" && isJobStage(v)) {
+        out[k] = v;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function saveJobStageForOrder(orderId: string, stage: JobStage): void {
+  ensureDataDir();
+  const current = loadPersistedJobStages();
+  current[orderId] = stage;
+  writeFileSync(JOB_STAGES_FILE, JSON.stringify(current, null, 2), "utf-8");
 }

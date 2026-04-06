@@ -1,8 +1,15 @@
 import { colors } from "@/data/acm";
 import type { SessionUser } from "@/lib/auth";
 import { demoOrders, getDemoOrderById, type OrderRecord } from "@/lib/demoData";
-import { loadDynamicOrders } from "@/lib/portalPersistence";
+import { resolveJobStage } from "@/lib/jobStage";
+import { loadDynamicOrders, loadPersistedJobStages } from "@/lib/portalPersistence";
 import type { CartItem } from "@/types/cart";
+
+export function mergeJobStageIntoOrder(order: OrderRecord): OrderRecord {
+  const persisted = loadPersistedJobStages()[order.id];
+  const jobStage = resolveJobStage(order, persisted);
+  return { ...order, jobStage };
+}
 
 export type CartQuoteItemLike = {
   widthIn: number;
@@ -24,7 +31,8 @@ export type CartQuoteItemLike = {
 };
 
 export function getPortalOrderById(orderId: string): OrderRecord | undefined {
-  return getDemoOrderById(orderId) ?? loadDynamicOrders().find((o) => o.id === orderId);
+  const raw = getDemoOrderById(orderId) ?? loadDynamicOrders().find((o) => o.id === orderId);
+  return raw ? mergeJobStageIntoOrder(raw) : undefined;
 }
 
 export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
@@ -33,7 +41,9 @@ export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
     const byId = new Map<string, OrderRecord>();
     demoOrders.forEach((o) => byId.set(o.id, o));
     dynamic.forEach((o) => byId.set(o.id, o));
-    return Array.from(byId.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return Array.from(byId.values())
+      .map(mergeJobStageIntoOrder)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
   const demo = demoOrders.filter((o) => o.customerId === user.customerId);
   const dyn = dynamic.filter(
@@ -43,7 +53,9 @@ export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
   );
   const byId = new Map<string, OrderRecord>();
   [...demo, ...dyn].forEach((o) => byId.set(o.id, o));
-  return Array.from(byId.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return Array.from(byId.values())
+    .map(mergeJobStageIntoOrder)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function cartQuoteItemToCartItem(raw: CartQuoteItemLike, lineId: string): CartItem {

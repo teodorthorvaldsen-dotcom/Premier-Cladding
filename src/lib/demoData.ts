@@ -1,4 +1,5 @@
 import type { CartItem } from "@/types/cart";
+import type { JobStage } from "@/lib/jobStage";
 
 export type Role = "customer" | "subcontractor" | "admin";
 
@@ -28,6 +29,8 @@ export type OrderRecord = {
   customerPhone: string;
   shippingAddress: ShippingAddress;
   status: "Pending" | "In Production" | "Completed" | "Shipped";
+  /** Production workflow; optional overlay from persisted job stages. */
+  jobStage?: JobStage;
   createdAt: string;
   projectName: string;
   measurements: {
