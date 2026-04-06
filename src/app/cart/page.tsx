@@ -3,25 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { CartItemMeasurementBlock } from "@/components/CartItemMeasurementBlock";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import {
-  allWidths,
-  colors,
-  finishes,
-  thicknesses,
-} from "@/data/acm";
+import { colors } from "@/data/acm";
 import { useCart } from "@/context/CartContext";
 import { usePortalSession } from "@/hooks/usePortalSession";
-import {
-  getPanelBendsFromCartItem,
-  formatPanelBendsSummary,
-  formatPanelBendsAlongWidthSummary,
-} from "@/lib/panelBends";
-import {
-  formatBoxTrayReproductionOneLine,
-  formatBoxTraySummary,
-  normalizeBoxTraySides,
-} from "@/lib/boxTray";
+import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
 function formatUSD(n: number): string {
@@ -38,44 +25,6 @@ function swatchImageSrc(color: (typeof colors)[number] | undefined): string | nu
     return (color as { swatchImage: string }).swatchImage;
   }
   return null;
-}
-
-function describeItem(item: CartItem): string {
-  const widthLabel = item.standardId
-    ? allWidths.find((w) => w.id === item.standardId)?.label ??
-      `${item.widthIn}"`
-    : `${item.widthIn}"`;
-  const sizeLabel = `${widthLabel} × ${item.heightIn} in`;
-  const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
-  const finishLabel = item.finishId
-    ? finishes.find((f) => f.id === item.finishId)?.label ?? ""
-    : "";
-  const thickness = thicknesses.find((t) => t.id === item.thicknessId)?.label ?? item.thicknessId;
-  const bends = getPanelBendsFromCartItem(item);
-  const bendL = bends.length > 0 ? `Length · ${formatPanelBendsSummary(bends)}` : "";
-  const bendW =
-    item.panelBendsAlongWidth && item.panelBendsAlongWidth.length > 0
-      ? formatPanelBendsAlongWidthSummary(item.panelBendsAlongWidth)
-      : "";
-  const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
-  const tray = trayNorm.length > 0 ? formatBoxTraySummary(trayNorm) : "";
-  const repro =
-    item.trayBuildSpec?.split("\n")[0] ??
-    (trayNorm.length > 0 ? formatBoxTrayReproductionOneLine(trayNorm) : "");
-  const reproHint =
-    repro && item.trayBuildSpec && item.trayBuildSpec.includes("\n") ? `${repro}…` : repro;
-  const parts = [
-    sizeLabel,
-    reproHint,
-    tray,
-    bendL,
-    bendW,
-    color,
-    finishLabel,
-    thickness,
-    item.panelTypeLabel,
-  ].filter(Boolean);
-  return parts.join(" · ");
 }
 
 function CartLine({
@@ -131,8 +80,8 @@ function CartLine({
           </div>
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-900">{describeItem(item)}</p>
-          <p className="text-xs text-gray-500">
+          <CartItemMeasurementBlock item={item} />
+          <p className="mt-2 text-xs text-gray-500">
             {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
           </p>
           {(item.customColorReference || item.customColorSpecFileName) && (
@@ -164,7 +113,7 @@ function CartLine({
               onQuantityChange(Math.max(1, Math.floor(Number(e.target.value)) || 1))
             }
             className="h-11 w-20 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label={`Quantity for ${describeItem(item)}`}
+            aria-label={`Quantity for ${describeCartLineItem(item)}`}
           />
         </label>
         <p className="w-20 text-right text-sm font-medium tabular-nums">
@@ -174,7 +123,7 @@ function CartLine({
           type="button"
           onClick={onRemove}
           className="text-sm text-red-600 hover:text-red-700 focus:outline-none focus:underline"
-          aria-label={`Remove ${describeItem(item)} from cart`}
+          aria-label={`Remove ${describeCartLineItem(item)} from cart`}
         >
           Remove
         </button>
