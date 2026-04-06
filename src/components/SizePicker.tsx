@@ -257,23 +257,15 @@ export function SizePicker({
       </label>
       {isPanel ? (
         <p className="mt-1 text-[10px] leading-snug text-gray-600">
-          Center face: width × length. Limits {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}
-          &quot; × {MIN_LENGTH_IN}–{maxLength}&quot; · up to {MAX_TRAY_SIDE_ROWS} returns. +° / −° as in main viewport help.
+          Width and length define the flat center face. Stay within the limits below; positive and negative angles match the
+          3D preview.
         </p>
       ) : (
-        <>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Width and length set the <span className="font-medium text-gray-800">flat center face</span> of the tray (always
-            that width × length in the preview). Each side you add is a return with its own height in inches and bend angle.
-            Pricing still uses full width × length (flat). Positive° bends a side outward (+Z); negative° bends inward.
-          </p>
-          <p className="mt-2 rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600" role="note">
-            Minimum width: {CUSTOM_WIDTH_MIN_IN} in. Maximum width: {CUSTOM_WIDTH_MAX_IN} in. Minimum length: {MIN_LENGTH_IN}{" "}
-            in. Maximum length: {maxLength} in ({Math.floor(maxLength / 12)} ft {maxLength % 12} in). Up to {MAX_TRAY_SIDE_ROWS}{" "}
-            returns. First four rows default to Front, Back, Left, Right; you can add another fold on any row on the same
-            edge (stacked returns). New rows default to 90°.
-          </p>
-        </>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Enter width and length for the flat center face. Allowed: {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}&quot; wide,{" "}
+          {MIN_LENGTH_IN}–{maxLength}&quot; long, up to {MAX_TRAY_SIDE_ROWS} returns (first four sides default to Front, Back,
+          Left, Right at 90°).
+        </p>
       )}
       <div className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"} role="group" aria-label="Panel width, length, and tray sides">
         <div>
@@ -331,15 +323,13 @@ export function SizePicker({
           </div>
           {!isPanel ? (
             <p className="mt-1.5 text-[11px] text-gray-500">
-              Rows 1–4 start as Front, Back, Left, Right; <span className="font-medium text-gray-700">Add side</span> continues the pattern. Use{" "}
-              <span className="font-medium text-gray-700">Add fold on this edge</span> on a side or on a fold to chain returns from that
-              segment’s free edge (names like <span className="font-medium text-gray-700">Side 2: F1, F2, F3</span> or{" "}
-              <span className="font-medium text-gray-700">Side 2: F2, F1</span> off the second top fold). Set depth and angle;{" "}
-              <span className="font-medium text-gray-700">Reverse bend</span> flips direction.
+              Use <span className="font-medium text-gray-700">Add side</span> or{" "}
+              <span className="font-medium text-gray-700">Add fold on this edge</span> to build returns, then set height and angle
+              for each row. <span className="font-medium text-gray-700">Reverse bend</span> flips the bend direction.
             </p>
           ) : (
             <p className="mt-1 text-[9px] leading-snug text-gray-500">
-              Add returns; chain folds from a side’s free edge. Reverse bend flips direction.
+              Add returns; stack folds with Add fold on this edge. Reverse bend flips direction.
             </p>
           )}
 
@@ -395,7 +385,7 @@ export function SizePicker({
                           </div>
                         ) : (
                           <p className="mb-2 text-[11px] text-gray-500">
-                            Continues on {EDGE_LABELS[side.edge]} (free edge of this return)
+                            Continues from the free edge on {EDGE_LABELS[side.edge]}.
                           </p>
                         )}
                         {!isRoot ? (
@@ -516,7 +506,7 @@ export function SizePicker({
             Clear all sides
           </button>
           <p className="mt-2 text-[11px] text-gray-500">
-            Resets Side 1–4 to the default 1″ @ 90° tray on each edge; width and length stay the same.
+            Restores the default four-sided tray; width and length are unchanged.
           </p>
         </div>
       </div>

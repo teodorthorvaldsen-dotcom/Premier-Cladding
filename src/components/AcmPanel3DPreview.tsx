@@ -701,10 +701,8 @@ export function AcmPanel3DPreview({
             Fold &amp; bend preview
           </h2>
           <p className="mt-0.5 text-xs text-gray-500">
-            Center face is always width × length. <span className="font-medium text-gray-700">Flat center</span> and abbreviated side labels
-            (e.g. <span className="font-medium text-gray-700">Side 2: F1, F2, F1</span>) appear on each panel. The same edge may repeat
-            (stacked flanges). On front/back, positive° tips outward (+Z in this view) and negative° inward. Left/right use the same sign
-            convention for matching bends. Drag to rotate.
+            Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each return; stacked folds may repeat on
+            the same edge.
           </p>
         </>
       )}
@@ -758,7 +756,7 @@ export function AcmPanel3DPreview({
           {reproductionBlock ? (
             <details className="mt-1 border-t border-gray-300/80 pt-1">
               <summary className="cursor-pointer text-[10px] font-medium text-gray-600">
-                Full reproduction spec
+                Full spec
               </summary>
               <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[9px] leading-snug text-gray-600">
                 {reproductionBlock}
@@ -774,16 +772,13 @@ export function AcmPanel3DPreview({
           {reproductionBlock ? (
             <details className="mt-3 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-left">
               <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
-                Full reproduction spec (rows, edges, angles)
+                Full spec (rows &amp; angles)
               </summary>
               <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-snug text-gray-600">
                 {reproductionBlock}
               </pre>
             </details>
           ) : null}
-          <p className="mt-2 text-center text-xs text-gray-400">
-            Drag to rotate. Use + / − on the preview to zoom; 1× resets zoom.
-          </p>
         </>
       )}
     </section>
