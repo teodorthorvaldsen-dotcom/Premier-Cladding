@@ -508,6 +508,7 @@ function PreviewRig({
   colorHex,
   mapUrl,
   zoomMul,
+  showGrid,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
@@ -515,6 +516,7 @@ function PreviewRig({
   mapUrl?: string;
   /** &gt; 1 moves the camera closer (zoom in). */
   zoomMul: number;
+  showGrid?: boolean;
 }) {
   const { camera, size } = useThree();
   const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
@@ -526,6 +528,10 @@ function PreviewRig({
   }, [boundingSphereRadius, minSpanInches, size.width, size.height]);
 
   const cameraRadius = orbitRadius / THREE.MathUtils.clamp(zoomMul, 0.38, 3.2);
+  const gridSize = useMemo(() => {
+    const spanWorld = inchesToWorld(Math.max(12, minSpanInches));
+    return Math.max(2, spanWorld * 2.8);
+  }, [minSpanInches]);
 
   useLayoutEffect(() => {
     camera.near = Math.max(0.01, orbitRadius / 2000);
@@ -536,6 +542,13 @@ function PreviewRig({
   return (
     <>
       <StickyOrbitCamera radius={cameraRadius} />
+      {showGrid ? (
+        <gridHelper
+          args={[gridSize, 28, "#c9cfd6", "#e6eaee"]}
+          position={[0, -gridSize * 0.06, 0]}
+          rotation={[Math.PI / 2, 0, 0]}
+        />
+      ) : null}
       <Suspense fallback={null}>
         <Environment preset="apartment" environmentIntensity={0.5} />
         <group position={[-center.x, -center.y, -center.z]}>
@@ -566,6 +579,7 @@ function PreviewScene({
   mapUrl,
   zoomMul,
   glCanvasRef,
+  showGrid,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
@@ -573,6 +587,7 @@ function PreviewScene({
   mapUrl?: string;
   zoomMul: number;
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
+  showGrid?: boolean;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
   const cameraPosition: [number, number, number] = [p0.x, p0.y, p0.z];
@@ -611,6 +626,7 @@ function PreviewScene({
         colorHex={colorHex}
         mapUrl={mapUrl}
         zoomMul={zoomMul}
+        showGrid={showGrid}
       />
     </Canvas>
   );
@@ -747,6 +763,7 @@ export function AcmPanel3DPreview({
           mapUrl={mapUrl}
           zoomMul={previewZoomMul}
           glCanvasRef={glCanvasRef}
+          showGrid={workspaceLayout}
         />
       </div>
 
