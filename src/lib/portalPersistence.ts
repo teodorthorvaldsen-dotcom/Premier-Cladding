@@ -27,7 +27,19 @@ type StoredEmployee = {
   createdAt: string;
 };
 
-type RegistryFileShape = { customers: StoredCustomer[]; employees: StoredEmployee[] };
+type StoredAdmin = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  createdAt: string;
+};
+
+type RegistryFileShape = {
+  customers: StoredCustomer[];
+  employees: StoredEmployee[];
+  admins: StoredAdmin[];
+};
 type OrdersFileShape = { orders: OrderRecord[] };
 
 function ensureDataDir() {
@@ -39,16 +51,17 @@ function ensureDataDir() {
 function readRegistry(): RegistryFileShape {
   ensureDataDir();
   if (!existsSync(REGISTRY_FILE)) {
-    return { customers: [], employees: [] };
+    return { customers: [], employees: [], admins: [] };
   }
   try {
     const raw = readFileSync(REGISTRY_FILE, "utf-8");
     const parsed = JSON.parse(raw) as Partial<RegistryFileShape>;
     const customers = Array.isArray(parsed.customers) ? parsed.customers : [];
     const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
-    return { customers, employees };
+    const admins = Array.isArray(parsed.admins) ? parsed.admins : [];
+    return { customers, employees, admins };
   } catch {
-    return { customers: [], employees: [] };
+    return { customers: [], employees: [], admins: [] };
   }
 }
 
@@ -103,7 +116,7 @@ export function verifyRegistryPortalLogin(
 ): RegistryPortalSession | null {
   try {
     const n = email.trim().toLowerCase();
-    const { customers, employees } = readRegistry();
+    const { customers, employees, admins } = readRegistry();
     const cust = customers.find((c) => c.email.toLowerCase() === n);
     if (cust && bcrypt.compareSync(password, cust.passwordHash)) {
       return {
@@ -121,6 +134,15 @@ export function verifyRegistryPortalLogin(
         email: emp.email,
         role: "employee",
         name: emp.name,
+      };
+    }
+    const admin = admins.find((a) => a.email.toLowerCase() === n);
+    if (admin && bcrypt.compareSync(password, admin.passwordHash)) {
+      return {
+        id: admin.id,
+        email: admin.email,
+        role: "admin",
+        name: admin.name,
       };
     }
     return null;
@@ -150,6 +172,12 @@ export function registerPortalCustomer(input: {
   if (registry.customers.some((c) => c.email.toLowerCase() === email)) {
     return { ok: false, error: "An account with this email already exists. Sign in instead." };
   }
+  if (registry.employees.some((e) => e.email.toLowerCase() === email)) {
+    return { ok: false, error: "An account with this email already exists. Sign in instead." };
+  }
+  if (registry.admins.some((a) => a.email.toLowerCase() === email)) {
+    return { ok: false, error: "An account with this email already exists. Sign in instead." };
+  }
 
   const customerId = `reg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const id = randomUUID();
@@ -163,8 +191,97 @@ export function registerPortalCustomer(input: {
     company: input.company.trim(),
     createdAt: new Date().toISOString(),
   });
-  writeRegistry(registry);
-  return { ok: true, customerId };
+  try {
+    writeRegistry(registry);
+    return { ok: true, customerId };
+  } catch {
+    return {
+      ok: false,
+      error:
+        "Registration is temporarily unavailable on this deployment. Please contact support or try again later.",
+    };
+  }
+}
+
+export type PortalAccountSummary = {
+  id: string;
+  role: Role;
+  email: string;
+  name: string;
+  company?: string;
+  customerId?: string;
+  createdAt: string;
+};
+
+export function listRegistryAccounts(): PortalAccountSummary[] {
+  const r = readRegistry();
+  const customers: PortalAccountSummary[] = r.customers.map((c) => ({
+    id: c.id,
+    role: "customer",
+    email: c.email,
+    name: c.name,
+    company: c.company,
+    customerId: c.customerId,
+    createdAt: c.createdAt,
+  }));
+  const employees: PortalAccountSummary[] = r.employees.map((e) => ({
+    id: e.id,
+    role: "employee",
+    email: e.email,
+    name: e.name,
+    createdAt: e.createdAt,
+  }));
+  const admins: PortalAccountSummary[] = r.admins.map((a) => ({
+    id: a.id,
+    role: "admin",
+    email: a.email,
+    name: a.name,
+    createdAt: a.createdAt,
+  }));
+
+  const byEmail = new Map<string, PortalAccountSummary>();
+  [...customers, ...employees, ...admins].forEach((u) => byEmail.set(u.email.toLowerCase(), u));
+  // Include demo users as well (for local/dev). Never includes passwords.
+  demoUsers.forEach((u) => {
+    const key = u.email.toLowerCase();
+    if (!byEmail.has(key)) {
+      byEmail.set(key, {
+        id: u.id,
+        role: u.role,
+        email: u.email,
+        name: u.name,
+        company: undefined,
+        customerId: u.customerId,
+        createdAt: new Date(0).toISOString(),
+      });
+    }
+  });
+  return Array.from(byEmail.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export function getRegistryAccountById(id: string): PortalAccountSummary | null {
+  const r = readRegistry();
+  const cust = r.customers.find((c) => c.id === id);
+  if (cust) {
+    return {
+      id: cust.id,
+      role: "customer",
+      email: cust.email,
+      name: cust.name,
+      company: cust.company,
+      customerId: cust.customerId,
+      createdAt: cust.createdAt,
+    };
+  }
+  const emp = r.employees.find((e) => e.id === id);
+  if (emp) {
+    return { id: emp.id, role: "employee", email: emp.email, name: emp.name, createdAt: emp.createdAt };
+  }
+  const admin = r.admins.find((a) => a.id === id);
+  if (admin) {
+    return { id: admin.id, role: "admin", email: admin.email, name: admin.name, createdAt: admin.createdAt };
+  }
+  return null;
 }
 
 /**

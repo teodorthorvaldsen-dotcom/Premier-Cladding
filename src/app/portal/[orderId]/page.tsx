@@ -5,7 +5,7 @@ import { getPortalOrderById } from "@/lib/portalOrders";
 import { PortalOrderDetailView } from "./PortalOrderDetailView";
 
 function canAccessOrder(user: SessionUser, order: OrderRecord) {
-  if (user.role === "employee") return true;
+  if (user.role === "employee" || user.role === "admin") return true;
   if (order.customerId === user.customerId) return true;
   return order.customerEmail.trim().toLowerCase() === user.email.trim().toLowerCase();
 }
@@ -29,7 +29,7 @@ export default async function PortalOrderDetailPage({ params }: PageProps) {
   return (
     <PortalOrderDetailView
       order={order}
-      showCadExport={user.role === "employee"}
+      showCadExport={user.role === "employee" || user.role === "admin"}
       showOrderTimeline={user.role !== "employee"}
     />
   );

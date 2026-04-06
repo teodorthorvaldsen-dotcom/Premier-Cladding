@@ -1,6 +1,6 @@
 import type { CartItem } from "@/types/cart";
 
-export type Role = "customer" | "employee";
+export type Role = "customer" | "employee" | "admin";
 
 export type UserRecord = {
   id: string;
@@ -59,6 +59,13 @@ export const demoUsers: UserRecord[] = [
     password: "employee123",
     role: "employee",
     name: "Alex Employee",
+  },
+  {
+    id: "u3",
+    email: "admin@example.com",
+    password: "admin12345",
+    role: "admin",
+    name: "Admin",
   },
 ];
 

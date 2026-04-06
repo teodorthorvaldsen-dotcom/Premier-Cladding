@@ -30,13 +30,28 @@ export default async function PortalPage() {
               and the <strong>order portal password</strong> you chose at checkout. New requests appear in this list as
               soon as your estimate submission succeeds.
             </p>
-          ) : (
+          ) : user.role === "employee" ? (
             <div className="mt-4">
               <Link
                 href="/portal/acm-panels"
                 className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 bg-white px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
               >
                 Open ACM Panel Configurator
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/portal/admin/accounts"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 bg-white px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Manage accounts
+              </Link>
+              <Link
+                href="/portal/acm-panels"
+                className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Open employee workspace
               </Link>
             </div>
           )}
