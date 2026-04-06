@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import {
   allWidths,
   colors,
@@ -133,17 +132,6 @@ function CartLine({
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-900">{describeItem(item)}</p>
-          {item.trayBuildSpec ? (
-            <details className="mt-2 rounded-lg border border-gray-100 bg-gray-50/90 px-2 py-1.5">
-              <summary className="cursor-pointer text-[13px] font-medium text-gray-700">
-                Build spec
-              </summary>
-              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-gray-600">
-                {item.trayBuildSpec}
-              </pre>
-            </details>
-          ) : null}
-          <RevitTrayExportBlock item={item} />
           <p className="text-xs text-gray-500">
             {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
           </p>
