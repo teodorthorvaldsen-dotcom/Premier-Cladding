@@ -1,15 +1,56 @@
 import { randomUUID } from "crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
 import { join } from "path";
 import bcrypt from "bcryptjs";
 import { demoUsers } from "@/lib/demoData";
 import type { OrderRecord, Role } from "@/lib/demoData";
 import { JOB_STAGES, type JobStage } from "@/lib/jobStage";
 
-const DATA_DIR = join(process.cwd(), "data");
-const REGISTRY_FILE = join(DATA_DIR, "portal-registry.json");
-const ORDERS_FILE = join(DATA_DIR, "portal-quote-orders.json");
-const JOB_STAGES_FILE = join(DATA_DIR, "order-job-stages.json");
+/** Writable directory for JSON persistence. Override with PORTAL_DATA_DIR (e.g. mounted volume). */
+let cachedDataDir: string | null = null;
+
+function getDataDir(): string {
+  if (cachedDataDir) return cachedDataDir;
+  const fromEnv = process.env.PORTAL_DATA_DIR?.trim();
+  if (fromEnv) {
+    mkdirSync(fromEnv, { recursive: true });
+    cachedDataDir = fromEnv;
+    return cachedDataDir;
+  }
+  const cwdData = join(process.cwd(), "data");
+  try {
+    if (!existsSync(cwdData)) {
+      mkdirSync(cwdData, { recursive: true });
+    }
+    const probe = join(cwdData, ".portal-write-test");
+    writeFileSync(probe, "ok", "utf-8");
+    unlinkSync(probe);
+    cachedDataDir = cwdData;
+  } catch {
+    const fallback = join(tmpdir(), "all-cladding-solutions-data");
+    mkdirSync(fallback, { recursive: true });
+    cachedDataDir = fallback;
+  }
+  return cachedDataDir;
+}
+
+function registryWritablePath(): string {
+  return join(getDataDir(), "portal-registry.json");
+}
+
+/** Seeded at build (read-only on many hosts); used when no writable copy exists yet. */
+function registrySeedPath(): string {
+  return join(process.cwd(), "data", "portal-registry.json");
+}
+
+function ordersPath(): string {
+  return join(getDataDir(), "portal-quote-orders.json");
+}
+
+function jobStagesPath(): string {
+  return join(getDataDir(), "order-job-stages.json");
+}
 
 type StoredCustomer = {
   id: string;
@@ -46,18 +87,23 @@ type RegistryFileShape = {
 type OrdersFileShape = { orders: OrderRecord[] };
 
 function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
+  mkdirSync(getDataDir(), { recursive: true });
 }
 
 function readRegistry(): RegistryFileShape {
   ensureDataDir();
-  if (!existsSync(REGISTRY_FILE)) {
+  const writable = registryWritablePath();
+  const seed = registrySeedPath();
+  let raw: string | null = null;
+  if (existsSync(writable)) {
+    raw = readFileSync(writable, "utf-8");
+  } else if (existsSync(seed)) {
+    raw = readFileSync(seed, "utf-8");
+  }
+  if (!raw) {
     return { customers: [], employees: [], admins: [] };
   }
   try {
-    const raw = readFileSync(REGISTRY_FILE, "utf-8");
     const parsed = JSON.parse(raw) as Partial<RegistryFileShape>;
     const customers = Array.isArray(parsed.customers) ? parsed.customers : [];
     const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
@@ -70,16 +116,17 @@ function readRegistry(): RegistryFileShape {
 
 function writeRegistry(data: RegistryFileShape) {
   ensureDataDir();
-  writeFileSync(REGISTRY_FILE, JSON.stringify(data, null, 2), "utf-8");
+  writeFileSync(registryWritablePath(), JSON.stringify(data, null, 2), "utf-8");
 }
 
 function readDynamicOrders(): OrdersFileShape {
   ensureDataDir();
-  if (!existsSync(ORDERS_FILE)) {
+  const path = ordersPath();
+  if (!existsSync(path)) {
     return { orders: [] };
   }
   try {
-    const raw = readFileSync(ORDERS_FILE, "utf-8");
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as OrdersFileShape;
     if (!Array.isArray(parsed.orders)) return { orders: [] };
     return parsed;
@@ -90,7 +137,7 @@ function readDynamicOrders(): OrdersFileShape {
 
 function writeDynamicOrders(data: OrdersFileShape) {
   ensureDataDir();
-  writeFileSync(ORDERS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  writeFileSync(ordersPath(), JSON.stringify(data, null, 2), "utf-8");
 }
 
 export function isReservedPortalEmail(email: string): boolean {
@@ -353,11 +400,12 @@ function isJobStage(s: string): s is JobStage {
 /** Persisted production workflow stages by order id (demo + dynamic orders). */
 export function loadPersistedJobStages(): Record<string, JobStage> {
   ensureDataDir();
-  if (!existsSync(JOB_STAGES_FILE)) {
+  const path = jobStagesPath();
+  if (!existsSync(path)) {
     return {};
   }
   try {
-    const raw = readFileSync(JOB_STAGES_FILE, "utf-8");
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const out: Record<string, JobStage> = {};
     for (const [k, v] of Object.entries(parsed)) {
@@ -375,5 +423,5 @@ export function saveJobStageForOrder(orderId: string, stage: JobStage): void {
   ensureDataDir();
   const current = loadPersistedJobStages();
   current[orderId] = stage;
-  writeFileSync(JOB_STAGES_FILE, JSON.stringify(current, null, 2), "utf-8");
+  writeFileSync(jobStagesPath(), JSON.stringify(current, null, 2), "utf-8");
 }
