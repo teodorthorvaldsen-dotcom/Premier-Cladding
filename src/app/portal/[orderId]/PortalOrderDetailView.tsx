@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import PortalEmployeeComplianceForm from "./PortalEmployeeComplianceForm";
+import PortalSubcontractorComplianceForm from "./PortalSubcontractorComplianceForm";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
@@ -123,7 +123,7 @@ export function PortalOrderDetailView({
   order: OrderRecord;
   /** DXF/CSV export — internal use only; not shown to customer portal logins. */
   showCadExport: boolean;
-  /** Estimated timeline — customer-facing only; hidden for employee logins. */
+  /** Estimated timeline — customer-facing only; hidden for subcontractor/admin logins. */
   showOrderTimeline: boolean;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -201,7 +201,7 @@ export function PortalOrderDetailView({
         </dl>
       </section>
 
-      {showCadExport ? <PortalEmployeeComplianceForm orderId={order.id} /> : null}
+      {showCadExport ? <PortalSubcontractorComplianceForm orderId={order.id} /> : null}
 
       <section className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">

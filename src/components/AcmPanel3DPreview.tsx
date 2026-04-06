@@ -54,7 +54,7 @@ export interface AcmPanel3DPreviewProps {
   panelSwatchImage?: string;
   /** WebGL canvas (for add-to-cart screenshot); set `preserveDrawingBuffer` internally. */
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
-  /** Larger viewport for the employee layout tool (still same interaction model). */
+  /** Larger viewport for the staff ACM workspace layout (still same interaction model). */
   expandedViewport?: boolean;
   /** Fills parent height: CAD-style workspace with minimal chrome (toolbar + status). */
   workspaceLayout?: boolean;

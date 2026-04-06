@@ -4,6 +4,13 @@ import { demoUsers, type Role } from "./demoData";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
+/** Legacy JWT payloads may still use `employee`; normalize everywhere. */
+export type LegacyRole = Role | "employee";
+
+export function normalizeSessionRole(role: LegacyRole): Role {
+  return role === "employee" ? "subcontractor" : role;
+}
+
 export type SessionUser = {
   id: string;
   email: string;
@@ -13,12 +20,20 @@ export type SessionUser = {
 };
 
 export function signToken(user: SessionUser) {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
+  const payload: SessionUser = {
+    ...user,
+    role: normalizeSessionRole(user.role as LegacyRole),
+  };
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): SessionUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as SessionUser;
+    const decoded = jwt.verify(token, JWT_SECRET) as SessionUser & { role?: LegacyRole };
+    return {
+      ...decoded,
+      role: normalizeSessionRole(decoded.role ?? "customer"),
+    };
   } catch {
     return null;
   }
@@ -66,7 +81,7 @@ export async function authenticatePortalUser(
     return {
       id: demo.id,
       email: demo.email,
-      role: demo.role,
+      role: normalizeSessionRole(demo.role as LegacyRole),
       name: demo.name,
       customerId: demo.customerId,
     };

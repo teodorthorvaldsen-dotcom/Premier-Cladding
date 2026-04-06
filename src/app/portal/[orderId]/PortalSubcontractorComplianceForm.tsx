@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type Props = { orderId: string };
 
-export default function PortalEmployeeComplianceForm({ orderId }: Props) {
+export default function PortalSubcontractorComplianceForm({ orderId }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -49,8 +49,8 @@ export default function PortalEmployeeComplianceForm({ orderId }: Props) {
         Insurance &amp; business license
       </h2>
       <p className="mt-2 text-[14px] text-gray-600">
-        Employee only. Upload PDF certificates for this order. General liability and workers comp each require an
-        expiration date.
+        Subcontractors and admins. Upload PDF certificates for this order. General liability and workers comp each
+        require an expiration date.
       </p>
 
       <form onSubmit={(ev) => void handleSubmit(ev)} className="mt-6 space-y-8">

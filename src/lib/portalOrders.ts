@@ -29,7 +29,7 @@ export function getPortalOrderById(orderId: string): OrderRecord | undefined {
 
 export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
   const dynamic = loadDynamicOrders();
-  if (user.role === "employee" || user.role === "admin") {
+  if (user.role === "subcontractor" || user.role === "admin") {
     const byId = new Map<string, OrderRecord>();
     demoOrders.forEach((o) => byId.set(o.id, o));
     dynamic.forEach((o) => byId.set(o.id, o));

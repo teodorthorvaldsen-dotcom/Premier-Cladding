@@ -200,7 +200,7 @@ const SMALL_ORDER_FEE = 125;
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity } = useCart();
-  const { isEmployee, loading: sessionLoading } = usePortalSession();
+  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const subtotal = items.reduce(
@@ -222,7 +222,7 @@ export default function CartPage() {
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isEmployee ? (
+        ) : isStaff ? (
           <Link
             href="/products/acm-panels"
             className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -281,7 +281,7 @@ export default function CartPage() {
             Total: {formatUSD(grandTotal)}
           </p>
           <div className="flex flex-wrap gap-3">
-            {isEmployee ? (
+            {isStaff ? (
               <Link
                 href="/products/acm-panels"
                 className="inline-block text-sm text-gray-600 hover:text-gray-900"

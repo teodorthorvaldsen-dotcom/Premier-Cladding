@@ -1,12 +1,12 @@
 /**
  * Ensures data/portal-registry.json exists and contains bcrypt-hashed demo
- * customer + employee + admin. Safe to run multiple times (won't overwrite
+ * customer + subcontractor + admin. Safe to run multiple times (won't overwrite
  * existing accounts, but will add missing seed accounts).
  *
  * Same credentials as the login page:
  * - customer@example.com / customer123
- * - employee@example.com / employee123
- * - admin@example.com / admin12345
+ * - subcontractor@example.com / subcontractor123
+ * - allcladdingsolutions@gmail.com / gator825
  */
 const fs = require("fs");
 const path = require("path");
@@ -45,21 +45,21 @@ if (!payload.customers.some((c) => (c.email || "").toLowerCase() === "customer@e
     createdAt: now,
   });
 }
-if (!payload.employees.some((e) => (e.email || "").toLowerCase() === "employee@example.com")) {
+if (!payload.employees.some((e) => (e.email || "").toLowerCase() === "subcontractor@example.com")) {
   payload.employees.push({
-    id: "seed-demo-employee",
-    email: "employee@example.com",
-    passwordHash: bcrypt.hashSync("employee123", 10),
-    name: "Alex Employee",
+    id: "seed-demo-subcontractor",
+    email: "subcontractor@example.com",
+    passwordHash: bcrypt.hashSync("subcontractor123", 10),
+    name: "Alex Subcontractor",
     createdAt: now,
   });
 }
-if (!payload.admins.some((a) => (a.email || "").toLowerCase() === "admin@example.com")) {
+if (!payload.admins.some((a) => (a.email || "").toLowerCase() === "allcladdingsolutions@gmail.com")) {
   payload.admins.push({
-    id: "seed-demo-admin",
-    email: "admin@example.com",
-    passwordHash: bcrypt.hashSync("admin12345", 10),
-    name: "Admin",
+    id: "seed-demo-admin-acs",
+    email: "allcladdingsolutions@gmail.com",
+    passwordHash: bcrypt.hashSync("gator825", 10),
+    name: "All Cladding Solutions",
     createdAt: now,
   });
 }

@@ -97,8 +97,8 @@ export default function LoginPage() {
           </li>
           <li>
             Open <strong>Order portal</strong> from the site header to see your requests and open any order for
-            details. <strong>Staff:</strong> sign in with an employee account to open the{" "}
-            <strong>ACM Panel Configurator</strong> from the menu (public) or the order portal (employee workspace).
+            details. <strong>Staff:</strong> sign in with a subcontractor or admin account to open the{" "}
+            <strong>ACM panel workspace</strong> from the header or order portal after you sign in.
           </li>
           <li>
             No quote yet? Use <strong>Create an account</strong> to register first, then sign in — or submit a cart
@@ -111,7 +111,7 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-semibold text-gray-900">Sign in</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Customers see their orders; employees see all orders.
+            Customers see their orders; subcontractors and admins see all orders.
           </p>
 
           <form onSubmit={(ev) => void handleLogin(ev)} className="mt-6 space-y-4">
@@ -137,7 +137,7 @@ export default function LoginPage() {
               <input
                 id="portal-password"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-black"
-                type="password"
+                type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
@@ -159,8 +159,8 @@ export default function LoginPage() {
           <div className="mt-6 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
             <p className="font-medium">Demo accounts</p>
             <p className="mt-2">Customer: customer@example.com / customer123</p>
-            <p>Employee: employee@example.com / employee123</p>
-            <p>Admin: admin@example.com / admin12345</p>
+            <p>Subcontractor: subcontractor@example.com / subcontractor123</p>
+            <p>Admin: allcladdingsolutions@gmail.com / gator825</p>
             <p className="mt-3 text-gray-600">
               After cloning or on deploy, <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">npm install</code>{" "}
               creates <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">data/portal-registry.json</code> with
@@ -216,7 +216,7 @@ export default function LoginPage() {
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-gray-700">Password (min 8 characters)</span>
               <input
-                type="password"
+                type="text"
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
                 required

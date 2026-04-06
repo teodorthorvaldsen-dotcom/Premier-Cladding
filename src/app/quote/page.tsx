@@ -40,7 +40,7 @@ function formatUSD(n: number): string {
 
 export default function QuotePage() {
   const router = useRouter();
-  const { isEmployee, loading: sessionLoading } = usePortalSession();
+  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [draft, setDraft] = useState<QuoteDraft | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -185,7 +185,7 @@ export default function QuotePage() {
         </p>
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isEmployee ? (
+        ) : isStaff ? (
           <a
             href="/products/acm-panels"
             className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -597,11 +597,11 @@ export default function QuotePage() {
         <div className="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-5 md:px-8 sm:flex-row sm:justify-end">
           <a
             href={
-              isEmployee ? draft.returnUrl ?? "/products/acm-panels" : "/consultation"
+              isStaff ? draft.returnUrl ?? "/products/acm-panels" : "/consultation"
             }
             className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3.5 text-[15px] font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            {isEmployee ? "Back to configurator" : "Back to consultation"}
+            {isStaff ? "Back to configurator" : "Back to consultation"}
           </a>
           <button
             type="submit"

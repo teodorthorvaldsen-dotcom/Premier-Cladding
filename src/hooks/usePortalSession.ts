@@ -27,7 +27,10 @@ export function usePortalSession() {
   }, []);
 
   const loading = user === undefined;
-  const isEmployee = user?.role === "employee";
+  const isStaff =
+    user?.role === "subcontractor" ||
+    user?.role === "admin" ||
+    user?.role === "employee";
 
-  return { user: user ?? null, loading, isEmployee };
+  return { user: user ?? null, loading, isStaff };
 }

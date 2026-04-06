@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 
 const ACM_PANEL_NAV = {
   id: "acm-panels",
@@ -26,10 +27,22 @@ const PUBLIC_NAV_LINKS = [
 export function Header() {
   const pathname = usePathname();
   const { totalCount } = useCart();
+  const { user: portalUser, loading: portalSessionLoading } = usePortalSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
 
-  const navLinks = [ACM_PANEL_NAV, ...PUBLIC_NAV_LINKS];
+  const showStaffPanelWorkspace =
+    !portalSessionLoading &&
+    portalUser != null &&
+    (portalUser.role === "subcontractor" || portalUser.role === "admin" || portalUser.role === "employee");
+
+  const staffNav = showStaffPanelWorkspace
+    ? ([
+        { id: "portal-acm-workspace", href: "/portal/acm-panels", label: "Panel workspace" },
+      ] as const)
+    : [];
+
+  const navLinks = [ACM_PANEL_NAV, ...staffNav, ...PUBLIC_NAV_LINKS];
 
   useEffect(() => {
     setMobileOpen(false);

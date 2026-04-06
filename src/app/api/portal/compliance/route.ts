@@ -18,7 +18,7 @@ function isValidDateValue(s: string): boolean {
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== "employee") {
+  if (!user || (user.role !== "subcontractor" && user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

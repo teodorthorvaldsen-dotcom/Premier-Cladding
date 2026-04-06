@@ -1,6 +1,6 @@
 import type { CartItem } from "@/types/cart";
 
-export type Role = "customer" | "employee" | "admin";
+export type Role = "customer" | "subcontractor" | "admin";
 
 export type UserRecord = {
   id: string;
@@ -55,17 +55,17 @@ export const demoUsers: UserRecord[] = [
   },
   {
     id: "u2",
-    email: "employee@example.com",
-    password: "employee123",
-    role: "employee",
-    name: "Alex Employee",
+    email: "subcontractor@example.com",
+    password: "subcontractor123",
+    role: "subcontractor",
+    name: "Alex Subcontractor",
   },
   {
     id: "u3",
-    email: "admin@example.com",
-    password: "admin12345",
+    email: "allcladdingsolutions@gmail.com",
+    password: "gator825",
     role: "admin",
-    name: "Admin",
+    name: "All Cladding Solutions",
   },
 ];
 

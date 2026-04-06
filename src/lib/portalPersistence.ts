@@ -19,7 +19,8 @@ type StoredCustomer = {
   createdAt: string;
 };
 
-type StoredEmployee = {
+/** Subcontractor accounts; persisted under JSON key `employees` for backward compatibility. */
+type StoredSubcontractor = {
   id: string;
   email: string;
   passwordHash: string;
@@ -37,7 +38,7 @@ type StoredAdmin = {
 
 type RegistryFileShape = {
   customers: StoredCustomer[];
-  employees: StoredEmployee[];
+  employees: StoredSubcontractor[];
   admins: StoredAdmin[];
 };
 type OrdersFileShape = { orders: OrderRecord[] };
@@ -132,7 +133,7 @@ export function verifyRegistryPortalLogin(
       return {
         id: emp.id,
         email: emp.email,
-        role: "employee",
+        role: "subcontractor",
         name: emp.name,
       };
     }
@@ -224,9 +225,9 @@ export function listRegistryAccounts(): PortalAccountSummary[] {
     customerId: c.customerId,
     createdAt: c.createdAt,
   }));
-  const employees: PortalAccountSummary[] = r.employees.map((e) => ({
+  const subcontractors: PortalAccountSummary[] = r.employees.map((e) => ({
     id: e.id,
-    role: "employee",
+    role: "subcontractor",
     email: e.email,
     name: e.name,
     createdAt: e.createdAt,
@@ -240,7 +241,7 @@ export function listRegistryAccounts(): PortalAccountSummary[] {
   }));
 
   const byEmail = new Map<string, PortalAccountSummary>();
-  [...customers, ...employees, ...admins].forEach((u) => byEmail.set(u.email.toLowerCase(), u));
+  [...customers, ...subcontractors, ...admins].forEach((u) => byEmail.set(u.email.toLowerCase(), u));
   // Include demo users as well (for local/dev). Never includes passwords.
   demoUsers.forEach((u) => {
     const key = u.email.toLowerCase();
@@ -275,7 +276,7 @@ export function getRegistryAccountById(id: string): PortalAccountSummary | null 
   }
   const emp = r.employees.find((e) => e.id === id);
   if (emp) {
-    return { id: emp.id, role: "employee", email: emp.email, name: emp.name, createdAt: emp.createdAt };
+    return { id: emp.id, role: "subcontractor", email: emp.email, name: emp.name, createdAt: emp.createdAt };
   }
   const admin = r.admins.find((a) => a.id === id);
   if (admin) {
@@ -286,7 +287,7 @@ export function getRegistryAccountById(id: string): PortalAccountSummary | null 
 
 /**
  * After a successful cart quote: ensure registry user (unless reserved demo email) and append portal order.
- * Skips persistence for reserved non-customer emails (e.g. employee demo).
+ * Skips persistence for reserved non-customer emails (e.g. subcontractor demo).
  */
 export function registerCustomerFromQuoteAndSaveOrder(input: {
   email: string;

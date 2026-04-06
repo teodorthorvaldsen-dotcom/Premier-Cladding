@@ -20,7 +20,7 @@ function formatUSD(n: number): string {
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
-  const { isEmployee, loading: sessionLoading } = usePortalSession();
+  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const [submitting, setSubmitting] = useState(false);
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isEmployee ? (
+        ) : isStaff ? (
           <Link
             href="/products/acm-panels"
             className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -144,7 +144,7 @@ export default function CheckoutPage() {
         </div>
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isEmployee ? (
+        ) : isStaff ? (
           <Link
             href="/products/acm-panels"
             className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"

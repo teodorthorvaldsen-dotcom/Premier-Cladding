@@ -5,11 +5,11 @@ import { CartProvider } from "@/context/CartContext";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
-const EMPLOYEE_ACM_TOOL_PATH = "/portal/acm-panels";
+const STAFF_ACM_WORKSPACE_PATH = "/portal/acm-panels";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const minimalChrome = pathname === EMPLOYEE_ACM_TOOL_PATH;
+  const minimalChrome = pathname === STAFF_ACM_WORKSPACE_PATH;
 
   return (
     <CartProvider>
