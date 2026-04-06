@@ -257,8 +257,8 @@ export function SizePicker({
       </label>
       {isPanel ? (
         <p className="mt-1 text-[10px] leading-snug text-gray-600">
-          Center face: width × length. Limits {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}" × {MIN_LENGTH_IN}–{maxLength}
-          " · up to {MAX_TRAY_SIDE_ROWS} returns. +° / −° as in main viewport help.
+          Center face: width × length. Limits {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}
+          &quot; × {MIN_LENGTH_IN}–{maxLength}&quot; · up to {MAX_TRAY_SIDE_ROWS} returns. +° / −° as in main viewport help.
         </p>
       ) : (
         <>
