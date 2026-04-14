@@ -104,16 +104,23 @@ export default function CustomShopDrawingsPage() {
         <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
           Review an example set of custom shop drawings to see typical layouts, callouts, and fabrication-ready details.
         </p>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <a
-            href="/documents/Custom-Shop-Drawings-Example-Picken.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded-xl bg-gray-900 px-6 py-3.5 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            View example drawings (PDF)
-          </a>
-          <span className="text-xs text-gray-500">Opens in a new tab</span>
+        <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
+            <p className="text-sm font-semibold text-gray-900">Example shop drawings (PDF)</p>
+            <a
+              href="/documents/Custom-Shop-Drawings-Example-Picken.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-gray-700 underline underline-offset-2 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded"
+            >
+              Open full screen
+            </a>
+          </div>
+          <iframe
+            title="Example custom shop drawings PDF"
+            src="/documents/Custom-Shop-Drawings-Example-Picken.pdf#view=FitH"
+            className="h-[70vh] w-full bg-white"
+          />
         </div>
       </section>
 
