@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "acm-stock", label: "ACM Stock", href: "/stock-material" },
   {
     id: "drawings-consultations",
-    label: "Drawings & Consultations",
+    label: "Our Services",
     items: [
       { id: "drawings", label: "Custom Shop Drawings", href: "/custom-shop-drawings" },
       { id: "consultations", label: "Consultation", href: "/consultation" },
@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+      className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] sm:text-base md:max-w-[11.5rem] md:px-4 md:py-3 md:text-base lg:max-w-[12rem] lg:text-lg ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+        className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] sm:text-base md:max-w-[11.5rem] md:px-4 md:py-3 md:text-base lg:max-w-[12rem] lg:text-lg ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
@@ -191,7 +191,7 @@ export function Header() {
                   alt="Premier Cladding"
                   width={840}
                   height={216}
-                  className="h-16 max-h-16 w-auto object-contain object-left mix-blend-multiply sm:h-24 sm:max-h-24 md:h-32 md:max-h-32 lg:h-56 lg:max-h-none xl:h-64"
+                  className="h-20 max-h-20 w-auto object-contain object-left mix-blend-multiply sm:h-24 sm:max-h-24 md:h-28 md:max-h-28 lg:h-32 lg:max-h-32 xl:h-36 xl:max-h-36"
                   priority
                   unoptimized
                 />
