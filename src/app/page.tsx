@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const BUSINESS_EMAIL = "allcladdingsolutions@gmail.com";
+const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
 const BUSINESS_PHONE = "+1 (706) 464-7953";
 const BUSINESS_PHONE_TEL = "+17064647953";
 

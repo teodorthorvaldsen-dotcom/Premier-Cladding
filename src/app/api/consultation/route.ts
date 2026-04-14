@@ -8,6 +8,7 @@ const CONSULTATIONS_JSONL_PATH = path.join(process.cwd(), "data", "consultations
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "image/png", "image/jpeg"];
+const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
 
 interface ConsultationPayload {
   fullName: string;
@@ -178,15 +179,18 @@ export async function POST(request: NextRequest) {
     payload.uploadedFilenames = uploadedFilenames;
 
     const apiKey = process.env.RESEND_API_KEY;
-    const businessEmail = process.env.BUSINESS_EMAIL;
     const fromEmail = process.env.EMAIL_FROM;
 
-    if (apiKey && businessEmail && fromEmail) {
+    if (apiKey && fromEmail) {
+      const businessRecipients = Array.from(
+        new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
+      ) as string[];
+
       const resend = new Resend(apiKey);
       const [businessResult, customerResult] = await Promise.all([
         resend.emails.send({
           from: fromEmail,
-          to: businessEmail,
+          to: businessRecipients,
           subject: `Consultation: ${payload.fullName} – ${REQUEST_TYPE_LABELS[payload.requestType] ?? payload.requestType}`,
           html: buildBusinessEmailHtml(payload),
         }),

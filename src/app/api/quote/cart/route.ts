@@ -6,6 +6,8 @@ import { registerCustomerFromQuoteAndSaveOrder } from "@/lib/portalPersistence";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 
+const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
+
 interface CartQuoteItem {
   widthIn: number;
   heightIn: number;
@@ -191,7 +193,6 @@ export async function POST(request: NextRequest) {
     };
 
     const apiKey = process.env.RESEND_API_KEY;
-    const businessEmail = process.env.BUSINESS_EMAIL ?? "allcladdingsolutions@gmail.com";
     const fromEmail = process.env.EMAIL_FROM;
 
     if (!apiKey || !fromEmail) {
@@ -201,11 +202,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const businessRecipients = Array.from(
+      new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
+    ) as string[];
+
     const resend = new Resend(apiKey);
     const [businessResult, customerResult] = await Promise.all([
       resend.emails.send({
         from: fromEmail,
-        to: businessEmail,
+        to: businessRecipients,
         subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
         html: buildCartEmailHtml(payload),
       }),

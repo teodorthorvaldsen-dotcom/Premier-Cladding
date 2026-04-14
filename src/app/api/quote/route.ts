@@ -19,6 +19,7 @@ const QUOTES_JSONL_PATH = path.join(process.cwd(), "data", "quotes.jsonl");
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "image/png", "image/jpeg"];
+const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
 
 interface QuotePayload {
   config: QuoteDraft;
@@ -304,24 +305,27 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.RESEND_API_KEY;
-    const businessEmail = process.env.BUSINESS_EMAIL;
     const fromEmail = process.env.EMAIL_FROM;
 
-    if (!apiKey || !businessEmail || !fromEmail) {
+    if (!apiKey || !fromEmail) {
       return NextResponse.json(
         {
           error:
-            "Email delivery is not configured. Set RESEND_API_KEY, BUSINESS_EMAIL, and EMAIL_FROM.",
+            "Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.",
         },
         { status: 500 }
       );
     }
 
+    const businessRecipients = Array.from(
+      new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
+    ) as string[];
+
     const resend = new Resend(apiKey);
     const [businessResult, customerResult] = await Promise.all([
       resend.emails.send({
         from: fromEmail,
-        to: businessEmail,
+        to: businessRecipients,
         subject: `Quote Request: ${payload.fullName} – ${payload.config.totalSqFt.toFixed(1)} ft²`,
         html: buildBusinessEmailHtml(payload),
       }),
