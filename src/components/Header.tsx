@@ -6,30 +6,108 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
-const ACM_PANEL_NAV = {
-  id: "acm-panels",
-  href: "/products/acm-panels",
-  label: "ACM Panel Configurator",
-} as const;
+type NavItem =
+  | { id: string; label: string; href: string }
+  | { id: string; label: string; items: { id: string; label: string; href: string }[] };
 
-const PUBLIC_NAV_LINKS = [
-  { id: "installment-kits", href: "/installment-kit-configurator", label: "Installment Kit Configurator" },
-  { id: "stock-material", href: "/stock-material", label: "Stock Material" },
-  { id: "installment-videos", href: "/installment-videos", label: "Installment Videos" },
-  { id: "custom-shop-drawings", href: "/custom-shop-drawings", label: "Custom Shop Drawings" },
-  { id: "consultation", href: "/consultation", label: "Consultation" },
-  { id: "about", href: "/about", label: "About" },
-  { id: "portal", href: "/login", label: "Order portal" },
-  { id: "cart", href: "/cart", label: "Cart" },
+const NAV_ITEMS: NavItem[] = [
+  {
+    id: "acm-panels",
+    label: "ACM Panels",
+    items: [
+      { id: "acm-configurator", label: "ACM Panel Configurator", href: "/products/acm-panels" },
+      { id: "acm-tech-resources", label: "ACM Technical Resources", href: "/products/acm-panels/technical-resources" },
+      { id: "acm-certifications", label: "ACM Certifications", href: "/products/acm-panels/certifications" },
+      { id: "acm-system", label: "Our ACM System", href: "/products/acm-panels/system" },
+    ],
+  },
+  {
+    id: "installment",
+    label: "Installment",
+    items: [
+      { id: "installment-kit", label: "Installment Kit Configurator", href: "/installment-kit-configurator" },
+      { id: "installment-videos", label: "Installment Videos", href: "/installment-videos" },
+    ],
+  },
+  { id: "acm-stock", label: "ACM Stock", href: "/stock-material" },
+  {
+    id: "drawings-consultations",
+    label: "Drawings & Consultations",
+    items: [
+      { id: "drawings", label: "Custom Shop Drawings", href: "/custom-shop-drawings" },
+      { id: "consultations", label: "Consultation", href: "/consultation" },
+    ],
+  },
+  { id: "about", label: "About", href: "/about" },
+  { id: "portal-login", label: "Portal Login", href: "/login" },
+  { id: "cart", label: "Cart", href: "/cart" },
 ] as const;
+
+function itemIsActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function groupIsActive(pathname: string, item: Extract<NavItem, { items: unknown }>): boolean {
+  return item.items.some((i) => itemIsActive(pathname, i.href));
+}
+
+function DesktopLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+        active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      }`}
+      aria-current={active ? "page" : undefined}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function DesktopDropdown({
+  label,
+  active,
+  items,
+}: {
+  label: string;
+  active: boolean;
+  items: { id: string; label: string; href: string }[];
+}) {
+  return (
+    <details className="relative">
+      <summary
+        className={`max-w-[10rem] list-none cursor-pointer whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+          active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        }`}
+        aria-label={`${label} menu`}
+      >
+        {label}
+      </summary>
+      <div className="absolute left-1/2 z-50 mt-3 w-[min(22rem,90vw)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
+        <ul className="space-y-1">
+          {items.map((it) => (
+            <li key={it.id}>
+              <Link
+                href={it.href}
+                className="block rounded-xl px-3 py-2.5 text-[15px] font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset"
+              >
+                {it.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  );
+}
 
 export function Header() {
   const pathname = usePathname();
   const { totalCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
-
-  const navLinks = [ACM_PANEL_NAV, ...PUBLIC_NAV_LINKS];
 
   useEffect(() => {
     setMobileOpen(false);
@@ -110,21 +188,13 @@ export function Header() {
               className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
               aria-label="Main"
             >
-              {navLinks.map(({ id, href, label }) => {
-                const active = pathname === href;
-                return (
-                  <Link
-                    key={id}
-                    href={href}
-                    className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
-                      active
-                        ? "text-gray-900"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                );
+              {NAV_ITEMS.map((item) => {
+                if ("href" in item) {
+                  const active = itemIsActive(pathname ?? "", item.href);
+                  return <DesktopLink key={item.id} href={item.href} label={item.label} active={active} />;
+                }
+                const active = groupIsActive(pathname ?? "", item);
+                return <DesktopDropdown key={item.id} label={item.label} active={active} items={item.items} />;
               })}
             </nav>
 
@@ -137,26 +207,59 @@ export function Header() {
               aria-label="Mobile navigation"
             >
               <ul className="space-y-1">
-                {navLinks.map(
-                  ({ id, href, label }) => {
-                    const active = pathname === href;
+                {NAV_ITEMS.map((item) => {
+                  if ("href" in item) {
+                    const active = itemIsActive(pathname ?? "", item.href);
                     return (
-                      <li key={id}>
+                      <li key={item.id}>
                         <Link
-                          href={href}
+                          href={item.href}
                           className={`block touch-manipulation rounded-lg px-3 py-3 text-left text-base font-bold leading-snug break-words active:bg-gray-100 ${
                             active ? "text-gray-900" : "text-gray-700"
                           }`}
                           onClick={() => setMobileOpen(false)}
                           aria-current={active ? "page" : undefined}
                         >
-                          {label}
-                          {id === "cart" && totalCount > 0 ? ` (${totalCount})` : ""}
+                          {item.label}
+                          {item.id === "cart" && totalCount > 0 ? ` (${totalCount})` : ""}
                         </Link>
                       </li>
                     );
                   }
-                )}
+                  const activeGroup = groupIsActive(pathname ?? "", item);
+                  return (
+                    <li key={item.id}>
+                      <details className="rounded-lg">
+                        <summary
+                          className={`list-none cursor-pointer touch-manipulation rounded-lg px-3 py-3 text-left text-base font-bold leading-snug active:bg-gray-100 ${
+                            activeGroup ? "text-gray-900" : "text-gray-700"
+                          }`}
+                        >
+                          {item.label}
+                        </summary>
+                        <ul className="mt-1 space-y-1 pl-3">
+                          {item.items.map((sub) => {
+                            const active = itemIsActive(pathname ?? "", sub.href);
+                            return (
+                              <li key={sub.id}>
+                                <Link
+                                  href={sub.href}
+                                  className={`block rounded-lg px-3 py-2.5 text-[15px] font-semibold ${
+                                    active ? "text-gray-900" : "text-gray-700"
+                                  } hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400`}
+                                  onClick={() => setMobileOpen(false)}
+                                  aria-current={active ? "page" : undefined}
+                                >
+                                  {sub.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </details>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
           </div>
