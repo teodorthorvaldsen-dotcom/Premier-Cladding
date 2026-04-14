@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/documents/:path*\\.pdf",
+        headers: [
+          { key: "Content-Type", value: "application/pdf" },
+          { key: "Content-Disposition", value: "inline" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
