@@ -84,7 +84,7 @@ export default function HomePage() {
               ACM Panels &amp; Cladding
             </h1>
             <p className="mt-6 animate-hero-fade-in text-lg text-white/90 md:text-xl [animation-delay:0.15s]">
-              Fire-rated ACM panels. Submit drawings for consultation and quoting. Nationwide.
+              Fire-rated ACM Panels. One-Of-A-Kind Building System. Quick Custom Orders. Ships Nationwide.
             </p>
           </div>
         </div>
