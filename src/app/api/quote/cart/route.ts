@@ -192,58 +192,8 @@ export async function POST(request: NextRequest) {
       portalPassword,
     };
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.EMAIL_FROM;
-
-    if (!apiKey || !fromEmail) {
-      return NextResponse.json(
-        { error: "Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM." },
-        { status: 500 }
-      );
-    }
-
-    const businessRecipients = Array.from(
-      new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
-    ) as string[];
-
-    const resend = new Resend(apiKey);
-    const [businessResult, customerResult] = await Promise.all([
-      resend.emails.send({
-        from: fromEmail,
-        to: businessRecipients,
-        subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
-        html: buildCartEmailHtml(payload),
-      }),
-      resend.emails.send({
-        from: fromEmail,
-        to: payload.email,
-        subject: "Quote Request Received – Premier Cladding",
-        html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 600px;">
-  <h2>Quote Request Received</h2>
-  <p>Dear ${escapeHtml(payload.fullName)},</p>
-  <p>Thank you for your quote request. We have received your cart and will respond with a finalized quote for your signature. Once the quote is approved, a 50% deposit will be required; the remainder is due upon shipping.</p>
-  <p style="color: #666; font-size: 0.9em;">— Premier Cladding</p>
-</body>
-</html>
-`,
-      }),
-    ]);
-
-    if (businessResult.error || customerResult.error) {
-      const err = businessResult.error ?? customerResult.error;
-      console.error("[Cart quote email error]", err);
-      return NextResponse.json(
-        { error: "Failed to send email. Please try again." },
-        { status: 500 }
-      );
-    }
-
+    const orderId = `ORD-Q-${Date.now().toString(36)}`;
     try {
-      const orderId = `ORD-Q-${Date.now().toString(36)}`;
       const order = buildPortalOrderFromCartQuote({
         orderId,
         customerId: "pending",
@@ -268,7 +218,57 @@ export async function POST(request: NextRequest) {
       console.error("[Cart quote portal persist]", e);
     }
 
-    return NextResponse.json({ ok: true });
+    const businessRecipients = Array.from(
+      new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
+    ) as string[];
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromEmail = process.env.EMAIL_FROM;
+
+    if (apiKey && fromEmail) {
+      const resend = new Resend(apiKey);
+      const [businessResult, customerResult] = await Promise.all([
+        resend.emails.send({
+          from: fromEmail,
+          to: businessRecipients,
+          subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
+          html: buildCartEmailHtml(payload),
+        }),
+        resend.emails.send({
+          from: fromEmail,
+          to: payload.email,
+          subject: "Quote Request Received – Premier Cladding",
+          html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 600px;">
+  <h2>Quote Request Received</h2>
+  <p>Dear ${escapeHtml(payload.fullName)},</p>
+  <p>Thank you for your quote request. We have received your cart and will respond with a finalized quote for your signature. Once the quote is approved, a 50% deposit will be required; the remainder is due upon shipping.</p>
+  <p style="color: #666; font-size: 0.9em;">— Premier Cladding</p>
+</body>
+</html>
+`,
+        }),
+      ]);
+
+      if (businessResult.error || customerResult.error) {
+        const err = businessResult.error ?? customerResult.error;
+        console.error("[Cart quote email error]", err);
+        return NextResponse.json(
+          { error: "Failed to send email. Please try again." },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.log("[Cart quote] Email not configured. Set RESEND_API_KEY and EMAIL_FROM to send confirmation emails.", {
+        orderId,
+        businessRecipients,
+      });
+    }
+
+    return NextResponse.json({ ok: true, orderId });
   } catch (e) {
     console.error("[Cart quote API error]", e);
     return NextResponse.json(

@@ -218,14 +218,12 @@ export default function CartPage() {
             Total: {formatUSD(grandTotal)}
           </p>
           <div className="flex flex-wrap gap-3">
-            {isStaff ? (
-              <Link
-                href="/products/acm-panels"
-                className="inline-block text-sm text-gray-600 hover:text-gray-900"
-              >
-                Continue configuring
-              </Link>
-            ) : null}
+            <Link
+              href="/products/acm-panels"
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-[15px] font-medium text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              Return to configurator
+            </Link>
             <Link
               href="/checkout"
               className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
