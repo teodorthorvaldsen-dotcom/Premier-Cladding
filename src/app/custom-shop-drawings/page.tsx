@@ -99,6 +99,24 @@ export default function CustomShopDrawingsPage() {
         </p>
       </div>
 
+      <section className="mb-10 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-8">
+        <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Examples</h2>
+        <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
+          Review an example set of custom shop drawings to see typical layouts, callouts, and fabrication-ready details.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <a
+            href="/documents/Custom-Shop-Drawings-Example-Picken.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-xl bg-gray-900 px-6 py-3.5 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            View example drawings (PDF)
+          </a>
+          <span className="text-xs text-gray-500">Opens in a new tab</span>
+        </div>
+      </section>
+
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="border-b border-gray-100 px-6 py-5 md:px-8">
           <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">Inquiry details</h2>
@@ -174,8 +192,8 @@ export default function CustomShopDrawingsPage() {
 
       <p className="mt-8 text-center text-[14px] text-gray-500">
         Questions? Email us at{" "}
-        <a href="mailto:allcladdingsolutions@gmail.com" className="font-medium text-gray-900 underline hover:text-gray-700">
-          allcladdingsolutions@gmail.com
+        <a href="mailto:premiercladdingsolutions@gmail.com" className="font-medium text-gray-900 underline hover:text-gray-700">
+          premiercladdingsolutions@gmail.com
         </a>
       </p>
     </div>
