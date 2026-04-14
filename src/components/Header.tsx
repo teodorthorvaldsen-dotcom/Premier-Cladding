@@ -177,7 +177,7 @@ export function Header() {
           />
         ) : null}
         <div className={`relative z-[110] ${shellClass}`}>
-          <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-10 lg:py-8">
+          <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-10 lg:py-4">
             {/* Mobile: logo + actions */}
             <div className="flex min-w-0 items-center justify-between gap-3 lg:contents">
               <Link
@@ -191,7 +191,7 @@ export function Header() {
                   alt="Premier Cladding"
                   width={840}
                   height={216}
-                  className="h-16 max-h-16 w-auto object-contain object-left mix-blend-multiply sm:h-24 sm:max-h-24 md:h-32 md:max-h-32 lg:h-56 lg:max-h-none xl:h-64"
+                  className="h-12 max-h-12 w-auto object-contain object-left mix-blend-multiply sm:h-16 sm:max-h-16 md:h-20 md:max-h-20 lg:h-24 lg:max-h-24 xl:h-28 xl:max-h-28"
                   priority
                   unoptimized
                 />
