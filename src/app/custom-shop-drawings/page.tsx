@@ -13,6 +13,7 @@ export default function CustomShopDrawingsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const examplePdfFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -107,19 +108,35 @@ export default function CustomShopDrawingsPage() {
         <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
             <p className="text-sm font-semibold text-gray-900">Example shop drawings (PDF)</p>
-            <a
-              href="/documents/Custom-Shop-Drawings-Example-Picken.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-semibold text-gray-700 underline underline-offset-2 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded"
-            >
-              Open full screen
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="text-sm font-semibold text-gray-700 underline underline-offset-2 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded"
+                onClick={() => {
+                  const el = examplePdfFrameRef.current;
+                  if (!el) return;
+                  el.requestFullscreen?.().catch(() => {});
+                }}
+              >
+                Fullscreen
+              </button>
+              <a
+                href="/documents/Custom-Shop-Drawings-Example-Picken.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-gray-700 underline underline-offset-2 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded"
+              >
+                Open in new tab
+              </a>
+            </div>
           </div>
           <iframe
+            ref={examplePdfFrameRef}
             title="Example custom shop drawings PDF"
             src="/documents/Custom-Shop-Drawings-Example-Picken.pdf#view=FitH"
             className="h-[70vh] w-full bg-white"
+            allow="fullscreen"
+            allowFullScreen
           />
         </div>
       </section>
