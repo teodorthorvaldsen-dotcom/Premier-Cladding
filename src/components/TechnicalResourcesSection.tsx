@@ -29,14 +29,28 @@ function PdfGrid({ items }: { items: readonly AlfrexPdfItem[] }) {
   );
 }
 
-export function TechnicalResourcesSection() {
+export function TechnicalResourcesSection({
+  withTopBorder = true,
+  includeHeading = true,
+}: {
+  withTopBorder?: boolean;
+  includeHeading?: boolean;
+}) {
   return (
-    <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="technical-resources-heading">
-      <h2 id="technical-resources-heading" className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-        Technical Resources
-      </h2>
+    <section
+      className={withTopBorder ? "mt-20 border-t border-gray-200/80 pt-16" : ""}
+      aria-labelledby={includeHeading ? "technical-resources-heading" : undefined}
+    >
+      {includeHeading ? (
+        <h2
+          id="technical-resources-heading"
+          className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl"
+        >
+          Technical Resources
+        </h2>
+      ) : null}
 
-      <div className="mt-10 space-y-12">
+      <div className={`${includeHeading ? "mt-10" : ""} space-y-12`}>
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-gray-900">Standard product finishes</h3>
           <div className="mt-4 w-full max-w-md">
