@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
 type NavItem =
@@ -17,7 +17,6 @@ const NAV_ITEMS: NavItem[] = [
     items: [
       { id: "acm-configurator", label: "ACM Panel Configurator", href: "/products/acm-panels" },
       { id: "acm-tech-resources", label: "ACM Technical Resources", href: "/products/acm-panels/technical-resources" },
-      { id: "acm-certifications", label: "ACM Certifications", href: "/products/acm-panels/certifications" },
       { id: "acm-system", label: "Our ACM System", href: "/products/acm-panels/system" },
     ],
   },
@@ -75,31 +74,66 @@ function DesktopDropdown({
   active: boolean;
   items: { id: string; label: string; href: string }[];
 }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      const root = rootRef.current;
+      if (!root) return;
+      const target = e.target as Node | null;
+      if (target && !root.contains(target)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown, true);
+    document.addEventListener("touchstart", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown, true);
+      document.removeEventListener("touchstart", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [open]);
+
   return (
-    <details className="relative">
-      <summary
-        className={`max-w-[10rem] list-none cursor-pointer whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] md:max-w-[11.5rem] md:px-4 md:py-3 md:text-lg lg:max-w-[12rem] lg:text-lg xl:text-xl ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
+        aria-haspopup="menu"
+        aria-expanded={open}
         aria-label={`${label} menu`}
+        onClick={() => setOpen((o) => !o)}
       >
         {label}
-      </summary>
-      <div className="absolute left-1/2 z-50 mt-3 w-[min(22rem,90vw)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
-        <ul className="space-y-1">
-          {items.map((it) => (
-            <li key={it.id}>
-              <Link
-                href={it.href}
-                className="block rounded-xl px-3 py-2.5 text-[15px] font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset"
-              >
-                {it.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </details>
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute left-1/2 z-50 mt-3 w-[min(22rem,90vw)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_18px_60px_rgba(0,0,0,0.12)]"
+        >
+          <ul className="space-y-1">
+            {items.map((it) => (
+              <li key={it.id}>
+                <Link
+                  href={it.href}
+                  role="menuitem"
+                  className="block rounded-xl px-3 py-2.5 text-[15px] font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset"
+                  onClick={() => setOpen(false)}
+                >
+                  {it.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
