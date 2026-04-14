@@ -64,8 +64,11 @@ export default function HomePage() {
           playsInline
           preload="metadata"
           aria-label="Background video"
+          poster="/images/hero.jpg"
         >
-          <source src="/videos/hero.mov" type="video/quicktime" />
+          <source src="/videos/hero.mp4" type="video/mp4" />
+          <source src="/videos/hero.webm" type="video/webm" />
+          <source src="/videos/hero.mov" />
         </video>
         <div
           className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/30"
