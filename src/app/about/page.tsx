@@ -31,9 +31,9 @@ export default function AboutPage() {
             <h2 className="text-lg font-semibold tracking-tight text-gray-900">One-of-a-kind riveting system</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
               Our ACM panel equipment uses a self‑pierce riveting approach engineered for consistent, repeatable
-              fastening—producing a clean, seamless appearance with minimal surface disruption. The result is a
-              one‑of‑a‑kind building system that elevates fit and finish while improving efficiency from fabrication to
-              installation.
+              fastening—creating a clean, seamless appearance with minimal surface disruption. This one‑of‑a‑kind
+              building system improves efficiency from fabrication through installation, helping projects move faster
+              while maintaining a refined finish.
             </p>
             <div className="mt-6">
               <a
