@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
@@ -57,14 +56,17 @@ export default function HomePage() {
     <div>
       {/* Hero */}
       <section className="relative min-h-[22rem] h-[85svh] max-h-[960px] w-full overflow-hidden md:h-[85vh] md:max-h-none">
-        <Image
-          src="/images/hero.jpg"
-          alt="Modern architectural facade with ACM panels"
-          fill
-          priority
-          className="object-cover"
-          unoptimized
-        />
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label="Background video"
+        >
+          <source src="/videos/hero.mov" type="video/quicktime" />
+        </video>
         <div
           className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/30"
           aria-hidden
