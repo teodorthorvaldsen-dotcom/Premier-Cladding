@@ -9,13 +9,13 @@ export function AboutNarrative() {
           Who We Are
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-gray-700">
-          All Cladding Solutions is a Columbus, Georgia–based company specializing in the fabrication and supply of high-quality custom Aluminum Composite Material (ACM) panels. With our own dedicated workshop, we oversee every step of the production process — from precision cutting and fabrication to careful packaging and shipping, ensuring accuracy, consistency, and durability in every panel we produce.
+          Premier Cladding is a Columbus, Georgia–based company specializing in the fabrication and supply of high-quality custom Aluminum Composite Material (ACM) panels. With our own dedicated workshop, we oversee every step of the production process — from precision cutting and fabrication to careful packaging and shipping, ensuring accuracy, consistency, and durability in every panel we produce.
         </p>
         <p className="mt-4 text-[15px] leading-relaxed text-gray-700">
           Our team is built of contractors, architects, engineers, and installation teams to deliver tailored cladding solutions designed to meet the exact specifications of each project. Whether it&apos;s a modern commercial façade, retail exterior, or specialty architectural feature, our panels are built with precision craftsmanship and attention to detail.
         </p>
         <p className="mt-4 text-[15px] leading-relaxed text-gray-700">
-          At All Cladding Solutions, we understand that timelines matter. That&apos;s why we focus on efficient production, dependable communication, and reliable nationwide shipping directly to your job site. Our goal is simple: provide premium custom ACM panels that elevate your project while making the process seamless from order to delivery.
+          At Premier Cladding, we understand that timelines matter. That&apos;s why we focus on efficient production, dependable communication, and reliable nationwide shipping directly to your job site. Our goal is simple: provide premium custom ACM panels that elevate your project while making the process seamless from order to delivery.
         </p>
         <p className="mt-6 text-[15px] font-semibold tracking-wide text-gray-900">
           Precision Built. Professionally Delivered.

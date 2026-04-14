@@ -11,7 +11,7 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div>
             <p className="text-base font-medium text-gray-900">
-              All Cladding Solutions
+              Premier Cladding
             </p>
             <p className="mt-1 text-sm text-gray-500">
               © {year}. All rights reserved.

@@ -10,11 +10,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "All Cladding Solutions | ACM Panels",
+  title: "Premier Cladding | ACM Panels",
   description: "Fire-rated ACM panels. Configure online or submit drawings for consultation. Nationwide.",
   appleWebApp: {
     capable: true,
-    title: "All Cladding Solutions",
+    title: "Premier Cladding",
     statusBarStyle: "default",
   },
 };

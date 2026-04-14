@@ -15,7 +15,7 @@ export default function AboutPage() {
             id="about-heading"
             className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl"
           >
-            About All Cladding Solutions
+            About Premier Cladding
           </h1>
           <p className="mt-2 text-[15px] text-gray-500">
             Fabrication, supply, and support for fire-rated ACM panels nationwide.
@@ -57,7 +57,7 @@ export default function AboutPage() {
         <div className="mx-auto mt-16 max-w-3xl">
           <section className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-8">
             <h2 className="text-[15px] font-medium text-gray-900">
-              Why All Cladding Solutions
+              Why Premier Cladding
             </h2>
             <ul className="mt-6 space-y-4">
               <li className="flex gap-3">

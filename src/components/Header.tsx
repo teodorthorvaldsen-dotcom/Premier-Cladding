@@ -71,12 +71,12 @@ export function Header() {
               <Link
                 href="/"
                 className="relative flex min-w-0 flex-1 items-center bg-transparent focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f9fafb] lg:flex-none lg:justify-start"
-                aria-label="All Cladding Solutions home"
+                aria-label="Premier Cladding home"
                 onClick={() => setMobileOpen(false)}
               >
                 <Image
                   src="/logo.png"
-                  alt="All Cladding Solutions"
+                  alt="Premier Cladding"
                   width={840}
                   height={216}
                   className="h-16 max-h-16 w-auto object-contain object-left mix-blend-multiply sm:h-24 sm:max-h-24 md:h-32 md:max-h-32 lg:h-56 lg:max-h-none xl:h-64"

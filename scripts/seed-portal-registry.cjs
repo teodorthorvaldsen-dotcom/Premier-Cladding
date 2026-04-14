@@ -59,7 +59,7 @@ if (!payload.admins.some((a) => (a.email || "").toLowerCase() === "allcladdingso
     id: "seed-demo-admin-acs",
     email: "allcladdingsolutions@gmail.com",
     passwordHash: bcrypt.hashSync("gator825", 10),
-    name: "All Cladding Solutions",
+    name: "Premier Cladding",
     createdAt: now,
   });
 }

@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       resend.emails.send({
         from: fromEmail,
         to: payload.email,
-        subject: "Quote Request Received – All Cladding Solutions",
+        subject: "Quote Request Received – Premier Cladding",
         html: `
 <!DOCTYPE html>
 <html>
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
   <h2>Quote Request Received</h2>
   <p>Dear ${escapeHtml(payload.fullName)},</p>
   <p>Thank you for your quote request. We have received your cart and will respond with a finalized quote for your signature. Once the quote is approved, a 50% deposit will be required; the remainder is due upon shipping.</p>
-  <p style="color: #666; font-size: 0.9em;">— All Cladding Solutions</p>
+  <p style="color: #666; font-size: 0.9em;">— Premier Cladding</p>
 </body>
 </html>
 `,
