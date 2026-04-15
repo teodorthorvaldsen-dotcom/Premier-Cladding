@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`max-w-[9rem] whitespace-normal rounded-md px-2 py-1.5 text-center text-xs font-semibold leading-tight tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[10rem] sm:text-sm md:max-w-[11rem] md:px-2.5 ${
+      className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`max-w-[9rem] whitespace-normal rounded-md px-2 py-1.5 text-center text-xs font-semibold leading-tight tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[10rem] sm:text-sm md:max-w-[11rem] md:px-2.5 ${
+        className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
@@ -115,7 +115,7 @@ function DesktopDropdown({
       {open ? (
         <div
           role="menu"
-          className="absolute left-1/2 z-50 mt-1.5 w-[min(22rem,90vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2 shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
+          className="absolute left-1/2 z-50 mt-2 w-[min(24rem,92vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
         >
           <ul className="space-y-1">
             {items.map((it) => (
@@ -123,7 +123,7 @@ function DesktopDropdown({
                 <Link
                   href={it.href}
                   role="menuitem"
-                  className="block rounded-xl px-3 py-2.5 text-[15px] font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset"
+                  className="block rounded-xl px-3 py-3 text-base font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset"
                   onClick={() => setOpen(false)}
                 >
                   {it.label}
@@ -180,7 +180,7 @@ export function Header() {
         ) : null}
         {isHome ? (
           <div className="relative z-[110] border-b border-gray-200 bg-white pt-[env(safe-area-inset-top)]">
-            <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+            <div className="mx-auto flex w-full max-w-[min(100%,1920px)] justify-center px-5 py-4 sm:px-8 sm:py-5 lg:px-12 lg:py-6">
               <Link
                 href="/"
                 className="inline-block focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
@@ -194,7 +194,7 @@ export function Header() {
                   height={216}
                   priority
                   unoptimized
-                  className="h-36 w-[min(1100px,92vw)] max-w-full object-contain object-center mix-blend-multiply sm:h-[10.5rem] sm:w-[min(1200px,92vw)] md:h-[11.25rem] md:w-[min(1300px,92vw)] lg:h-48 lg:w-[min(1400px,92vw)] xl:h-48 xl:w-[min(1500px,92vw)]"
+                  className="h-44 w-[min(1400px,95vw)] max-w-full object-contain object-center mix-blend-multiply sm:h-[12rem] sm:w-[min(1550px,95vw)] md:h-[13rem] md:w-[min(1700px,95vw)] lg:h-56 lg:w-[min(1800px,96vw)] xl:h-[15rem] xl:w-[min(1900px,96vw)]"
                 />
               </Link>
             </div>
@@ -202,7 +202,7 @@ export function Header() {
         ) : null}
         <div className={`relative z-[110] ${navBarClass}${navBarTopSafe}`}>
           <div
-            className={`mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5 lg:flex-row lg:items-center lg:gap-3 lg:px-6 lg:py-2.5 ${
+            className={`mx-auto flex w-full min-w-0 max-w-[min(100%,1920px)] flex-col gap-3 px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 lg:flex-row lg:items-center lg:gap-4 lg:px-10 lg:py-4 ${
               isHome ? "lg:justify-center" : "lg:justify-between"
             }`}
           >
@@ -224,17 +224,17 @@ export function Header() {
                     alt="Premier Cladding"
                     width={840}
                     height={216}
-                    className="h-12 max-h-12 w-auto object-contain object-left mix-blend-multiply sm:h-14 sm:max-h-14 md:h-[3.75rem] md:max-h-[3.75rem] lg:h-16 lg:max-h-16"
+                    className="h-14 max-h-14 w-auto object-contain object-left mix-blend-multiply sm:h-16 sm:max-h-16 md:h-[4.25rem] md:max-h-[4.25rem] lg:h-[4.5rem] lg:max-h-[4.5rem]"
                     priority
                     unoptimized
                   />
                 </Link>
               ) : null}
 
-              <div className="flex shrink-0 items-center gap-2 lg:hidden">
+              <div className="flex shrink-0 items-center gap-2.5 lg:hidden">
                 <Link
                   href="/cart"
-                  className="rounded-md px-2 py-1.5 text-center text-xs font-semibold tracking-wide text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset min-[360px]:text-sm"
+                  className="rounded-lg px-3 py-2 text-center text-sm font-semibold tracking-wide text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset min-[360px]:text-base"
                   aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
                   onClick={() => setMobileOpen(false)}
                 >
@@ -242,7 +242,7 @@ export function Header() {
                 </Link>
                 <button
                   type="button"
-                  className="inline-flex min-h-[36px] min-w-[36px] touch-manipulation items-center justify-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 min-[360px]:px-3 min-[360px]:text-sm"
+                  className="inline-flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 min-[360px]:px-4 min-[360px]:text-base"
                   aria-expanded={mobileOpen}
                   aria-controls={menuId}
                   onClick={() => setMobileOpen((o) => !o)}
@@ -253,7 +253,7 @@ export function Header() {
             </div>
 
             <nav
-              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-1 md:flex md:gap-x-1.5 lg:gap-x-2"
+              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-2 md:flex md:gap-x-2.5 lg:gap-x-4"
               aria-label="Main"
             >
               {NAV_ITEMS.map((item) => {
