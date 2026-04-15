@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
+      className={`flex-1 whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-5 md:py-3.5 md:text-lg ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
+        className={`flex-1 whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-5 md:py-3.5 md:text-lg ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
@@ -253,7 +253,7 @@ export function Header() {
             </div>
 
             <nav
-              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-2 md:flex md:gap-x-2.5 lg:gap-x-4"
+              className="hidden w-full min-w-0 flex-1 flex-wrap items-stretch justify-between gap-x-2 gap-y-2 md:flex md:gap-x-3 lg:gap-x-5"
               aria-label="Main"
             >
               {NAV_ITEMS.map((item) => {
