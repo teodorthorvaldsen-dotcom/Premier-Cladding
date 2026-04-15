@@ -1,7 +1,5 @@
 /** Gallery images on the About page (under company information). */
 export const OUR_WORK_IMAGES = [
-  "/images/our-work/our-work-1.png",
-  "/images/our-work/our-work-2.png",
   "/images/our-work/our-work-3.png",
   "/images/our-work/our-work-4.png",
   "/images/our-work/our-work-5.png",
