@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { JobProgressBar } from "@/components/JobProgressBar";
 import type { OrderRecord } from "@/lib/demoData";
 import { JOB_STAGE_LABEL, JOB_STAGES, type JobStage } from "@/lib/jobStage";
@@ -14,8 +14,13 @@ export function PortalStaffOrderControls({ order }: { order: OrderRecord }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    setStage(initialStage);
+  }, [initialStage]);
+
   async function onChange(next: JobStage) {
     setError("");
+    const prev = stage;
     setStage(next); // optimistic UI: progress bar updates immediately
     setPending(true);
     try {
@@ -26,13 +31,13 @@ export function PortalStaffOrderControls({ order }: { order: OrderRecord }) {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setStage(initialStage);
+        setStage(prev);
         setError(typeof data.error === "string" ? data.error : "Update failed.");
         return;
       }
       router.refresh();
     } catch {
-      setStage(initialStage);
+      setStage(prev);
       setError("Something went wrong.");
     } finally {
       setPending(false);
