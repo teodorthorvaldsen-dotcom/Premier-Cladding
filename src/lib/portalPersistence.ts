@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import bcrypt from "bcryptjs";
@@ -20,12 +20,7 @@ function getDataDir(): string {
   }
   const cwdData = join(process.cwd(), "data");
   try {
-    if (!existsSync(cwdData)) {
-      mkdirSync(cwdData, { recursive: true });
-    }
-    const probe = join(cwdData, ".portal-write-test");
-    writeFileSync(probe, "ok", "utf-8");
-    unlinkSync(probe);
+    mkdirSync(cwdData, { recursive: true });
     cachedDataDir = cwdData;
   } catch {
     const fallback = join(tmpdir(), "all-cladding-solutions-data");
