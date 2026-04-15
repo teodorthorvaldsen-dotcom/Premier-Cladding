@@ -22,7 +22,6 @@ import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
-import { TechnicalResourcesSection } from "./TechnicalResourcesSection";
 import {
   defaultFullTraySides,
   formatBoxTrayReproductionSpec,
@@ -422,8 +421,6 @@ export function Configurator() {
           <MaterialCompositionDiagram />
         </div>
       </section>
-
-      <TechnicalResourcesSection />
 
       <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="trust-heading">
         <h2 id="trust-heading" className="sr-only">
