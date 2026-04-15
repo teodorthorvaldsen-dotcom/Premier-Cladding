@@ -157,8 +157,9 @@ export function Header() {
     };
   }, [mobileOpen]);
 
-  const shellClass =
-    "border-b border-gray-200/60 bg-[#f9fafb] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]";
+  const navBarClass =
+    "border-b border-gray-200/60 bg-[#f9fafb] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]";
+  const navBarTopSafe = isHome ? "" : " pt-[env(safe-area-inset-top)]";
 
   return (
     <>
@@ -177,14 +178,40 @@ export function Header() {
             onClick={() => setMobileOpen(false)}
           />
         ) : null}
-        <div className={`relative z-[110] ${shellClass}`}>
+        {isHome ? (
+          <div className="relative z-[110] border-b border-gray-200 bg-white pt-[env(safe-area-inset-top)]">
+            <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+              <Link
+                href="/"
+                className="inline-block focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
+                aria-label="Premier Cladding home"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Premier Cladding"
+                  width={840}
+                  height={216}
+                  priority
+                  unoptimized
+                  className="h-36 w-auto max-w-full object-contain object-center mix-blend-multiply sm:h-[10.5rem] md:h-[11.25rem] lg:h-48 xl:h-48"
+                />
+              </Link>
+            </div>
+          </div>
+        ) : null}
+        <div className={`relative z-[110] ${navBarClass}${navBarTopSafe}`}>
           <div
             className={`mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5 lg:flex-row lg:items-center lg:gap-3 lg:px-6 lg:py-2.5 ${
               isHome ? "lg:justify-center" : "lg:justify-between"
             }`}
           >
-            {/* Mobile: logo + actions (logo omitted on home — shown large below hero) */}
-            <div className="flex min-w-0 items-center justify-between gap-3 lg:contents">
+            {/* Mobile: logo + actions (home: logo row above; toolbar row is nav + cart only) */}
+            <div
+              className={`flex min-w-0 items-center gap-3 lg:contents ${
+                isHome ? "justify-end" : "justify-between"
+              }`}
+            >
               {!isHome ? (
                 <Link
                   href="/"
@@ -202,15 +229,7 @@ export function Header() {
                     unoptimized
                   />
                 </Link>
-              ) : (
-                <Link
-                  href="/"
-                  className="text-sm font-semibold text-gray-900 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 lg:sr-only"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Home
-                </Link>
-              )}
+              ) : null}
 
               <div className="flex shrink-0 items-center gap-2 lg:hidden">
                 <Link

@@ -10,6 +10,7 @@ const STAFF_ACM_WORKSPACE_PATH = "/portal/acm-panels";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const minimalChrome = pathname === STAFF_ACM_WORKSPACE_PATH;
+  const isHome = pathname === "/";
 
   return (
     <CartProvider>
@@ -19,7 +20,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className={
           minimalChrome
             ? "flex h-dvh min-h-0 flex-col overflow-hidden p-0"
-            : "min-h-[calc(100dvh-4.75rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-5rem)] md:py-20 lg:py-24"
+            : isHome
+              ? "min-h-[calc(100dvh-15rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-15.5rem)] md:py-20 lg:py-24"
+              : "min-h-[calc(100dvh-4.75rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-5rem)] md:py-20 lg:py-24"
         }
       >
         {minimalChrome ? (
