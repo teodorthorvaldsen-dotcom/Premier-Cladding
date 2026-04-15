@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] sm:text-base md:max-w-[11.5rem] md:px-4 md:py-3 md:text-base lg:max-w-[12rem] lg:text-lg ${
+      className={`max-w-[9rem] whitespace-normal rounded-md px-2 py-1.5 text-center text-xs font-semibold leading-tight tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[10rem] sm:text-sm md:max-w-[11rem] md:px-2.5 ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`max-w-[10rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[11rem] sm:text-base md:max-w-[11.5rem] md:px-4 md:py-3 md:text-base lg:max-w-[12rem] lg:text-lg ${
+        className={`max-w-[9rem] whitespace-normal rounded-md px-2 py-1.5 text-center text-xs font-semibold leading-tight tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[10rem] sm:text-sm md:max-w-[11rem] md:px-2.5 ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
@@ -115,7 +115,7 @@ function DesktopDropdown({
       {open ? (
         <div
           role="menu"
-          className="absolute left-1/2 z-50 mt-3 w-[min(22rem,90vw)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_18px_60px_rgba(0,0,0,0.12)]"
+          className="absolute left-1/2 z-50 mt-1.5 w-[min(22rem,90vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2 shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
         >
           <ul className="space-y-1">
             {items.map((it) => (
@@ -167,7 +167,7 @@ export function Header() {
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40">
+      <header className="relative z-40">
         {mobileOpen ? (
           <button
             type="button"
@@ -177,7 +177,7 @@ export function Header() {
           />
         ) : null}
         <div className={`relative z-[110] ${shellClass}`}>
-          <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-10 lg:py-8">
+          <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:px-6 lg:py-2">
             {/* Mobile: logo + actions */}
             <div className="flex min-w-0 items-center justify-between gap-3 lg:contents">
               <Link
@@ -191,7 +191,7 @@ export function Header() {
                   alt="Premier Cladding"
                   width={840}
                   height={216}
-                  className="h-44 max-h-44 w-auto object-contain object-left mix-blend-multiply sm:h-52 sm:max-h-52 md:h-60 md:max-h-60 lg:h-72 lg:max-h-72 xl:h-80 xl:max-h-80"
+                  className="h-8 max-h-8 w-auto object-contain object-left mix-blend-multiply sm:h-9 sm:max-h-9 md:h-9 md:max-h-9"
                   priority
                   unoptimized
                 />
@@ -200,7 +200,7 @@ export function Header() {
               <div className="flex shrink-0 items-center gap-2 lg:hidden">
                 <Link
                   href="/cart"
-                  className="rounded-lg px-3 py-2.5 text-center text-sm font-bold tracking-wide text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset min-[360px]:text-base"
+                  className="rounded-md px-2 py-1.5 text-center text-xs font-semibold tracking-wide text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset min-[360px]:text-sm"
                   aria-label={`Cart: ${totalCount} item${totalCount !== 1 ? "s" : ""}`}
                   onClick={() => setMobileOpen(false)}
                 >
@@ -208,7 +208,7 @@ export function Header() {
                 </Link>
                 <button
                   type="button"
-                  className="inline-flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 min-[360px]:px-4 min-[360px]:text-base"
+                  className="inline-flex min-h-[36px] min-w-[36px] touch-manipulation items-center justify-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 min-[360px]:px-3 min-[360px]:text-sm"
                   aria-expanded={mobileOpen}
                   aria-controls={menuId}
                   onClick={() => setMobileOpen((o) => !o)}
@@ -219,7 +219,7 @@ export function Header() {
             </div>
 
             <nav
-              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-3 md:flex md:gap-x-3 lg:gap-x-4"
+              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-1 md:flex md:gap-x-1.5 lg:gap-x-2"
               aria-label="Main"
             >
               {NAV_ITEMS.map((item) => {
