@@ -66,7 +66,7 @@ export default function CheckoutPage() {
       setFormError(null);
       setSubmitting(true);
       try {
-        const res = await fetch("/api/quote/cart", {
+        const res = await fetch("/api/order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -85,7 +85,13 @@ export default function CheckoutPage() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          throw new Error(typeof data?.error === "string" ? data.error : "Failed to submit.");
+          const msg =
+            typeof data?.message === "string"
+              ? data.message
+              : typeof data?.error === "string"
+                ? data.error
+                : "Failed to submit.";
+          throw new Error(msg);
         }
         setSubmittedEmail(email);
         setSubmittedEmailSent(data.emailSent === true);
@@ -140,10 +146,12 @@ export default function CheckoutPage() {
           ) : (
             <>
               Email is not configured on this server, so neither you nor our team received an automatic email for this
-              request. Add <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">RESEND_API_KEY</code> and{" "}
-              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">EMAIL_FROM</code> in your hosting environment
-              (e.g. Vercel → Environment Variables), then redeploy. We will still review your request using the contact
-              information you provided.
+              request. Add{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">RESEND_API_KEY</code>,{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">EMAIL_FROM</code> (verified sender in Resend),
+              and <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">ORDER_NOTIFICATION_EMAIL</code> in your
+              hosting environment (e.g. Vercel → Environment Variables), then redeploy. We will still review your
+              request using the contact information you provided.
             </>
           )}
         </p>
