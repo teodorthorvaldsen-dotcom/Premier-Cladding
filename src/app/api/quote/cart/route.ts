@@ -229,6 +229,7 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
+      // Two sends: full line-item HTML to the business inbox(es), short confirmation to the customer.
       const [businessResult, customerResult] = await Promise.all([
         resend.emails.send({
           from: fromEmail,

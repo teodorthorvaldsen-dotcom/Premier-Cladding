@@ -134,12 +134,16 @@ export default function CheckoutPage() {
           We have received your request.{" "}
           {submittedEmailSent ? (
             <>
-              You will receive a confirmation email shortly. We will review and send your finalized quote for signature.
+              We emailed a confirmation to you and sent the full cart details to our team. We will review and send your
+              finalized quote for signature.
             </>
           ) : (
             <>
-              Automatic confirmation emails are not active on this site (email delivery is not configured). We will still
-              review your request and follow up using the contact information you provided.
+              Email is not configured on this server, so neither you nor our team received an automatic email for this
+              request. Add <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">RESEND_API_KEY</code> and{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">EMAIL_FROM</code> in your hosting environment
+              (e.g. Vercel → Environment Variables), then redeploy. We will still review your request using the contact
+              information you provided.
             </>
           )}
         </p>
