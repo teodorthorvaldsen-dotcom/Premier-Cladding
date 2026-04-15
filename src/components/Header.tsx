@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
+      className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
+        className={`max-w-[11rem] whitespace-normal rounded-lg px-3 py-2.5 text-center text-sm font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset sm:max-w-[12rem] sm:text-base md:max-w-[13rem] md:px-4 md:py-3 ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
