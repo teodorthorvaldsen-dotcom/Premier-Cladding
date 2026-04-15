@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`flex-1 whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-5 md:py-3.5 md:text-lg ${
+      className={`whitespace-normal rounded-lg px-6 py-4 text-center text-2xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-7 md:py-4.5 md:text-3xl ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`flex-1 whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-5 md:py-3.5 md:text-lg ${
+        className={`whitespace-normal rounded-lg px-6 py-4 text-center text-2xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-7 md:py-4.5 md:text-3xl ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
@@ -253,7 +253,7 @@ export function Header() {
             </div>
 
             <nav
-              className="hidden w-full min-w-0 flex-1 flex-wrap items-stretch justify-between gap-x-2 gap-y-2 md:flex md:gap-x-3 lg:gap-x-5"
+              className="hidden w-full min-w-0 flex-1 flex-wrap items-stretch justify-evenly gap-x-4 gap-y-2 md:flex md:gap-x-6 lg:gap-x-10"
               aria-label="Main"
             >
               {NAV_ITEMS.map((item) => {
