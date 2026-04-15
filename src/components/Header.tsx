@@ -55,7 +55,7 @@ function DesktopLink({ href, label, active }: { href: string; label: string; act
   return (
     <Link
       href={href}
-      className={`whitespace-normal rounded-lg px-6 py-4 text-center text-2xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-7 md:py-4.5 md:text-3xl ${
+      className={`whitespace-normal rounded-lg px-5 py-3.5 text-center text-xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-6 md:py-4 md:text-2xl ${
         active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       }`}
       aria-current={active ? "page" : undefined}
@@ -102,7 +102,7 @@ function DesktopDropdown({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className={`whitespace-normal rounded-lg px-6 py-4 text-center text-2xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-7 md:py-4.5 md:text-3xl ${
+        className={`whitespace-normal rounded-lg px-5 py-3.5 text-center text-xl font-bold leading-snug tracking-wide focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset md:px-6 md:py-4 md:text-2xl ${
           active ? "text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
         aria-haspopup="menu"
