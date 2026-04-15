@@ -53,10 +53,12 @@ export default function AboutPage() {
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-200">
               <video
                 className="h-full w-full object-cover"
-                controls
+                autoPlay
                 muted
+                loop
                 playsInline
                 preload="metadata"
+                poster="/images/acm-riveting-system.png"
                 aria-label="ACM panel riveting system equipment"
               >
                 <source src="/videos/riveting-system.mp4" type="video/mp4" />
