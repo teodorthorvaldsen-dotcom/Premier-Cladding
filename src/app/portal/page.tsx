@@ -7,15 +7,29 @@ import { getSessionUser } from "@/lib/auth";
 import { JOB_STAGE_LABEL } from "@/lib/jobStage";
 import { listRegistryAccounts } from "@/lib/portalPersistence";
 import { getPortalOrdersForUser } from "@/lib/portalOrders";
+import type { JobStage } from "@/lib/jobStage";
 
-export default async function PortalPage() {
+function coerceStage(val: unknown): JobStage | null {
+  if (val === "ordering" || val === "building" || val === "shipping" || val === "complete") return val;
+  return null;
+}
+
+export default async function PortalPage({
+  searchParams,
+}: {
+  searchParams?: { stage?: string };
+}) {
   const user = await getSessionUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  const orders = getPortalOrdersForUser(user);
+  const stageFilter = coerceStage(searchParams?.stage);
+  const ordersAll = getPortalOrdersForUser(user);
+  const orders = stageFilter
+    ? ordersAll.filter((o) => (o.jobStage ?? "ordering") === stageFilter)
+    : ordersAll;
   const isStaff = user.role === "subcontractor" || user.role === "admin";
 
   if (isStaff) {
@@ -31,6 +45,14 @@ export default async function PortalPage() {
             <p className="mt-2 text-sm text-gray-500">
               Select an order to open customer details, panel preview, and CAD measurements.
             </p>
+            {stageFilter ? (
+              <p className="mt-2 text-sm text-gray-600">
+                Showing stage: <span className="font-semibold">{JOB_STAGE_LABEL[stageFilter]}</span>.{" "}
+                <Link href="/portal" className="underline underline-offset-2 hover:text-gray-900">
+                  View all stages
+                </Link>
+              </p>
+            ) : null}
             <div className="mt-4">
               <Link
                 href="/portal/acm-panels"
