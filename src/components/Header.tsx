@@ -194,7 +194,7 @@ export function Header() {
                   height={216}
                   priority
                   unoptimized
-                  className="h-36 w-auto max-w-full object-contain object-center mix-blend-multiply sm:h-[10.5rem] md:h-[11.25rem] lg:h-48 xl:h-48"
+                  className="h-36 w-[min(1100px,92vw)] max-w-full object-contain object-center mix-blend-multiply sm:h-[10.5rem] sm:w-[min(1200px,92vw)] md:h-[11.25rem] md:w-[min(1300px,92vw)] lg:h-48 lg:w-[min(1400px,92vw)] xl:h-48 xl:w-[min(1500px,92vw)]"
                 />
               </Link>
             </div>
