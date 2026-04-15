@@ -59,6 +59,7 @@ export default function AboutPage() {
                 preload="metadata"
                 aria-label="ACM panel riveting system equipment"
               >
+                <source src="/videos/riveting-system.mp4" type="video/mp4" />
                 <source src="/videos/riveting-system.mov" type="video/quicktime" />
               </video>
             </div>
