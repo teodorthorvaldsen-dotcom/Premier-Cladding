@@ -40,7 +40,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
   }
 
-  saveJobStageForOrder(orderId, stageRaw);
+  try {
+    saveJobStageForOrder(orderId, stageRaw);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to persist stage.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({
     ok: true,
