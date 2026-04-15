@@ -115,7 +115,7 @@ function DesktopDropdown({
       {open ? (
         <div
           role="menu"
-          className="absolute left-1/2 z-50 mt-2 w-[min(24rem,92vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
+          className="absolute left-1/2 z-50 mt-2 w-[min(24rem,92vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.1)] max-h-[min(60vh,26rem)] overflow-y-auto overscroll-contain"
         >
           <ul className="space-y-1">
             {items.map((it) => (
