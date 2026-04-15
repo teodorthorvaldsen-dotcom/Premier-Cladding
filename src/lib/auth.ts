@@ -4,7 +4,7 @@ import { demoUsers, type Role } from "./demoData";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
-/** Legacy JWT payloads may still use `employee`; normalize everywhere. */
+/** Legacy JWT payloads may still use the old role value; normalize everywhere. */
 export type LegacyRole = Role | "employee";
 
 export function normalizeSessionRole(role: LegacyRole): Role {

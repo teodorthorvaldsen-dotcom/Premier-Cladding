@@ -20,8 +20,7 @@ export function LoginStaffJobPanel() {
         const s = await fetch("/api/portal/session", { credentials: "include" }).then((r) => r.json() as Promise<{ user: { role?: string } | null }>);
         if (cancelled) return;
         const role = s.user?.role;
-        const staff =
-          role === "admin" || role === "subcontractor" || role === "employee";
+        const staff = role === "admin" || role === "subcontractor";
         if (!staff) {
           setVisible(false);
           setLoading(false);
