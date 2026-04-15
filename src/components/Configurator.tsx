@@ -14,7 +14,6 @@ import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
 import type { PanelType } from "@/lib/pricing";
 import { useCart } from "@/context/CartContext";
 import { ColorSwatches } from "./ColorSwatches";
-import { MaterialCompositionDiagram } from "./MaterialCompositionDiagram";
 import { PanelTypePicker } from "./PanelTypePicker";
 import { PriceSummary } from "./PriceSummary";
 import { QuantityPicker } from "./QuantityPicker";
@@ -409,18 +408,6 @@ export function Configurator() {
           </div>
         </div>
       </div>
-
-      <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="material-composition-heading">
-        <h2 id="material-composition-heading" className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          Material Composition
-        </h2>
-        <p className="mt-2 text-[15px] text-gray-500">
-          Fire-resistant metal composite material (FR MCM) uses a mineral-filled core in place of plastic, meeting stringent fire ratings for exterior applications. The sandwich constructionΓÇöaluminum skins bonded to a non-combustible coreΓÇödelivers durability, formability, and compliance with building codes.
-        </p>
-        <div className="mt-10 flex flex-col items-center gap-8 sm:flex-row sm:items-start sm:justify-center">
-          <MaterialCompositionDiagram />
-        </div>
-      </section>
 
       <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="trust-heading">
         <h2 id="trust-heading" className="sr-only">
