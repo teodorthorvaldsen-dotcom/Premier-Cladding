@@ -225,6 +225,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.EMAIL_FROM;
 
+    let emailSent = false;
+
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
       const [businessResult, customerResult] = await Promise.all([
@@ -261,14 +263,15 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+      emailSent = true;
     } else {
-      console.log("[Cart quote] Email not configured. Set RESEND_API_KEY and EMAIL_FROM to send confirmation emails.", {
-        orderId,
-        businessRecipients,
-      });
+      console.warn(
+        "[Cart quote] Email not sent: set RESEND_API_KEY and EMAIL_FROM (e.g. in Vercel → Project → Settings → Environment Variables).",
+        { orderId, businessRecipients }
+      );
     }
 
-    return NextResponse.json({ ok: true, orderId });
+    return NextResponse.json({ ok: true, orderId, emailSent });
   } catch (e) {
     console.error("[Cart quote API error]", e);
     return NextResponse.json(

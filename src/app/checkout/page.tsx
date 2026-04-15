@@ -29,6 +29,7 @@ export default function CheckoutPage() {
   const [signature, setSignature] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [submittedEmailSent, setSubmittedEmailSent] = useState(true);
 
   const subtotal = items.reduce((sum, i) => sum + cartItemLineTotal(i), 0);
   const totalSqFt = items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
@@ -87,6 +88,7 @@ export default function CheckoutPage() {
           throw new Error(typeof data?.error === "string" ? data.error : "Failed to submit.");
         }
         setSubmittedEmail(email);
+        setSubmittedEmailSent(data.emailSent === true);
         clearCart();
         setSubmitted(true);
       } catch (err) {
@@ -129,7 +131,17 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Thank you.</h1>
         <p className="mt-3 text-base text-gray-600">
-          We have received your request. You will receive a confirmation email shortly. We will review and send your finalized quote for signature.
+          We have received your request.{" "}
+          {submittedEmailSent ? (
+            <>
+              You will receive a confirmation email shortly. We will review and send your finalized quote for signature.
+            </>
+          ) : (
+            <>
+              Automatic confirmation emails are not active on this site (email delivery is not configured). We will still
+              review your request and follow up using the contact information you provided.
+            </>
+          )}
         </p>
         <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left text-[15px] text-gray-700">
           <p className="font-medium text-gray-900">Order portal</p>
