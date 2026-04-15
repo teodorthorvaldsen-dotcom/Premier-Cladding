@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { AboutNarrative } from "@/components/AboutNarrative";
-import { ImageCarousel } from "@/components/ImageCarousel";
 import { OUR_WORK_IMAGES } from "@/data/ourWorkImages";
 
 export default function AboutPage() {
@@ -78,7 +78,24 @@ export default function AboutPage() {
           </p>
 
           <div className="mx-auto mt-8 max-w-5xl">
-            <ImageCarousel images={OUR_WORK_IMAGES} alt="Project and installation photography" autoAdvanceMs={5500} />
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8">
+              {OUR_WORK_IMAGES.map((src) => (
+                <div
+                  key={src}
+                  className="relative aspect-[4/3] min-h-[280px] overflow-hidden rounded-xl bg-gray-200 sm:min-h-[320px]"
+                >
+                  <Image
+                    src={src}
+                    alt="Project and installation photography"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 640px"
+                    quality={100}
+                    unoptimized
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
