@@ -224,7 +224,7 @@ export function Header() {
                     alt="Premier Cladding"
                     width={840}
                     height={216}
-                    className="h-14 max-h-14 w-auto object-contain object-left mix-blend-multiply sm:h-16 sm:max-h-16 md:h-[4.25rem] md:max-h-[4.25rem] lg:h-[4.5rem] lg:max-h-[4.5rem]"
+                    className="h-20 max-h-20 w-auto object-contain object-left mix-blend-multiply sm:h-24 sm:max-h-24 md:h-[5.5rem] md:max-h-[5.5rem] lg:h-28 lg:max-h-28"
                     priority
                     unoptimized
                   />
