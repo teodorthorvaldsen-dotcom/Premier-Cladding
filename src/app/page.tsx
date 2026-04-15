@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
@@ -87,6 +88,27 @@ export default function HomePage() {
               Fire-rated ACM Panels. One-Of-A-Kind Building System. Quick Custom Orders. Ships Nationwide.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Logo above homepage tables (trust grid); header logo hidden on "/" */}
+      <section className="border-t border-gray-200 bg-white" aria-label="Premier Cladding">
+        <div className="mx-auto flex max-w-7xl justify-center px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+          <Link
+            href="/"
+            className="inline-block focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
+            aria-label="Premier Cladding home"
+          >
+            <Image
+              src="/logo.png"
+              alt="Premier Cladding"
+              width={840}
+              height={216}
+              priority
+              unoptimized
+              className="h-36 w-auto max-w-full object-contain object-center mix-blend-multiply sm:h-[10.5rem] md:h-[11.25rem] lg:h-48 xl:h-48"
+            />
+          </Link>
         </div>
       </section>
 

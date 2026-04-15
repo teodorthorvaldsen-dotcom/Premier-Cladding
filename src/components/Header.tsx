@@ -139,6 +139,7 @@ function DesktopDropdown({
 
 export function Header() {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const { totalCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
@@ -177,25 +178,39 @@ export function Header() {
           />
         ) : null}
         <div className={`relative z-[110] ${shellClass}`}>
-          <div className="mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:px-6 lg:py-2.5">
-            {/* Mobile: logo + actions */}
+          <div
+            className={`mx-auto flex w-full min-w-0 max-w-[100vw] flex-col gap-2 px-3 py-2 sm:gap-2 sm:px-4 sm:py-2.5 lg:flex-row lg:items-center lg:gap-3 lg:px-6 lg:py-2.5 ${
+              isHome ? "lg:justify-center" : "lg:justify-between"
+            }`}
+          >
+            {/* Mobile: logo + actions (logo omitted on home — shown large below hero) */}
             <div className="flex min-w-0 items-center justify-between gap-3 lg:contents">
-              <Link
-                href="/"
-                className="relative flex min-w-0 flex-1 items-center bg-transparent focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f9fafb] lg:flex-none lg:justify-start"
-                aria-label="Premier Cladding home"
-                onClick={() => setMobileOpen(false)}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="Premier Cladding"
-                  width={840}
-                  height={216}
-                  className="h-12 max-h-12 w-auto object-contain object-left mix-blend-multiply sm:h-14 sm:max-h-14 md:h-[3.75rem] md:max-h-[3.75rem] lg:h-16 lg:max-h-16"
-                  priority
-                  unoptimized
-                />
-              </Link>
+              {!isHome ? (
+                <Link
+                  href="/"
+                  className="relative flex min-w-0 flex-1 items-center bg-transparent focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f9fafb] lg:flex-none lg:justify-start"
+                  aria-label="Premier Cladding home"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Image
+                    src="/logo.png"
+                    alt="Premier Cladding"
+                    width={840}
+                    height={216}
+                    className="h-12 max-h-12 w-auto object-contain object-left mix-blend-multiply sm:h-14 sm:max-h-14 md:h-[3.75rem] md:max-h-[3.75rem] lg:h-16 lg:max-h-16"
+                    priority
+                    unoptimized
+                  />
+                </Link>
+              ) : (
+                <Link
+                  href="/"
+                  className="text-sm font-semibold text-gray-900 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 lg:sr-only"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Home
+                </Link>
+              )}
 
               <div className="flex shrink-0 items-center gap-2 lg:hidden">
                 <Link
