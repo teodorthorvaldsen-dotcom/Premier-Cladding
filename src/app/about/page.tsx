@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { AboutNarrative } from "@/components/AboutNarrative";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { OUR_WORK_IMAGES } from "@/data/ourWorkImages";
@@ -52,15 +51,16 @@ export default function AboutPage() {
 
           <section className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:p-6">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-200">
-              <Image
-                src="/images/acm-riveting-system.png"
-                alt="ACM panel fabrication equipment"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 520px"
-                quality={100}
-                unoptimized
-              />
+              <video
+                className="h-full w-full object-cover"
+                controls
+                muted
+                playsInline
+                preload="metadata"
+                aria-label="ACM panel riveting system equipment"
+              >
+                <source src="/videos/riveting-system.mov" type="video/quicktime" />
+              </video>
             </div>
           </section>
         </div>
