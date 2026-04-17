@@ -1,5 +1,5 @@
-import { Configurator } from "@/components/Configurator";
+import AcmPanelsClient from "./acm-panels-client";
 
 export default function AcmPanelsPage() {
-  return <Configurator />;
+  return <AcmPanelsClient />;
 }
