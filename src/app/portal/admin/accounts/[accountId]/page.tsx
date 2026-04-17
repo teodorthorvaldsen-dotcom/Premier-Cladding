@@ -15,14 +15,13 @@ function formatDate(iso: string): string {
 export default async function PortalAdminAccountDetailPage({
   params,
 }: {
-  params: Promise<{ accountId: string }>;
+  params: { accountId: string };
 }) {
   const viewer = await getSessionUser();
   if (!viewer) redirect("/login?next=/portal/admin/accounts");
   if (viewer.role !== "admin" && viewer.role !== "subcontractor") redirect("/portal");
 
-  const { accountId: rawAccountId } = await params;
-  const accountId = decodeURIComponent(rawAccountId);
+  const accountId = decodeURIComponent(params.accountId);
   const account = getRegistryAccountById(accountId);
   if (!account) notFound();
 
