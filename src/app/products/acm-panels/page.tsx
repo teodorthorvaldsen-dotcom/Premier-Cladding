@@ -1,9 +1,5 @@
-import dynamic from "next/dynamic";
+import { Configurator } from "@/components/Configurator";
 
-const AcmPanelsClient = dynamic(() => import("./acm-panels-client"), {
-  ssr: false,
-});
-
-export default function AcmPanelsPage() {
-  return <AcmPanelsClient />;
+export default function ACMPanelsPage() {
+  return <Configurator />;
 }
