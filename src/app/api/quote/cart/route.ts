@@ -259,11 +259,12 @@ export async function POST(request: NextRequest) {
       if (businessResult.error || customerResult.error) {
         const err = businessResult.error ?? customerResult.error;
         console.error("[Cart quote email error]", err);
-        // Don't fail the quote submission if email fails.
-        emailSent = false;
-      } else {
-        emailSent = true;
+        return NextResponse.json(
+          { error: "Failed to send email. Please try again." },
+          { status: 500 }
+        );
       }
+      emailSent = true;
     } else {
       console.warn(
         "[Cart quote] Email not sent: set RESEND_API_KEY and EMAIL_FROM (e.g. in Vercel → Project → Settings → Environment Variables).",
