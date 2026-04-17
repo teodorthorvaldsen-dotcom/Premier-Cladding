@@ -97,16 +97,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error?.message || "Failed to save order" }, { status: 400 });
     }
 
-    await sendOrderEmails({
-      orderId: inserted.id,
-      customerName: inserted.customer_name,
-      customerEmail: inserted.customer_email,
-      customerPhone: inserted.customer_phone || "",
-      companyName: inserted.company_name || "",
-      orderTitle: inserted.order_title,
-      orderDetails: inserted.order_details,
-      createdAt: new Date(inserted.created_at).toLocaleString(),
-    });
+    try {
+      await sendOrderEmails({
+        orderId: inserted.id,
+        customerName: inserted.customer_name,
+        customerEmail: inserted.customer_email,
+        customerPhone: inserted.customer_phone || "",
+        companyName: inserted.company_name || "",
+        orderTitle: inserted.order_title,
+        orderDetails: inserted.order_details,
+        createdAt: new Date(inserted.created_at).toLocaleString(),
+      });
+    } catch (emailError) {
+      console.error("Order email failed:", emailError);
+    }
 
     return NextResponse.json({ success: true, order: inserted });
   } catch (error) {
@@ -174,15 +178,19 @@ export async function PATCH(req: Request) {
     }
 
     if (sendCustomerEmail && previousStatus !== orderStatus) {
-      await sendStatusUpdateEmails({
-        orderId: updatedOrder.id,
-        customerName: updatedOrder.customer_name,
-        customerEmail: updatedOrder.customer_email,
-        orderTitle: updatedOrder.order_title,
-        previousStatus,
-        newStatus: orderStatus,
-        adminNotes,
-      });
+      try {
+        await sendStatusUpdateEmails({
+          orderId: updatedOrder.id,
+          customerName: updatedOrder.customer_name,
+          customerEmail: updatedOrder.customer_email,
+          orderTitle: updatedOrder.order_title,
+          previousStatus,
+          newStatus: orderStatus,
+          adminNotes,
+        });
+      } catch (emailError) {
+        console.error("Status update email failed:", emailError);
+      }
     }
 
     return NextResponse.json({
