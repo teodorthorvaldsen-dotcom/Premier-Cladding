@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 type OrderEmailPayload = {
   orderId: string;
   customerName: string;
@@ -21,16 +23,6 @@ type StatusEmailPayload = {
   adminNotes?: string;
 };
 
-function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  return new Resend(apiKey);
-}
-
 function baseOrderHtml(order: OrderEmailPayload) {
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
@@ -51,19 +43,8 @@ function baseOrderHtml(order: OrderEmailPayload) {
 }
 
 export async function sendOrderEmails(order: OrderEmailPayload) {
-  const resend = getResendClient();
-
-  const from = process.env.EMAIL_FROM;
-  const adminEmail = process.env.ADMIN_EMAIL;
-
-  if (!from) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  if (!adminEmail) {
-    throw new Error("ADMIN_EMAIL is missing");
-  }
-
+  const from = process.env.EMAIL_FROM!;
+  const adminEmail = process.env.ADMIN_EMAIL!;
   const subject = `Order Confirmation - ${order.orderTitle} (${order.orderId.slice(0, 8)})`;
   const html = baseOrderHtml(order);
 
@@ -90,18 +71,8 @@ export async function sendOrderEmails(order: OrderEmailPayload) {
 }
 
 export async function sendStatusUpdateEmails(payload: StatusEmailPayload) {
-  const resend = getResendClient();
-
-  const from = process.env.EMAIL_FROM;
-  const adminEmail = process.env.ADMIN_EMAIL;
-
-  if (!from) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  if (!adminEmail) {
-    throw new Error("ADMIN_EMAIL is missing");
-  }
+  const from = process.env.EMAIL_FROM!;
+  const adminEmail = process.env.ADMIN_EMAIL!;
 
   const subject = `Order Update - ${payload.orderTitle} is now ${payload.newStatus}`;
 
