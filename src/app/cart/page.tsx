@@ -7,7 +7,6 @@ import { CartItemMeasurementBlock } from "@/components/CartItemMeasurementBlock"
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { colors } from "@/data/acm";
 import { useCart } from "@/context/CartContext";
-import { usePortalSession } from "@/hooks/usePortalSession";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
 
@@ -137,7 +136,6 @@ const SMALL_ORDER_FEE = 125;
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity } = useCart();
-  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const subtotal = items.reduce(
@@ -157,31 +155,20 @@ export default function CartPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Your Cart</h1>
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
-        {sessionLoading ? (
-          <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isStaff ? (
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
           <Link
             href="/products/acm-panels"
-            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            Configure panels
+            ACM panel configurator
           </Link>
-        ) : (
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
-            <Link
-              href="/products/acm-panels"
-              className="inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              ACM panel configurator
-            </Link>
-            <Link
-              href="/consultation"
-              className="inline-flex rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              Request a consultation
-            </Link>
-          </div>
-        )}
+          <Link
+            href="/consultation"
+            className="inline-flex rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Request a consultation
+          </Link>
+        </div>
       </div>
     );
   }
