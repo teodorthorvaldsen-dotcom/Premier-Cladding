@@ -1,18 +1,36 @@
-type PageProps = {
-  params: Promise<{
-    orderId: string;
-  }>;
-};
+import { notFound, redirect } from "next/navigation";
+import { getSessionUser, type SessionUser } from "@/lib/auth";
+import type { OrderRecord } from "@/lib/demoData";
+import { getPortalOrderById } from "@/lib/portalOrders";
+import { PortalOrderDetailView } from "./PortalOrderDetailView";
 
-export default async function OrderDetailPage({ params }: PageProps) {
-  const { orderId } = await params;
+function canAccessOrder(user: SessionUser, order: OrderRecord) {
+  if (user.role === "subcontractor" || user.role === "admin") return true;
+  if (order.customerId === user.customerId) return true;
+  return order.customerEmail.trim().toLowerCase() === user.email.trim().toLowerCase();
+}
+
+type PageProps = { params: { orderId: string } };
+
+export default async function PortalOrderDetailPage({ params }: PageProps) {
+  const user = await getSessionUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { orderId: rawId } = params;
+  const orderId = decodeURIComponent(rawId);
+  const order = getPortalOrderById(orderId);
+
+  if (!order || !canAccessOrder(user, order)) {
+    notFound();
+  }
 
   return (
-    <div className="min-h-screen bg-white p-6 md:p-10">
-      <div className="max-w-4xl mx-auto rounded-2xl border p-6">
-        <h1 className="text-2xl font-semibold mb-4">Order Details</h1>
-        <p className="text-sm text-gray-600">Order ID: {orderId}</p>
-      </div>
-    </div>
+    <PortalOrderDetailView
+      order={order}
+      showCadExport={user.role === "subcontractor" || user.role === "admin"}
+      showOrderTimeline={user.role === "customer"}
+    />
   );
 }
