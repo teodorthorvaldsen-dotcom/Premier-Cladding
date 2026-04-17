@@ -5,24 +5,33 @@ import { CartProvider } from "@/context/CartContext";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
+const STAFF_ACM_WORKSPACE_PATH = "/portal/acm-panels";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const minimalChrome = pathname === STAFF_ACM_WORKSPACE_PATH;
   const isHome = pathname === "/";
 
   return (
     <CartProvider>
-      <Header />
+      {minimalChrome ? null : <Header />}
       <main
         id="main-content"
         className={
-          isHome
-            ? "min-h-[calc(100dvh-19rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-19.5rem)] md:py-20 lg:py-24"
-            : "min-h-[calc(100dvh-5.5rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-5.75rem)] md:py-20 lg:py-24"
+          minimalChrome
+            ? "flex h-dvh min-h-0 flex-col overflow-hidden p-0"
+            : isHome
+              ? "min-h-[calc(100dvh-19rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-19.5rem)] md:py-20 lg:py-24"
+              : "min-h-[calc(100dvh-5.5rem)] py-8 sm:py-10 md:min-h-[calc(100dvh-5.75rem)] md:py-20 lg:py-24"
         }
       >
-        {children}
+        {minimalChrome ? (
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        ) : (
+          children
+        )}
       </main>
-      <Footer />
+      {minimalChrome ? null : <Footer />}
     </CartProvider>
   );
 }

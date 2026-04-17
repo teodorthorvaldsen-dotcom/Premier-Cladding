@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { id: "about", label: "About", href: "/about" },
+  { id: "portal-login", label: "Portal Login", href: "/login" },
   { id: "cart", label: "Cart", href: "/cart" },
 ] as const;
 
