@@ -1,25 +1,8 @@
 import { Resend } from "resend";
 
-type OrderEmailPayload = {
-  orderId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  companyName?: string;
-  orderTitle: string;
-  orderDetails: string;
-  createdAt: string;
-};
-
-type StatusEmailPayload = {
-  orderId: string;
-  customerName: string;
-  customerEmail: string;
-  orderTitle: string;
-  previousStatus: string;
-  newStatus: string;
-  adminNotes?: string;
-};
+export function isEmailConfigured() {
+  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM && process.env.ADMIN_EMAIL);
+}
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -31,49 +14,59 @@ function getResendClient() {
   return new Resend(apiKey);
 }
 
-function baseOrderHtml(order: OrderEmailPayload) {
-  return `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-      <h2>Order Confirmation</h2>
-      <p><strong>Order ID:</strong> ${order.orderId}</p>
-      <p><strong>Date:</strong> ${order.createdAt}</p>
-      <p><strong>Customer Name:</strong> ${order.customerName}</p>
-      <p><strong>Customer Email:</strong> ${order.customerEmail}</p>
-      <p><strong>Phone:</strong> ${order.customerPhone || "-"}</p>
-      <p><strong>Company:</strong> ${order.companyName || "-"}</p>
-      <p><strong>Order Title:</strong> ${order.orderTitle}</p>
-      <p><strong>Order Details:</strong></p>
-      <div style="padding: 12px; background: #f7f7f7; border-radius: 8px; white-space: pre-wrap;">
-        ${order.orderDetails}
-      </div>
-    </div>
-  `;
-}
-
-export async function sendOrderEmails(order: OrderEmailPayload) {
-  const resend = getResendClient();
-
+export async function sendOrderEmails({
+  orderId,
+  customerName,
+  customerEmail,
+  customerPhone,
+  companyName,
+  orderTitle,
+  orderDetails,
+  createdAt,
+}: {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  companyName?: string;
+  orderTitle: string;
+  orderDetails: string;
+  createdAt: string;
+}) {
   const from = process.env.EMAIL_FROM;
   const adminEmail = process.env.ADMIN_EMAIL;
 
-  if (!from) {
-    throw new Error("EMAIL_FROM is missing");
-  }
+  if (!from) throw new Error("EMAIL_FROM is missing");
+  if (!adminEmail) throw new Error("ADMIN_EMAIL is missing");
 
-  if (!adminEmail) {
-    throw new Error("ADMIN_EMAIL is missing");
-  }
+  const resend = getResendClient();
 
-  const subject = `Order Confirmation - ${order.orderTitle} (${order.orderId.slice(0, 8)})`;
-  const html = baseOrderHtml(order);
+  const subject = `Order Confirmation - ${orderTitle} (${orderId.slice(0, 8)})`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2>Order Confirmation</h2>
+      <p><strong>Order ID:</strong> ${orderId}</p>
+      <p><strong>Date:</strong> ${createdAt}</p>
+      <p><strong>Customer Name:</strong> ${customerName}</p>
+      <p><strong>Customer Email:</strong> ${customerEmail}</p>
+      <p><strong>Phone:</strong> ${customerPhone || "-"}</p>
+      <p><strong>Company:</strong> ${companyName || "-"}</p>
+      <p><strong>Order Title:</strong> ${orderTitle}</p>
+      <p><strong>Order Details:</strong></p>
+      <div style="padding:12px;background:#f7f7f7;border-radius:8px;white-space:pre-wrap;">
+        ${orderDetails}
+      </div>
+    </div>
+  `;
 
   await resend.emails.send({
     from,
-    to: order.customerEmail,
+    to: customerEmail,
     subject,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <p>Hi ${order.customerName},</p>
+        <p>Hi ${customerName},</p>
         <p>Thank you for your order. A copy of your submission is below.</p>
         ${html}
       </div>
@@ -85,11 +78,19 @@ export async function sendOrderEmails(order: OrderEmailPayload) {
     to: adminEmail,
     subject: `Admin Copy - ${subject}`,
     html,
-    replyTo: order.customerEmail,
+    replyTo: customerEmail,
   });
 }
 
-export async function sendStatusUpdateEmails(payload: StatusEmailPayload) {
+export async function sendStatusUpdateEmails(payload: {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  orderTitle: string;
+  previousStatus: string;
+  newStatus: string;
+  adminNotes?: string;
+}) {
   const resend = getResendClient();
 
   const from = process.env.EMAIL_FROM;
