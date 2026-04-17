@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { JobProgressBar } from "@/components/JobProgressBar";
+import OrderForm from "@/components/order-form";
 import { PortalLogoutButton } from "@/components/PortalLogoutButton";
+import PortalOrders from "@/components/portal-orders";
 import { PortalStaffDashboard } from "@/components/PortalStaffDashboard";
 import { getSessionUser } from "@/lib/auth";
 import { JOB_STAGE_LABEL } from "@/lib/jobStage";
@@ -42,6 +44,11 @@ export default async function PortalPage() {
           </div>
 
           <PortalLogoutButton />
+        </div>
+
+        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+          <OrderForm />
+          <PortalOrders />
         </div>
 
         <PortalStaffDashboard
