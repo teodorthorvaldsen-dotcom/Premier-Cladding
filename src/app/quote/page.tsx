@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePortalSession } from "@/hooks/usePortalSession";
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
@@ -186,19 +187,19 @@ export default function QuotePage() {
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
         ) : isStaff ? (
-          <a
+          <Link
             href="/products/acm-panels"
             className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Return to configurator
-          </a>
+          </Link>
         ) : (
-          <a
+          <Link
             href="/"
             className="mt-8 inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Back to home
-          </a>
+          </Link>
         )}
       </div>
     );
