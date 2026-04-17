@@ -5,7 +5,6 @@ import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
-import { usePortalSession } from "@/hooks/usePortalSession";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { ORDER_PROCESS_STEPS } from "@/lib/orderProcess";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
@@ -20,7 +19,6 @@ function formatUSD(n: number): string {
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
-  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const [submitting, setSubmitting] = useState(false);
@@ -53,16 +51,6 @@ export default function CheckoutPage() {
         setFormError("Please provide your electronic signature.");
         return;
       }
-      const portalPassword = String(formData.get("portalPassword") ?? "").trim();
-      const portalPasswordConfirm = String(formData.get("portalPasswordConfirm") ?? "").trim();
-      if (portalPassword.length < 8) {
-        setFormError("Order portal password must be at least 8 characters.");
-        return;
-      }
-      if (portalPassword !== portalPasswordConfirm) {
-        setFormError("Order portal passwords do not match.");
-        return;
-      }
       setFormError(null);
       setSubmitting(true);
       try {
@@ -80,7 +68,6 @@ export default function CheckoutPage() {
             notes: (formData.get("notes") as string) ?? "",
             paymentMethod,
             signature: signature.trim(),
-            portalPassword,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -105,23 +92,12 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Checkout</h1>
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
-        {sessionLoading ? (
-          <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isStaff ? (
-          <Link
-            href="/products/acm-panels"
-            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            Configure panels
-          </Link>
-        ) : (
-          <Link
-            href="/consultation"
-            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            Request a consultation
-          </Link>
-        )}
+        <Link
+          href="/products/acm-panels"
+          className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+        >
+          Configure panels
+        </Link>
       </div>
     );
   }
@@ -147,34 +123,12 @@ export default function CheckoutPage() {
             </>
           )}
         </p>
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left text-[15px] text-gray-700">
-          <p className="font-medium text-gray-900">Order portal</p>
-          <p className="mt-2">
-            An account for the <strong>order portal</strong> is set up (or updated) for{" "}
-            <strong>{submittedEmail}</strong> using the password you chose at checkout. To check status, open{" "}
-            <Link href="/login" className="font-medium text-gray-900 underline underline-offset-2 hover:text-gray-700">
-              Order portal login
-            </Link>
-            , sign in, then use <strong>Order portal</strong> in the site menu to view your requests.
-          </p>
-        </div>
-        {sessionLoading ? (
-          <p className="mt-8 text-sm text-gray-500">Loading…</p>
-        ) : isStaff ? (
-          <Link
-            href="/products/acm-panels"
-            className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            Return to configurator
-          </Link>
-        ) : (
-          <Link
-            href="/"
-            className="mt-8 inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            Back to home
-          </Link>
-        )}
+        <Link
+          href="/"
+          className="mt-8 inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+        >
+          Back to home
+        </Link>
       </div>
     );
   }
@@ -337,41 +291,6 @@ export default function CheckoutPage() {
             <span className="block text-sm font-medium text-gray-900">Notes</span>
             <textarea name="notes" rows={3} className="mt-1.5 block min-h-[88px] w-full rounded-xl border border-gray-200 px-3 py-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2" placeholder="Project notes or special requests" />
           </label>
-
-          <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-6">
-            <h3 className="text-sm font-semibold text-gray-900">Order portal access</h3>
-            <p className="mt-1 text-xs text-gray-600">
-              Create or update your portal login so you can track this quote and future orders. Use at least 8
-              characters. You will sign in at <span className="font-medium">Order portal</span> with this email and
-              password.
-            </p>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-900">Portal password</span>
-                <input
-                  type="password"
-                  name="portalPassword"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="mt-1.5 block h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-                  placeholder="Minimum 8 characters"
-                />
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-900">Confirm portal password</span>
-                <input
-                  type="password"
-                  name="portalPasswordConfirm"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="mt-1.5 block h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-                  placeholder="Re-enter password"
-                />
-              </label>
-            </div>
-          </div>
 
           <div className="rounded-xl border border-gray-200/80 bg-gray-50/50 p-6">
             <span className="block text-sm font-medium text-gray-900">Pre-estimate agreement</span>
