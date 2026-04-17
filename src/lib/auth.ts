@@ -40,7 +40,7 @@ export function verifyToken(token: string): SessionUser | null {
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const token = cookieStore.get("portal_token")?.value;
   if (!token) return null;
   return verifyToken(token);
