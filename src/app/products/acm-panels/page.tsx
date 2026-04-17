@@ -1,8 +1,4 @@
-import dynamic from "next/dynamic";
-
-const AcmPanelsClient = dynamic(() => import("./acm-panels-client"), {
-  ssr: false,
-});
+import AcmPanelsClient from "./acm-panels-client";
 
 export default function AcmPanelsPage() {
   return <AcmPanelsClient />;
