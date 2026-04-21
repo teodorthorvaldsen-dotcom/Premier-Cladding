@@ -168,7 +168,7 @@ export function Header() {
       >
         Skip to content
       </a>
-      <header className="relative z-40 toolbar-scale">
+      <header className="relative z-40">
         {mobileOpen ? (
           <button
             type="button"
