@@ -3,8 +3,16 @@ import { Resend } from "resend";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
+import { colors, finishes, thicknesses } from "@/data/acm";
 
 const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
+
+const BOX_EDGE_EMAIL_LABEL: Record<string, string> = {
+  south: "Front",
+  north: "Back",
+  west: "Left",
+  east: "Right",
+};
 
 interface CartQuoteItem {
   widthIn: number;
@@ -66,12 +74,48 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function getColorLabel(colorId: string): { name: string; code: string } {
+  const c = colors.find((x) => x.id === colorId);
+  if (!c) return { name: colorId, code: "" };
+  return { name: c.name, code: c.code };
+}
+
+function getThicknessLabel(thicknessId: string): string {
+  const t = thicknesses.find((x) => x.id === thicknessId);
+  return t?.label ?? thicknessId;
+}
+
+function getFinishLabel(finishId: string): string {
+  const f = finishes.find((x) => x.id === finishId);
+  return f?.label ?? finishId;
+}
+
+function trayMeasurementsHtml(sidesUnknown: unknown): string {
+  if (!Array.isArray(sidesUnknown)) return "";
+  const tray = normalizeBoxTraySides(sidesUnknown as BoxTraySideRow[]);
+  if (!tray.length) return "";
+  const rows = tray
+    .map((s, i) => {
+      const n = i + 1;
+      const edgeLabel = escapeHtml(BOX_EDGE_EMAIL_LABEL[s.edge] ?? s.edge);
+      return `<div>Side ${n}: ${edgeLabel} · ${s.flangeHeightIn}″ @ ${s.angleDeg}°</div>`;
+    })
+    .join("");
+  return `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#374151;"><div style="font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#6b7280;font-size:11px;margin-bottom:4px;">Measurements</div>${rows}</div>`;
+}
+
 function buildCartEmailHtml(payload: CartQuotePayload): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
     .map((i) => {
+      const color = getColorLabel(i.colorId);
+      const thicknessLabel = getThicknessLabel(i.thicknessId);
+      const finishLabel = getFinishLabel(i.finishId);
+      const unit = i.unitPrice;
+      const lineTotal = i.unitPrice * i.quantity;
+      const lineSqFt = i.areaFt2 * i.quantity;
       const extra =
         i.customColorReference || i.customColorSpecFileName
           ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
@@ -90,6 +134,7 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
       const specBlock = i.trayBuildSpec
         ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(i.trayBuildSpec)}</pre>`
         : "";
+      const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       let revitBlock = "";
       try {
         if (Array.isArray(i.boxTraySides)) {
@@ -100,11 +145,17 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
       } catch {
         revitBlock = "";
       }
+      const metaBlock = `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#111827;">
+        <div><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
+        <div>${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
+        <div>${i.widthIn}″ × ${i.heightIn}″ · ${lineSqFt.toFixed(2)} ft² · Qty ${i.quantity}</div>
+        <div style="margin-top:4px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
+      </div>`;
       return `<tr>
-          <td style="padding: 6px 12px 6px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${i.widthIn}" × ${i.heightIn} in · Qty ${i.quantity}${extra}${specBlock}${revitBlock}</td>
+          <td style="padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${metaBlock}${measurementsBlock}${extra}${specBlock}${revitBlock}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
-          <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(i.unitPrice * i.quantity)}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(lineTotal)}</td>
         </tr>`;
     })
     .join("");
@@ -143,6 +194,65 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
   <p><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
 
   <p style="color: #666; font-size: 0.9em;">Submitted via ACM Panel Cart Checkout.</p>
+</body>
+</html>
+`;
+}
+
+function buildCartCustomerEmailHtml(payload: CartQuotePayload): string {
+  const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
+  const itemsHtml = payload.items
+    .map((i) => {
+      const color = getColorLabel(i.colorId);
+      const thicknessLabel = getThicknessLabel(i.thicknessId);
+      const finishLabel = getFinishLabel(i.finishId);
+      const unit = i.unitPrice;
+      const lineTotal = i.unitPrice * i.quantity;
+      const lineSqFt = i.areaFt2 * i.quantity;
+      const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
+      const previewBlock = previewUrl
+        ? `<div style="margin:0 0 10px 0;"><img src="${previewUrl}" alt="Panel preview" width="360" style="max-width:100%;height:auto;border:1px solid #e5e7eb;border-radius:10px;background:#f4f5f7" /></div>`
+        : "";
+      const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
+      const customBlock =
+        i.customColorReference || i.customColorSpecFileName
+          ? `<div style="margin-top:8px;font-size:12px;color:#374151;">
+              ${i.customColorReference ? `<div>Color reference: ${escapeHtml(i.customColorReference)}</div>` : ""}
+              ${
+                i.customColorSpecFileName
+                  ? `<div>Spec PDF: ${escapeHtml(i.customColorSpecFileName)} (we may request this file)</div>`
+                  : ""
+              }
+            </div>`
+          : "";
+      return `<div style="padding:14px 0;border-bottom:1px solid #eef2f7;">
+        ${previewBlock}
+        <div style="font-size:14px;color:#111827;">
+          <div style="font-weight:700;">${i.widthIn}″ × ${i.heightIn}″${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
+          <div style="margin-top:4px;"><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
+          <div style="color:#374151;">${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)} · Qty ${i.quantity} · ${lineSqFt.toFixed(2)} ft²</div>
+          <div style="margin-top:6px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
+          ${measurementsBlock}
+          ${customBlock}
+        </div>
+      </div>`;
+    })
+    .join("");
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111827; max-width: 680px;">
+  <h2 style="margin-bottom: 0.25em;">Estimate Request Received</h2>
+  <p style="margin-top:0;color:#4b5563;">Hi ${escapeHtml(payload.fullName)}, we received your request. Here’s a copy of your order summary.</p>
+
+  <h3 style="margin: 18px 0 8px 0; font-size: 1em;">Order summary</h3>
+  <div style="border-top:1px solid #eef2f7;">${itemsHtml}</div>
+
+  <p style="margin-top:14px;"><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
+  <p style="color:#4b5563;font-size:13px;">Final pricing will be confirmed after we verify inventory and prepare your estimate.</p>
+  <p style="color: #6b7280; font-size: 0.9em;">— Premier Cladding</p>
 </body>
 </html>
 `;
@@ -193,7 +303,7 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
-      // Two sends: full line-item HTML to the business inbox(es), short confirmation to the customer.
+      // Two sends: full line-item HTML to the business inbox(es), and a matching summary to the customer.
       const [businessResult, customerResult] = await Promise.all([
         resend.emails.send({
           from: fromEmail,
@@ -205,18 +315,7 @@ export async function POST(request: NextRequest) {
           from: fromEmail,
           to: payload.email,
           subject: "Quote Request Received – Premier Cladding",
-          html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 600px;">
-  <h2>Quote Request Received</h2>
-  <p>Dear ${escapeHtml(payload.fullName)},</p>
-  <p>Thank you for your quote request. We have received your cart and will respond with a finalized quote for your signature. Once the quote is approved, a 50% deposit will be required; the remainder is due upon shipping.</p>
-  <p style="color: #666; font-size: 0.9em;">— Premier Cladding</p>
-</body>
-</html>
-`,
+          html: buildCartCustomerEmailHtml(payload),
         }),
       ]);
 
