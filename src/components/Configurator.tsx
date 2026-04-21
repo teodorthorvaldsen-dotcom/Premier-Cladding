@@ -276,7 +276,7 @@ export function Configurator() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 md:h-[calc(100dvh-10rem)] md:overflow-hidden">
       <div className="mb-8 md:mb-10">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           ACM Panel Configurator
@@ -286,8 +286,8 @@ export function Configurator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-8 lg:gap-16">
-        <div className="md:col-span-7 min-w-0">
+      <div className="grid grid-cols-1 gap-8 md:h-[calc(100%-0rem)] md:grid-cols-12 md:gap-8 lg:gap-16">
+        <div className="md:col-span-7 min-w-0 md:h-full md:overflow-y-auto md:overscroll-contain hide-scrollbar md:pr-2">
           <section className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="border-b border-gray-100 px-6 py-5 md:px-8">
               <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">
@@ -354,11 +354,44 @@ export function Configurator() {
               </div>
             </div>
           </section>
+
+          <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="trust-heading">
+            <h2 id="trust-heading" className="sr-only">
+              Product and service information
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="text-[15px] font-medium text-gray-900">FR Rated Panels</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
+                  Fire-resistant ACM panels meet building codes for exterior applications.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="text-[15px] font-medium text-gray-900">Lead Times</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
+                  Availability and lead times are confirmed with your final quote based on project size, finish selection, and delivery location.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="text-[15px] font-medium text-gray-900">Cut-to-Length</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
+                  Custom lengths from 12 in to 300 in. Specify your size when configuring.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="text-[15px] font-medium text-gray-900">Nationwide Shipping</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
+                  We ship across the US. Delivery options and pricing provided with your quote.
+                </p>
+              </div>
+            </div>
+          </section>
+          <div className="h-10 md:h-16" />
         </div>
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start md:sticky md:top-6 lg:top-8 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:h-full scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div className="flex flex-col gap-3 lg:gap-4">
             <div className="space-y-3 pr-0 lg:space-y-4">
@@ -408,38 +441,6 @@ export function Configurator() {
           </div>
         </div>
       </div>
-
-      <section className="mt-20 border-t border-gray-200/80 pt-16" aria-labelledby="trust-heading">
-        <h2 id="trust-heading" className="sr-only">
-          Product and service information
-        </h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-medium text-gray-900">FR Rated Panels</h3>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              Fire-resistant ACM panels meet building codes for exterior applications.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-medium text-gray-900">Lead Times</h3>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              Availability and lead times are confirmed with your final quote based on project size, finish selection, and delivery location.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-medium text-gray-900">Cut-to-Length</h3>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              Custom lengths from 12 in to 300 in. Specify your size when configuring.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-medium text-gray-900">Nationwide Shipping</h3>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              We ship across the US. Delivery options and pricing provided with your quote.
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
