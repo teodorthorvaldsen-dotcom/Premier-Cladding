@@ -20,6 +20,8 @@ export interface AcmPanelFlatPreviewProps {
   panelSwatchImage?: string;
   /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
   compact?: boolean;
+  /** Multiply the preview viewport size (e.g. 2 = 2× bigger). */
+  scale?: number;
 }
 
 export function AcmPanelFlatPreview({
@@ -30,8 +32,11 @@ export function AcmPanelFlatPreview({
   panelColorName,
   panelSwatchImage,
   compact = false,
+  scale = 1,
 }: AcmPanelFlatPreviewProps) {
-  const previewH = compact ? PREVIEW_H_COMPACT : PREVIEW_H;
+  const safeScale = Number.isFinite(scale) ? Math.max(0.5, Math.min(3, scale)) : 1;
+  const previewW = PREVIEW_W * safeScale;
+  const previewH = (compact ? PREVIEW_H_COMPACT : PREVIEW_H) * safeScale;
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
     const baseH = panelHeightIn * FLAT_LEN_SCALE;
@@ -40,7 +45,7 @@ export function AcmPanelFlatPreview({
     const totalW = baseW + depthPx + 40;
     const totalH = baseH + depthPx + 40;
 
-    const scaleX = (PREVIEW_W - 80) / totalW;
+    const scaleX = (previewW - 80) / totalW;
     const scaleY = (previewH - 80) / totalH;
     const scale = Math.min(scaleX, scaleY, 1);
 
@@ -49,7 +54,7 @@ export function AcmPanelFlatPreview({
       faceH: baseH * scale,
       depth: Math.max(depthPx * scale, 6),
     };
-  }, [panelWidthIn, panelHeightIn, panelDepthIn, previewH]);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, previewH, previewW]);
 
   const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
@@ -85,7 +90,7 @@ export function AcmPanelFlatPreview({
         className="mx-auto mt-3 overflow-hidden rounded-xl"
         style={{
           height: previewH,
-          maxWidth: PREVIEW_W,
+          maxWidth: previewW,
           background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
         }}
       >

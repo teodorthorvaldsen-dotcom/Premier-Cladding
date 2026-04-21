@@ -60,6 +60,8 @@ export interface AcmPanel3DPreviewProps {
   workspaceLayout?: boolean;
   /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
   compact?: boolean;
+  /** Multiply the preview viewport size (e.g. 2 = 2× bigger). */
+  scale?: number;
 }
 
 type BuiltPart = {
@@ -630,6 +632,7 @@ export function AcmPanel3DPreview({
   expandedViewport = false,
   workspaceLayout = false,
   compact = false,
+  scale = 1,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -670,7 +673,13 @@ export function AcmPanel3DPreview({
     ? undefined
     : expandedViewport
       ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
-      : { height: compact ? PREVIEW_H_COMPACT : PREVIEW_H, maxWidth: 520 };
+      : {
+          height:
+            (compact ? PREVIEW_H_COMPACT : PREVIEW_H) *
+            (Number.isFinite(scale) ? Math.max(0.5, Math.min(3, scale)) : 1),
+          maxWidth:
+            520 * (Number.isFinite(scale) ? Math.max(0.5, Math.min(3, scale)) : 1),
+        };
 
   return (
     <section
