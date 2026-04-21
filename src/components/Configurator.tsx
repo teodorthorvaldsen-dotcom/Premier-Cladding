@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   allWidths,
@@ -102,87 +102,6 @@ export function Configurator() {
   const router = useRouter();
   const { addItem } = useCart();
   const previewGlCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const configColRef = useRef<HTMLDivElement | null>(null);
-  const estimateColRef = useRef<HTMLDivElement | null>(null);
-  const stickyAsideRef = useRef<HTMLDivElement | null>(null);
-  const previewStackRef = useRef<HTMLDivElement | null>(null);
-  const bottomAsideRef = useRef<HTMLDivElement | null>(null);
-  const [desktopAsideMinHeight, setDesktopAsideMinHeight] = useState<number | null>(null);
-  const [desktopPreviewShellHeight, setDesktopPreviewShellHeight] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    let raf = 0;
-
-    const measure = () => {
-      if (!mq.matches) {
-        setDesktopAsideMinHeight(null);
-        setDesktopPreviewShellHeight(null);
-        return;
-      }
-
-      const leftH = configColRef.current?.getBoundingClientRect().height ?? 0;
-      if (leftH <= 1) {
-        setDesktopAsideMinHeight(null);
-        setDesktopPreviewShellHeight(null);
-        return;
-      }
-
-      setDesktopAsideMinHeight(leftH);
-
-      const stackH = previewStackRef.current?.getBoundingClientRect().height ?? 0;
-      if (stackH <= 1) {
-        setDesktopPreviewShellHeight(null);
-        return;
-      }
-
-      const styles = previewStackRef.current ? getComputedStyle(previewStackRef.current) : null;
-      const gapY = styles ? Number.parseFloat(styles.rowGap || styles.gap) || 0 : 0;
-      const innerH = stackH - (Number.isFinite(gapY) ? gapY : 0);
-      const each = Math.floor(innerH / 2);
-
-      // Keep previews readable on short screens; allow tall screens to “elongate” with the left column.
-      const clamped = Math.max(190, Math.min(520, each));
-      setDesktopPreviewShellHeight(clamped);
-    };
-
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-
-    schedule();
-
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
-    ro?.observe(document.documentElement);
-    if (configColRef.current) ro?.observe(configColRef.current);
-    if (estimateColRef.current) ro?.observe(estimateColRef.current);
-    if (stickyAsideRef.current) ro?.observe(stickyAsideRef.current);
-    if (previewStackRef.current) ro?.observe(previewStackRef.current);
-    if (bottomAsideRef.current) ro?.observe(bottomAsideRef.current);
-
-    mq.addEventListener("change", schedule);
-    window.addEventListener("resize", schedule);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro?.disconnect();
-      mq.removeEventListener("change", schedule);
-      window.removeEventListener("resize", schedule);
-    };
-  }, [
-    size,
-    thicknessId,
-    colorId,
-    quantity,
-    panelType,
-    pricing,
-    loading,
-    error,
-    panelDrawingFile,
-    customColorSpecFile,
-    customColorReference,
-  ]);
 
   useEffect(() => {
     if (colorId !== "custom-color-match") {
@@ -368,7 +287,7 @@ export function Configurator() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-8 lg:gap-16">
-        <div ref={configColRef} className="md:col-span-7 min-w-0">
+        <div className="md:col-span-7 min-w-0">
           <section className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="border-b border-gray-100 px-6 py-5 md:px-8">
               <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">
@@ -439,13 +358,13 @@ export function Configurator() {
 
         <div
           id="estimate"
-          ref={estimateColRef}
-          className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px] md:self-start"
-          style={desktopAsideMinHeight ? { minHeight: desktopAsideMinHeight } : undefined}
+          className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
-          <div ref={stickyAsideRef} className="md:sticky md:top-6 lg:top-8 md:h-full">
-            <div className="flex h-full min-h-0 flex-col gap-3 lg:gap-4">
-              <div ref={previewStackRef} className="min-h-0 flex-1 space-y-3 pr-0 lg:space-y-4">
+          <div
+            className="md:sticky md:top-6 lg:top-8"
+          >
+            <div className="flex flex-col gap-3 lg:gap-4">
+              <div className="space-y-3 pr-0 lg:space-y-4">
                 <AcmPanelFlatPreview
                   panelWidthIn={size.widthIn}
                   panelHeightIn={size.lengthIn}
@@ -453,8 +372,6 @@ export function Configurator() {
                   panelColorHex={color.swatchHex}
                   panelColorName={color.name}
                   compact
-                  fill={desktopPreviewShellHeight !== null}
-                  previewHeightPx={desktopPreviewShellHeight ?? undefined}
                   panelSwatchImage={
                     "swatchImage" in color &&
                     typeof (color as { swatchImage?: string }).swatchImage === "string"
@@ -470,8 +387,6 @@ export function Configurator() {
                   panelColorHex={color.swatchHex}
                   panelColorName={color.name}
                   compact
-                  fill={desktopPreviewShellHeight !== null}
-                  previewHeightPx={desktopPreviewShellHeight ?? undefined}
                   panelSwatchImage={
                     "swatchImage" in color &&
                     typeof (color as { swatchImage?: string }).swatchImage === "string"
@@ -482,7 +397,7 @@ export function Configurator() {
                 />
               </div>
 
-              <div ref={bottomAsideRef} className="shrink-0 space-y-3 lg:space-y-4">
+              <div className="shrink-0 space-y-3 lg:space-y-4">
                 <PriceSummary pricing={pricing} loading={loading} error={error} compact />
                 <button
                   type="button"
