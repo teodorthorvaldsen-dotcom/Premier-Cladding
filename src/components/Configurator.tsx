@@ -393,8 +393,8 @@ export function Configurator() {
           id="estimate"
           className="md:col-span-5 md:self-start md:h-full md:overflow-y-auto md:overscroll-contain scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
-          <div className="flex flex-col gap-3 lg:gap-4 md:min-h-full md:justify-between">
-            <div className="space-y-3 pr-0 lg:space-y-4">
+          <div className="flex flex-col gap-3 lg:gap-4 md:min-h-full">
+            <div className="space-y-3 pr-0 lg:space-y-4 md:pb-5">
               <AcmPanelFlatPreview
                 panelWidthIn={size.widthIn}
                 panelHeightIn={size.lengthIn}
@@ -427,16 +427,18 @@ export function Configurator() {
               />
             </div>
 
-            <div className="shrink-0 space-y-3 lg:space-y-4">
-              <PriceSummary pricing={pricing} loading={loading} error={error} compact />
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={loading || !!error || !pricing}
-                className="w-full rounded-xl bg-gray-900 px-4 py-3 text-[14px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Add to cart
-              </button>
+            <div className="md:sticky md:bottom-0 md:z-10 md:bg-[#f9fafb] md:pt-3">
+              <div className="space-y-3 lg:space-y-4">
+                <PriceSummary pricing={pricing} loading={loading} error={error} compact />
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={loading || !!error || !pricing}
+                  className="w-full rounded-xl bg-gray-900 px-4 py-3 text-[14px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Add to cart
+                </button>
+              </div>
             </div>
           </div>
         </div>
