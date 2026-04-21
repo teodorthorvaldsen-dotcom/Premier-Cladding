@@ -358,7 +358,7 @@ export function Configurator() {
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start md:sticky md:top-1/2 md:-translate-y-1/2 md:transform scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:sticky md:top-6 lg:top-8 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div className="flex flex-col gap-3 lg:gap-4">
             <div className="space-y-3 pr-0 lg:space-y-4">
