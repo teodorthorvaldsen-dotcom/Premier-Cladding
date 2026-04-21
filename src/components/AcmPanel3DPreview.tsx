@@ -14,6 +14,7 @@ import {
 
 /** Preview viewport height (px). */
 const PREVIEW_H = 360;
+const PREVIEW_H_COMPACT = 260;
 /** Same visual scale as prior CSS preview (inches → scene units). */
 const INCH_TO_WORLD = 0.05;
 
@@ -57,6 +58,8 @@ export interface AcmPanel3DPreviewProps {
   expandedViewport?: boolean;
   /** Fills parent height: CAD-style workspace with minimal chrome (toolbar + status). */
   workspaceLayout?: boolean;
+  /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
+  compact?: boolean;
 }
 
 type BuiltPart = {
@@ -626,6 +629,7 @@ export function AcmPanel3DPreview({
   glCanvasRef,
   expandedViewport = false,
   workspaceLayout = false,
+  compact = false,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -666,7 +670,7 @@ export function AcmPanel3DPreview({
     ? undefined
     : expandedViewport
       ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
-      : { height: PREVIEW_H, maxWidth: 520 };
+      : { height: compact ? PREVIEW_H_COMPACT : PREVIEW_H, maxWidth: 520 };
 
   return (
     <section

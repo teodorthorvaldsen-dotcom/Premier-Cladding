@@ -4,6 +4,7 @@ import { useMemo, type CSSProperties } from "react";
 
 const PREVIEW_W = 520;
 const PREVIEW_H = 300;
+const PREVIEW_H_COMPACT = 220;
 
 const FLAT_LEN_SCALE = 3.2;
 const FLAT_WIDTH_SCALE = 6;
@@ -17,6 +18,8 @@ export interface AcmPanelFlatPreviewProps {
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
+  /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
+  compact?: boolean;
 }
 
 export function AcmPanelFlatPreview({
@@ -26,7 +29,9 @@ export function AcmPanelFlatPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
+  compact = false,
 }: AcmPanelFlatPreviewProps) {
+  const previewH = compact ? PREVIEW_H_COMPACT : PREVIEW_H;
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
     const baseH = panelHeightIn * FLAT_LEN_SCALE;
@@ -36,7 +41,7 @@ export function AcmPanelFlatPreview({
     const totalH = baseH + depthPx + 40;
 
     const scaleX = (PREVIEW_W - 80) / totalW;
-    const scaleY = (PREVIEW_H - 80) / totalH;
+    const scaleY = (previewH - 80) / totalH;
     const scale = Math.min(scaleX, scaleY, 1);
 
     return {
@@ -44,7 +49,7 @@ export function AcmPanelFlatPreview({
       faceH: baseH * scale,
       depth: Math.max(depthPx * scale, 6),
     };
-  }, [panelWidthIn, panelHeightIn, panelDepthIn]);
+  }, [panelWidthIn, panelHeightIn, panelDepthIn, previewH]);
 
   const shades = useMemo(() => createPanelShades(panelColorHex), [panelColorHex]);
 
@@ -79,7 +84,7 @@ export function AcmPanelFlatPreview({
       <div
         className="mx-auto mt-3 overflow-hidden rounded-xl"
         style={{
-          height: PREVIEW_H,
+          height: previewH,
           maxWidth: PREVIEW_W,
           background: "linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%)",
         }}

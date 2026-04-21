@@ -371,6 +371,7 @@ export function Configurator() {
                   panelDepthIn={previewDepthIn}
                   panelColorHex={color.swatchHex}
                   panelColorName={color.name}
+                  compact
                   panelSwatchImage={
                     "swatchImage" in color &&
                     typeof (color as { swatchImage?: string }).swatchImage === "string"
@@ -385,6 +386,7 @@ export function Configurator() {
                   boxSides={size.boxSides}
                   panelColorHex={color.swatchHex}
                   panelColorName={color.name}
+                  compact
                   panelSwatchImage={
                     "swatchImage" in color &&
                     typeof (color as { swatchImage?: string }).swatchImage === "string"
