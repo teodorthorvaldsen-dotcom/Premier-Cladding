@@ -391,10 +391,10 @@ export function Configurator() {
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start md:h-full md:overflow-y-auto md:overscroll-contain scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:flex md:h-full md:min-h-0 md:flex-col scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
-          <div className="flex flex-col gap-3 lg:gap-4 md:min-h-full">
-            <div className="space-y-3 pr-0 lg:space-y-4 md:pb-5">
+          <div className="flex flex-col gap-3 lg:gap-4 md:min-h-0 md:flex-1">
+            <div className="space-y-3 pr-0 lg:space-y-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:pr-1 md:pb-2">
               <AcmPanelFlatPreview
                 panelWidthIn={size.widthIn}
                 panelHeightIn={size.lengthIn}
@@ -427,7 +427,7 @@ export function Configurator() {
               />
             </div>
 
-            <div className="md:sticky md:bottom-0 md:z-10 md:bg-[#f9fafb] md:pt-3">
+            <div className="shrink-0 md:border-t md:border-gray-200/70 md:bg-[#f9fafb] md:pt-3">
               <div className="space-y-3 lg:space-y-4">
                 <PriceSummary pricing={pricing} loading={loading} error={error} compact />
                 <button
