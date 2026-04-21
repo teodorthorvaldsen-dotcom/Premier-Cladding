@@ -45,14 +45,6 @@ input[type="number"] {
 }
 
 @layer utilities {
-  .hide-scrollbar {
-    -ms-overflow-style: none; /* IE/Edge Legacy */
-    scrollbar-width: none; /* Firefox */
-  }
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-  }
-
   @keyframes hero-fade-in {
     from {
       opacity: 0;

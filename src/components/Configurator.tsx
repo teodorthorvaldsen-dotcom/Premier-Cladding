@@ -360,10 +360,11 @@ export function Configurator() {
           id="estimate"
           className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
-          <div className="md:sticky md:top-6 lg:top-8 md:max-h-[calc(100dvh-7.5rem)] md:overflow-y-auto md:overscroll-contain md:pr-1 hide-scrollbar">
+          <div
+            className="md:sticky md:top-6 lg:top-8"
+          >
             <div className="flex flex-col gap-3 lg:gap-4">
-              <div className="sticky top-0 z-10 bg-[#f9fafb] pt-0.5">
-                <div className="space-y-3 lg:space-y-4">
+              <div className="space-y-3 pr-0 lg:space-y-4">
                 <AcmPanelFlatPreview
                   panelWidthIn={size.widthIn}
                   panelHeightIn={size.lengthIn}
@@ -394,8 +395,6 @@ export function Configurator() {
                   }
                   glCanvasRef={previewGlCanvasRef}
                 />
-                </div>
-                <div className="mt-3 h-3 bg-gradient-to-b from-[#f9fafb] to-transparent" />
               </div>
 
               <div className="shrink-0 space-y-3 lg:space-y-4">
