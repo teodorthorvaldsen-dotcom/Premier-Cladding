@@ -276,7 +276,7 @@ export function Configurator() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 md:h-[calc(100dvh-10rem)] md:overflow-hidden">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 md:h-[calc(100dvh-10rem)] md:overflow-hidden">
       <div className="mb-8 md:mb-10">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
           ACM Panel Configurator
@@ -287,7 +287,7 @@ export function Configurator() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:h-[calc(100%-0rem)] md:grid-cols-12 md:gap-8 lg:gap-16">
-        <div className="md:col-span-7 min-w-0 md:h-full md:overflow-y-auto md:overscroll-contain hide-scrollbar md:pr-2">
+        <div className="md:col-span-7 min-w-0 md:h-full md:overflow-y-auto md:overscroll-contain md:pr-2">
           <section className="rounded-2xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="border-b border-gray-100 px-6 py-5 md:px-8">
               <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">
@@ -391,7 +391,7 @@ export function Configurator() {
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start md:h-full md:overflow-y-auto md:overscroll-contain hide-scrollbar scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:h-full md:overflow-y-auto md:overscroll-contain scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div className="flex flex-col gap-3 lg:gap-4 md:min-h-full md:justify-between">
             <div className="space-y-3 pr-0 lg:space-y-4">
