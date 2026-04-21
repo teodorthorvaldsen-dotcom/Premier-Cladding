@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --site-scale: 0.8;
-}
-
 @layer base {
   /* Slightly larger root (~18px at typical 16px browser default) for readability across the site */
   html {
@@ -16,12 +12,6 @@
   }
   body {
     @apply bg-[#f9fafb] text-gray-900 antialiased;
-  }
-  .site-scale {
-    transform: scale(var(--site-scale));
-    transform-origin: top left;
-    width: calc(100% / var(--site-scale));
-    min-height: calc(100vh / var(--site-scale));
   }
   /* Inputs below ~16px trigger unwanted zoom on iPhone focus */
   @media (max-width: 639px) {
@@ -45,6 +35,13 @@ input[type="number"] {
 }
 
 @layer utilities {
+  .toolbar-scale {
+    transform: scale(0.8);
+    transform-origin: top center;
+    width: 125%;
+    margin-left: -12.5%;
+  }
+
   .hide-scrollbar {
     -ms-overflow-style: none; /* IE/Edge Legacy */
     scrollbar-width: none; /* Firefox */

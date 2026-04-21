@@ -27,9 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen overflow-x-hidden bg-[#f9fafb] text-gray-900 antialiased">
-        <div className="site-scale">
-          <AppShell>{children}</AppShell>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
