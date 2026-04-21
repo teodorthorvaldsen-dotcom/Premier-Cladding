@@ -391,9 +391,9 @@ export function Configurator() {
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start md:h-full scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:h-full md:overflow-y-auto md:overscroll-contain hide-scrollbar scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
-          <div className="flex flex-col gap-3 lg:gap-4">
+          <div className="flex flex-col gap-3 lg:gap-4 md:min-h-full md:justify-between">
             <div className="space-y-3 pr-0 lg:space-y-4">
               <AcmPanelFlatPreview
                 panelWidthIn={size.widthIn}
