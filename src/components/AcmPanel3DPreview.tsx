@@ -14,7 +14,7 @@ import {
 
 /** Preview viewport height (px). */
 const PREVIEW_H = 360;
-const PREVIEW_H_COMPACT = 260;
+const PREVIEW_H_COMPACT = 240;
 /** Same visual scale as prior CSS preview (inches → scene units). */
 const INCH_TO_WORLD = 0.05;
 

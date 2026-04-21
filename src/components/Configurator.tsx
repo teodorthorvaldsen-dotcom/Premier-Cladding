@@ -361,10 +361,10 @@ export function Configurator() {
           className="md:col-span-5 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div
-            className="md:sticky md:top-6 lg:top-8 md:max-h-[calc(100dvh-7.5rem)] md:overflow-hidden"
+            className="md:sticky md:top-6 lg:top-8"
           >
-            <div className="flex flex-col gap-3 lg:gap-4 md:max-h-[calc(100dvh-7.5rem)]">
-              <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-1 lg:space-y-4">
+            <div className="flex flex-col gap-3 lg:gap-4">
+              <div className="space-y-3 pr-0 lg:space-y-4">
                 <AcmPanelFlatPreview
                   panelWidthIn={size.widthIn}
                   panelHeightIn={size.lengthIn}

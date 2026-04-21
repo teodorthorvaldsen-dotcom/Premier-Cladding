@@ -4,7 +4,7 @@ import { useMemo, type CSSProperties } from "react";
 
 const PREVIEW_W = 520;
 const PREVIEW_H = 300;
-const PREVIEW_H_COMPACT = 220;
+const PREVIEW_H_COMPACT = 190;
 
 const FLAT_LEN_SCALE = 3.2;
 const FLAT_WIDTH_SCALE = 6;
