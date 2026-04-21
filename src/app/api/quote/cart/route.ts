@@ -4,8 +4,6 @@ import { normalizeBoxTraySides } from "@/lib/boxTray";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { colors, finishes, thicknesses } from "@/data/acm";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
 
 const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
 
@@ -66,51 +64,6 @@ function safePreviewDataUrl(s: unknown): string | undefined {
     return s;
   }
   return undefined;
-}
-
-function baseUrlFromRequest(req: NextRequest): string | null {
-  const env = process.env.PUBLIC_SITE_URL?.trim();
-  if (env && /^https?:\/\//i.test(env)) return env.replace(/\/+$/, "");
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  if (!host) return null;
-  return `${proto}://${host}`.replace(/\/+$/, "");
-}
-
-function decodePreviewDataUrl(dataUrl: string): { bytes: Buffer; ext: ".jpg" | ".png" | ".webp" } | null {
-  const m = dataUrl.match(/^data:image\/(jpeg|png|webp);base64,(.+)$/);
-  if (!m) return null;
-  const kind = m[1];
-  const b64 = m[2];
-  const bytes = Buffer.from(b64, "base64");
-  if (!bytes.length) return null;
-  const ext = kind === "png" ? ".png" : kind === "webp" ? ".webp" : ".jpg";
-  return { bytes, ext };
-}
-
-async function persistPreviewAndGetUrl(
-  req: NextRequest,
-  orderId: string,
-  itemIndex: number,
-  dataUrl: unknown
-): Promise<string | undefined> {
-  const safe = safePreviewDataUrl(dataUrl);
-  if (!safe) return undefined;
-  const decoded = decodePreviewDataUrl(safe);
-  if (!decoded) return undefined;
-
-  // Hard cap (bytes) to avoid huge filesystem writes.
-  if (decoded.bytes.length > 1_600_000) return undefined;
-
-  const dir = path.join(process.cwd(), "data", "email-previews");
-  await mkdir(dir, { recursive: true });
-  const id = `${orderId}-${itemIndex}-${Date.now().toString(36)}`;
-  const filePath = path.join(dir, `${id}${decoded.ext}`);
-  await writeFile(filePath, decoded.bytes);
-
-  const baseUrl = baseUrlFromRequest(req);
-  if (!baseUrl) return undefined;
-  return `${baseUrl}/api/preview/${id}`;
 }
 
 function escapeHtml(s: string): string {
@@ -176,7 +129,7 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
           : "";
       const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
       const previewBlock = previewUrl
-        ? `<div style="margin-bottom:8px;"><img src="${escapeHtml(previewUrl)}" alt="Panel preview" width="260" style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#f4f5f7" /></div>`
+        ? `<div style="margin-bottom:8px;"><img src="${previewUrl}" alt="Panel preview" width="260" style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#f4f5f7" /></div>`
         : "";
       const specBlock = i.trayBuildSpec
         ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(i.trayBuildSpec)}</pre>`
@@ -259,7 +212,7 @@ function buildCartCustomerEmailHtml(payload: CartQuotePayload): string {
       const lineSqFt = i.areaFt2 * i.quantity;
       const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
       const previewBlock = previewUrl
-        ? `<div style="margin:0 0 10px 0;"><img src="${escapeHtml(previewUrl)}" alt="Panel preview" width="360" style="max-width:100%;height:auto;border:1px solid #e5e7eb;border-radius:10px;background:#f4f5f7" /></div>`
+        ? `<div style="margin:0 0 10px 0;"><img src="${previewUrl}" alt="Panel preview" width="360" style="max-width:100%;height:auto;border:1px solid #e5e7eb;border-radius:10px;background:#f4f5f7" /></div>`
         : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       const customBlock =
@@ -324,21 +277,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const orderId = `ORD-Q-${Date.now().toString(36)}`;
-
-    const itemsWithHostedPreviews: CartQuoteItem[] = await Promise.all(
-      body.items.map(async (it: CartQuoteItem, idx: number) => {
-        try {
-          const hosted = await persistPreviewAndGetUrl(request, orderId, idx + 1, it.previewImageDataUrl);
-          return hosted ? { ...it, previewImageDataUrl: hosted } : it;
-        } catch {
-          return it;
-        }
-      })
-    );
-
     const payload: CartQuotePayload = {
-      items: itemsWithHostedPreviews,
+      items: body.items,
       fullName: body.fullName,
       company: body.company ?? "",
       email: body.email,
@@ -349,6 +289,8 @@ export async function POST(request: NextRequest) {
       paymentMethod: body.paymentMethod === "credit" ? "credit" : "wire",
       signature: body.signature.trim(),
     };
+
+    const orderId = `ORD-Q-${Date.now().toString(36)}`;
 
     const businessRecipients = Array.from(
       new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
