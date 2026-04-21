@@ -60,6 +60,10 @@ export interface AcmPanel3DPreviewProps {
   workspaceLayout?: boolean;
   /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
   compact?: boolean;
+  /** Fixed preview viewport height (px). Overrides compact/default sizing when set (non-workspace layouts). */
+  previewHeightPx?: number;
+  /** Stretch the card to fill a parent flex column (preview grows; returns list scrolls if needed). */
+  fill?: boolean;
 }
 
 type BuiltPart = {
@@ -630,6 +634,8 @@ export function AcmPanel3DPreview({
   expandedViewport = false,
   workspaceLayout = false,
   compact = false,
+  previewHeightPx,
+  fill = false,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -664,20 +670,31 @@ export function AcmPanel3DPreview({
 
   const viewportShell = workspaceLayout
     ? "relative min-h-0 flex-1 overflow-hidden bg-[#f4f5f7]"
-    : "relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7]";
+    : `relative mx-auto mt-3 overflow-hidden rounded-xl border border-gray-100 bg-[#f4f5f7] ${
+        fill ? "min-h-0 w-full max-w-none flex-1" : ""
+      }`;
+
+  const resolvedPreviewH =
+    typeof previewHeightPx === "number" && Number.isFinite(previewHeightPx)
+      ? previewHeightPx
+      : compact
+        ? PREVIEW_H_COMPACT
+        : PREVIEW_H;
 
   const viewportStyle = workspaceLayout
     ? undefined
     : expandedViewport
       ? { height: 420, width: "100%", maxWidth: "min(100%, 56rem)" }
-      : { height: compact ? PREVIEW_H_COMPACT : PREVIEW_H, maxWidth: 520 };
+      : { height: resolvedPreviewH, maxWidth: 520 };
 
   return (
     <section
       className={
         workspaceLayout
           ? "flex h-full min-h-0 flex-col bg-white"
-          : "rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
+          : `rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4 ${
+              fill ? "flex h-full min-h-0 flex-col" : ""
+            }`
       }
       aria-labelledby="acm-panel-3d-preview-heading"
     >
@@ -763,7 +780,11 @@ export function AcmPanel3DPreview({
           ) : null}
         </div>
       ) : (
-        <div className="mt-3 border-t border-gray-100 pt-3">
+        <div
+          className={`mt-3 border-t border-gray-100 pt-3 ${
+            fill ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""
+          }`}
+        >
           <p className="text-center text-[15px] font-medium text-gray-800" title={measurementsTitle}>
             <span className="tabular-nums">{sizeHeadline}</span>
             <span className="text-gray-400"> · </span>
@@ -774,7 +795,11 @@ export function AcmPanel3DPreview({
               <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 Returns
               </p>
-              <ol className="list-decimal space-y-2 border border-gray-100 bg-gray-50/90 px-4 py-3 text-left text-[13px] text-gray-800 sm:px-5 marker:font-semibold marker:text-gray-500">
+              <ol
+                className={`list-decimal space-y-2 border border-gray-100 bg-gray-50/90 px-4 py-3 text-left text-[13px] text-gray-800 sm:px-5 marker:font-semibold marker:text-gray-500 ${
+                  fill ? "max-h-44 overflow-y-auto overscroll-contain sm:max-h-52" : ""
+                }`}
+              >
                 {measurementLines.map((line, i) => (
                   <li key={i} className="leading-snug">
                     {line}

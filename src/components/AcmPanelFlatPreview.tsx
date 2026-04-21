@@ -20,6 +20,10 @@ export interface AcmPanelFlatPreviewProps {
   panelSwatchImage?: string;
   /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
   compact?: boolean;
+  /** Fixed preview viewport height (px). Overrides compact/default sizing when set. */
+  previewHeightPx?: number;
+  /** Stretch the card to fill a parent flex column (card grows; viewport height still uses previewHeightPx). */
+  fill?: boolean;
 }
 
 export function AcmPanelFlatPreview({
@@ -30,8 +34,15 @@ export function AcmPanelFlatPreview({
   panelColorName,
   panelSwatchImage,
   compact = false,
+  previewHeightPx,
+  fill = false,
 }: AcmPanelFlatPreviewProps) {
-  const previewH = compact ? PREVIEW_H_COMPACT : PREVIEW_H;
+  const previewH =
+    typeof previewHeightPx === "number" && Number.isFinite(previewHeightPx)
+      ? previewHeightPx
+      : compact
+        ? PREVIEW_H_COMPACT
+        : PREVIEW_H;
   const scaled = useMemo(() => {
     const baseW = panelWidthIn * FLAT_WIDTH_SCALE;
     const baseH = panelHeightIn * FLAT_LEN_SCALE;
@@ -68,7 +79,9 @@ export function AcmPanelFlatPreview({
 
   return (
     <section
-      className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4"
+      className={`rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-4 ${
+        fill ? "flex h-full min-h-0 flex-col" : ""
+      }`}
       aria-labelledby="acm-panel-flat-preview-heading"
     >
       <h2
