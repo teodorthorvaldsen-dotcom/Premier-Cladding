@@ -358,27 +358,25 @@ export function Configurator() {
 
         <div
           id="estimate"
-          className="md:col-span-5 md:self-start scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+          className="md:col-span-5 md:self-start md:sticky md:top-6 lg:top-8 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
         >
           <div className="flex flex-col gap-3 lg:gap-4">
             <div className="space-y-3 pr-0 lg:space-y-4">
-              <div className="md:sticky md:top-6 lg:top-8 md:z-10 md:bg-[#f9fafb] md:pb-3">
-                <AcmPanelFlatPreview
-                  panelWidthIn={size.widthIn}
-                  panelHeightIn={size.lengthIn}
-                  panelDepthIn={previewDepthIn}
-                  panelColorHex={color.swatchHex}
-                  panelColorName={color.name}
-                  compact
-                  scale={2}
-                  panelSwatchImage={
-                    "swatchImage" in color &&
-                    typeof (color as { swatchImage?: string }).swatchImage === "string"
-                      ? (color as { swatchImage: string }).swatchImage
-                      : undefined
-                  }
-                />
-              </div>
+              <AcmPanelFlatPreview
+                panelWidthIn={size.widthIn}
+                panelHeightIn={size.lengthIn}
+                panelDepthIn={previewDepthIn}
+                panelColorHex={color.swatchHex}
+                panelColorName={color.name}
+                compact
+                scale={2}
+                panelSwatchImage={
+                  "swatchImage" in color &&
+                  typeof (color as { swatchImage?: string }).swatchImage === "string"
+                    ? (color as { swatchImage: string }).swatchImage
+                    : undefined
+                }
+              />
               <AcmPanel3DPreview
                 panelWidthIn={size.widthIn}
                 panelHeightIn={size.lengthIn}
