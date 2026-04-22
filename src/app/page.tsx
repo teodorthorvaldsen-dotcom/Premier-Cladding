@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactForm } from "@/components/ContactForm";
 
 const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
 const BUSINESS_PHONE = "+1 (706) 464-7953";
@@ -198,6 +199,7 @@ export default function HomePage() {
               {BUSINESS_PHONE}
             </a>
           </p>
+          <ContactForm />
         </div>
       </section>
     </div>

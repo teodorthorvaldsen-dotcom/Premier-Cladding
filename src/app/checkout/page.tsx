@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
 import { ORDER_PROCESS_STEPS } from "@/lib/orderProcess";
 import { cartItemLineTotal, type CartItem } from "@/types/cart";
@@ -19,6 +20,7 @@ function formatUSD(n: number): string {
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
+  const { isStaff, loading: sessionLoading } = usePortalSession();
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
   const [submitting, setSubmitting] = useState(false);
@@ -92,20 +94,23 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Checkout</h1>
         <p className="mt-2 text-[15px] text-gray-500">Your cart is empty.</p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+        {sessionLoading ? (
+          <p className="mt-8 text-sm text-gray-500">Loading…</p>
+        ) : isStaff ? (
           <Link
             href="/products/acm-panels"
-            className="inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
-            ACM panel configurator
+            Configure panels
           </Link>
+        ) : (
           <Link
             href="/consultation"
-            className="inline-flex rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="mt-8 inline-flex rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Request a consultation
           </Link>
-        </div>
+        )}
       </div>
     );
   }
@@ -131,23 +136,30 @@ export default function CheckoutPage() {
             </>
           )}
         </p>
-        <p className="mt-4 text-sm text-gray-600">
-          We will follow up at <strong>{submittedEmail}</strong> with any questions and your finalized quote.
-        </p>
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left text-[15px] text-gray-700">
+          <p className="font-medium text-gray-900">What happens next</p>
+          <p className="mt-2">
+            We received your request for <strong>{submittedEmail}</strong>. Our team will follow up by email with your
+            finalized quote and any questions.
+          </p>
+        </div>
+        {sessionLoading ? (
+          <p className="mt-8 text-sm text-gray-500">Loading…</p>
+        ) : isStaff ? (
           <Link
             href="/products/acm-panels"
-            className="inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="mt-8 inline-block rounded-xl bg-gray-900 px-6 py-4 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Return to configurator
           </Link>
+        ) : (
           <Link
             href="/"
-            className="inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="mt-8 inline-block rounded-xl border-2 border-gray-900 bg-white px-6 py-4 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Back to home
           </Link>
-        </div>
+        )}
       </div>
     );
   }

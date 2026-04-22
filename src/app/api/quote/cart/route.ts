@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { buildPortalOrderFromCartQuote } from "@/lib/portalOrders";
+import { appendDynamicQuoteOrder } from "@/lib/portalPersistence";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { colors, finishes, thicknesses } from "@/data/acm";
@@ -54,24 +56,29 @@ function formatUSD(n: number): string {
   }).format(n);
 }
 
-function safePreviewDataUrl(s: unknown): string | undefined {
-  if (typeof s !== "string" || s.length > 2_800_000) return undefined;
-  if (
-    s.startsWith("data:image/jpeg;base64,") ||
-    s.startsWith("data:image/png;base64,") ||
-    s.startsWith("data:image/webp;base64,")
-  ) {
-    return s;
-  }
-  return undefined;
-}
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function resendErrorMessage(e: unknown): string {
+  if (e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string") {
+    return (e as { message: string }).message;
+  }
+  return "Failed to send email.";
+}
+
+function truncateForEmail(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return `${s.slice(0, max)}\n\n…(truncated for email)`;
+}
+
+function isValidEmail(s: string): boolean {
+  const t = s.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
 }
 
 function getColorLabel(colorId: string): { name: string; code: string } {
@@ -127,12 +134,13 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
               }
             </div>`
           : "";
-      const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
-      const previewBlock = previewUrl
-        ? `<div style="margin-bottom:8px;"><img src="${previewUrl}" alt="Panel preview" width="260" style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#f4f5f7" /></div>`
+      const previewBlock = i.previewImageDataUrl
+        ? `<div style="margin-bottom:8px;font-size:12px;color:#666;">3D preview was submitted with this line (omitted from email).</div>`
         : "";
-      const specBlock = i.trayBuildSpec
-        ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(i.trayBuildSpec)}</pre>`
+      const specRaw = typeof i.trayBuildSpec === "string" ? i.trayBuildSpec : "";
+      const specTrimmed = specRaw ? truncateForEmail(specRaw, 12_000) : "";
+      const specBlock = specTrimmed
+        ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(specTrimmed)}</pre>`
         : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       let revitBlock = "";
@@ -199,9 +207,11 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
 `;
 }
 
-function buildCartCustomerEmailHtml(payload: CartQuotePayload): string {
+function buildCartCustomerEmailHtml(payload: CartQuotePayload, orderId: string): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
+  const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
+
   const itemsHtml = payload.items
     .map((i) => {
       const color = getColorLabel(i.colorId);
@@ -210,9 +220,8 @@ function buildCartCustomerEmailHtml(payload: CartQuotePayload): string {
       const unit = i.unitPrice;
       const lineTotal = i.unitPrice * i.quantity;
       const lineSqFt = i.areaFt2 * i.quantity;
-      const previewUrl = safePreviewDataUrl(i.previewImageDataUrl);
-      const previewBlock = previewUrl
-        ? `<div style="margin:0 0 10px 0;"><img src="${previewUrl}" alt="Panel preview" width="360" style="max-width:100%;height:auto;border:1px solid #e5e7eb;border-radius:10px;background:#f4f5f7" /></div>`
+      const previewBlock = i.previewImageDataUrl
+        ? `<div style="margin:0 0 10px 0;font-size:12px;color:#6b7280;">3D preview was submitted with this line (omitted from email).</div>`
         : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       const customBlock =
@@ -239,18 +248,29 @@ function buildCartCustomerEmailHtml(payload: CartQuotePayload): string {
       </div>`;
     })
     .join("");
+
+  const customerNotes = payload.notes ? truncateForEmail(payload.notes, 4_000) : "";
+
   return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111827; max-width: 680px;">
-  <h2 style="margin-bottom: 0.25em;">Estimate Request Received</h2>
-  <p style="margin-top:0;color:#4b5563;">Hi ${escapeHtml(payload.fullName)}, we received your request. Here’s a copy of your order summary.</p>
+  <h2 style="margin-bottom: 0.25em;">Estimate request received</h2>
+  <p style="margin-top:0;color:#4b5563;">Hi ${escapeHtml(payload.fullName)}, we received your request. Below is a copy of what you submitted.</p>
+
+  <div style="margin:16px 0;padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;background:#fafafa;">
+    <div style="font-size:13px;color:#374151;margin-bottom:6px;"><strong>Request ID:</strong> ${escapeHtml(orderId)}</div>
+    <div style="font-size:13px;color:#374151;margin-bottom:6px;"><strong>Preferred payment:</strong> ${escapeHtml(paymentLabel)}</div>
+    <div style="font-size:13px;color:#374151;margin-bottom:6px;"><strong>Project:</strong> ${escapeHtml(payload.projectCity)}, ${escapeHtml(payload.projectState)}</div>
+    ${payload.company ? `<div style="font-size:13px;color:#374151;"><strong>Company:</strong> ${escapeHtml(payload.company)}</div>` : ""}
+  </div>
 
   <h3 style="margin: 18px 0 8px 0; font-size: 1em;">Order summary</h3>
   <div style="border-top:1px solid #eef2f7;">${itemsHtml}</div>
 
   <p style="margin-top:14px;"><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
+  ${customerNotes ? `<p style="margin-top:12px;color:#374151;"><strong>Your notes:</strong><br><span style="white-space:pre-wrap;">${escapeHtml(customerNotes)}</span></p>` : ""}
   <p style="color:#4b5563;font-size:13px;">Final pricing will be confirmed after we verify inventory and prepare your estimate.</p>
   <p style="color: #6b7280; font-size: 0.9em;">— Premier Cladding</p>
 </body>
@@ -291,10 +311,35 @@ export async function POST(request: NextRequest) {
     };
 
     const orderId = `ORD-Q-${Date.now().toString(36)}`;
+    try {
+      const order = buildPortalOrderFromCartQuote({
+        orderId,
+        customerId: `guest-${orderId}`,
+        payload: {
+          fullName: payload.fullName,
+          company: payload.company,
+          email: payload.email,
+          phone: payload.phone,
+          projectCity: payload.projectCity,
+          projectState: payload.projectState,
+        },
+        items: payload.items,
+      });
+      appendDynamicQuoteOrder(order);
+    } catch (e) {
+      console.error("[Cart quote portal persist]", e);
+    }
 
-    const businessRecipients = Array.from(
-      new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
-    ) as string[];
+    let businessRecipients = Array.from(
+      new Set(
+        [ORDER_COPY_EMAIL, process.env.BUSINESS_EMAIL?.trim()]
+          .filter((x): x is string => typeof x === "string" && isValidEmail(x))
+          .map((x) => x.trim().toLowerCase())
+      )
+    );
+    if (businessRecipients.length === 0) {
+      businessRecipients = [ORDER_COPY_EMAIL.trim().toLowerCase()];
+    }
 
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.EMAIL_FROM;
@@ -303,30 +348,39 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
-      // Two sends: full line-item HTML to the business inbox(es), and a matching summary to the customer.
-      const [businessResult, customerResult] = await Promise.all([
-        resend.emails.send({
-          from: fromEmail,
-          to: businessRecipients,
-          subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
-          html: buildCartEmailHtml(payload),
-        }),
-        resend.emails.send({
-          from: fromEmail,
-          to: payload.email,
-          subject: "Quote Request Received – Premier Cladding",
-          html: buildCartCustomerEmailHtml(payload),
-        }),
-      ]);
+      const teamHtml = buildCartEmailHtml(payload);
+      const customerHtml = buildCartCustomerEmailHtml(payload, orderId);
 
-      if (businessResult.error || customerResult.error) {
-        const err = businessResult.error ?? customerResult.error;
-        console.error("[Cart quote email error]", err);
+      const businessResult = await resend.emails.send({
+        from: fromEmail,
+        to: businessRecipients,
+        replyTo: payload.email.trim(),
+        subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
+        html: teamHtml,
+      });
+
+      if (businessResult.error) {
+        console.error("[Cart quote email error] team notification", businessResult.error);
         return NextResponse.json(
-          { error: "Failed to send email. Please try again." },
+          { error: resendErrorMessage(businessResult.error) },
           { status: 500 }
         );
       }
+
+      const customerResult = await resend.emails.send({
+        from: fromEmail,
+        to: [payload.email.trim()],
+        subject: `Estimate request received – ${orderId}`,
+        html: customerHtml,
+      });
+      if (customerResult.error) {
+        console.error("[Cart quote email error] customer confirmation", customerResult.error);
+        return NextResponse.json(
+          { error: resendErrorMessage(customerResult.error) },
+          { status: 500 }
+        );
+      }
+
       emailSent = true;
     } else {
       console.warn(

@@ -32,8 +32,21 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function resendErrorMessage(e: unknown): string {
+  if (e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string") {
+    return (e as { message: string }).message;
+  }
+  return "Failed to send email.";
+}
+
+function truncateForEmail(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return `${s.slice(0, max)}\n\n…(truncated for email)`;
+}
+
 function buildBusinessEmailHtml(payload: ConsultationPayload): string {
   const typeLabel = REQUEST_TYPE_LABELS[payload.requestType] ?? payload.requestType;
+  const notes = payload.notes ? truncateForEmail(payload.notes, 12_000) : "";
   return `
 <!DOCTYPE html>
 <html>
@@ -51,7 +64,7 @@ function buildBusinessEmailHtml(payload: ConsultationPayload): string {
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Project</td><td>${escapeHtml(payload.projectCity)}, ${escapeHtml(payload.projectState)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Timeline</td><td>${escapeHtml(payload.desiredTimeline)}</td></tr>
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Request type</td><td>${escapeHtml(typeLabel)}</td></tr>
-    ${payload.notes ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Notes</td><td>${escapeHtml(payload.notes)}</td></tr>` : ""}
+    ${notes ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Notes</td><td>${escapeHtml(notes)}</td></tr>` : ""}
     ${payload.uploadedFilenames?.length ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Uploaded files</td><td>${payload.uploadedFilenames.map((f) => escapeHtml(f)).join(", ")}</td></tr>` : ""}
   </table>
 
@@ -68,13 +81,27 @@ function buildCustomerEmailHtml(payload: ConsultationPayload): string {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 600px;">
-  <h2 style="margin-bottom: 0.5em;">Consultation Request Received</h2>
+  <h2 style="color: #1a1a1a;">Consultation Request Received</h2>
   <p>Dear ${escapeHtml(payload.fullName)},</p>
-  <p>Thank you for your consultation request. We have received your submission. Our team of general contractors and structural engineers will review it and respond in 1–3 business days.</p>
+  <p>Thank you for reaching out to Cladding Solutions. We have received your request and our team will review it shortly.</p>
 
-  <p><strong>Request type:</strong> ${escapeHtml(typeLabel)}</p>
-  ${payload.uploadedFilenames?.length ? `<p><strong>Files received:</strong> ${payload.uploadedFilenames.map((f) => escapeHtml(f)).join(", ")}</p>` : ""}
-  <p style="color: #666; font-size: 0.9em;">— Cladding Solutions</p>
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #eee; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #444; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Order Summary</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr><td style="padding: 8px 0; color: #666; width: 120px;">Request Type:</td><td style="font-weight: 500;">${escapeHtml(typeLabel)}</td></tr>
+      <tr><td style="padding: 8px 0; color: #666;">Project:</td><td>${escapeHtml(payload.projectCity)}, ${escapeHtml(payload.projectState)}</td></tr>
+      <tr><td style="padding: 8px 0; color: #666;">Timeline:</td><td>${escapeHtml(payload.desiredTimeline)}</td></tr>
+      ${payload.company ? `<tr><td style="padding: 8px 0; color: #666;">Company:</td><td>${escapeHtml(payload.company)}</td></tr>` : ""}
+      ${payload.notes ? `<tr><td style="padding: 8px 0; color: #666; vertical-align: top;">Notes:</td><td style="white-space: pre-wrap;">${escapeHtml(payload.notes)}</td></tr>` : ""}
+    </table>
+  </div>
+
+  <p>Our team of general contractors and structural engineers will respond to you within 1–3 business days.</p>
+  
+  <p style="margin-top: 30px; font-size: 0.9em; color: #888; border-top: 1px solid #eee; padding-top: 15px;">
+    Best regards,<br>
+    <strong>Cladding Solutions Team</strong>
+  </p>
 </body>
 </html>
 `;
@@ -92,10 +119,11 @@ function validatePayload(body: unknown): body is ConsultationPayload {
   const o = body as Record<string, unknown>;
   return (
     typeof o.fullName === "string" &&
+    o.fullName.trim().length > 0 &&
     typeof o.email === "string" &&
-    o.email.includes("@") &&
+    isValidEmail(o.email) &&
     typeof o.requestType === "string" &&
-    o.requestType.length > 0
+    o.requestType.trim().length > 0
   );
 }
 
@@ -104,6 +132,14 @@ function sanitizeFilename(name: string): string {
 }
 
 const UPLOAD_DIR = path.join(process.cwd(), "tmp", "consultation-uploads");
+
+/** Basic RFC‑5322–style check; rejects "@", whitespace-only locals, etc. */
+function isValidEmail(s: string): boolean {
+  const t = s.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
+}
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -133,15 +169,15 @@ export async function POST(request: NextRequest) {
     }
 
     const payload: ConsultationPayload = {
-      fullName: parsed.fullName,
-      company: parsed.company ?? "",
-      email: parsed.email,
-      phone: parsed.phone ?? "",
-      projectCity: parsed.projectCity ?? "",
-      projectState: parsed.projectState ?? "",
-      desiredTimeline: parsed.desiredTimeline ?? "",
-      requestType: parsed.requestType,
-      notes: parsed.notes ?? "",
+      fullName: String(parsed.fullName).trim(),
+      company: typeof parsed.company === "string" ? parsed.company.trim() : "",
+      email: String(parsed.email).trim(),
+      phone: typeof parsed.phone === "string" ? parsed.phone.trim() : "",
+      projectCity: typeof parsed.projectCity === "string" ? parsed.projectCity.trim() : "",
+      projectState: typeof parsed.projectState === "string" ? parsed.projectState.trim() : "",
+      desiredTimeline: typeof parsed.desiredTimeline === "string" ? parsed.desiredTimeline.trim() : "",
+      requestType: String(parsed.requestType).trim(),
+      notes: typeof parsed.notes === "string" ? parsed.notes : "",
     };
 
     const files = formData.getAll("files").filter((v): v is File => v instanceof File);
@@ -155,7 +191,11 @@ export async function POST(request: NextRequest) {
     const prefix = `${Date.now()}-`;
     const uploadedFilenames: string[] = [];
 
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size === 0) {
+        return NextResponse.json({ error: `Empty file not allowed: ${file.name}` }, { status: 400 });
+      }
       if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json(
           { error: `Invalid file type: ${file.name}. Use PDF, PNG, or JPG.` },
@@ -169,7 +209,7 @@ export async function POST(request: NextRequest) {
         );
       }
       const safeName = sanitizeFilename(file.name);
-      const storedName = `${prefix}${safeName}`;
+      const storedName = `${prefix}${i}-${safeName}`;
       const filePath = path.join(uploadDir, storedName);
       const buffer = Buffer.from(await file.arrayBuffer());
       await writeFile(filePath, buffer);
@@ -180,34 +220,55 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.EMAIL_FROM;
+    let businessRecipients = Array.from(
+      new Set(
+        [ORDER_COPY_EMAIL, process.env.BUSINESS_EMAIL?.trim()]
+          .filter((x): x is string => typeof x === "string" && isValidEmail(x))
+          .map((x) => x.trim().toLowerCase())
+      )
+    );
+    if (businessRecipients.length === 0) {
+      businessRecipients = [ORDER_COPY_EMAIL.trim().toLowerCase()];
+    }
 
     if (apiKey && fromEmail) {
-      const businessRecipients = Array.from(
-        new Set([process.env.BUSINESS_EMAIL, ORDER_COPY_EMAIL].filter(Boolean))
-      ) as string[];
-
       const resend = new Resend(apiKey);
-      const [businessResult, customerResult] = await Promise.all([
-        resend.emails.send({
-          from: fromEmail,
-          to: businessRecipients,
-          subject: `Consultation: ${payload.fullName} – ${REQUEST_TYPE_LABELS[payload.requestType] ?? payload.requestType}`,
-          html: buildBusinessEmailHtml(payload),
-        }),
-        resend.emails.send({
-          from: fromEmail,
-          to: payload.email,
-          subject: "Consultation Request Received – Cladding Solutions",
-          html: buildCustomerEmailHtml(payload),
-        }),
-      ]);
+      const teamHtml = buildBusinessEmailHtml(payload);
+      const customerHtml = buildCustomerEmailHtml(payload);
+      const subjectTeam = `Consultation: ${payload.fullName} – ${REQUEST_TYPE_LABELS[payload.requestType] ?? payload.requestType}`;
 
-      if (businessResult.error || customerResult.error) {
-        const err = businessResult.error ?? customerResult.error;
-        console.error("[Consultation email error]", err);
+      const businessResult = await resend.emails.send({
+        from: fromEmail,
+        to: businessRecipients,
+        replyTo: payload.email.trim(),
+        subject: subjectTeam,
+        html: teamHtml,
+      });
+
+      if (businessResult.error) {
+        console.error("[Consultation email error] team notification", businessResult.error);
+        return NextResponse.json({ error: resendErrorMessage(businessResult.error) }, { status: 500 });
+      }
+
+      const customerResult = await resend.emails.send({
+        from: fromEmail,
+        to: [payload.email.trim()],
+        subject: "Consultation Request Received – Cladding Solutions",
+        html: customerHtml,
+      });
+
+      if (customerResult.error) {
+        console.error("[Consultation email error] customer confirmation", customerResult.error);
+        return NextResponse.json({ error: resendErrorMessage(customerResult.error) }, { status: 500 });
       }
     } else {
-      console.log("[Consultation] Email not configured. Payload:", payload);
+      return NextResponse.json(
+        {
+          error: "Mangler konfigurasjon",
+          debug: { hasApiKey: !!apiKey, hasFrom: !!fromEmail },
+        },
+        { status: 500 }
+      );
     }
 
     const record = {
@@ -222,8 +283,8 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error("[Consultation API error]", e);
     return NextResponse.json(
-      { error: "Invalid request or server error." },
-      { status: 400 }
+      { error: "Server error while processing your request." },
+      { status: 500 }
     );
   }
 }
