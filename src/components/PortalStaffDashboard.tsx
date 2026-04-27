@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PortalStaffOrderControls } from "@/components/PortalStaffOrderControls";
 import PortalSubcontractorComplianceForm from "@/components/PortalSubcontractorComplianceForm";
 import type { OrderRecord } from "@/lib/demoData";
@@ -266,16 +266,21 @@ export function PortalStaffDashboard({
   const [tab, setTab] = useState<Tab>("orders");
   const [sectionOverrides, setSectionOverrides] = useState<Record<string, PortalOrderSection>>({});
 
-  useEffect(() => {
+  /** Load persisted column placement before paint so orders do not briefly appear in the wrong column. */
+  useLayoutEffect(() => {
     setSectionOverrides(loadSectionOverrides());
   }, []);
 
+  useEffect(() => {
+    const onFocus = () => setSectionOverrides(loadSectionOverrides());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   const onMove = useCallback((orderId: string, next: PortalOrderSection) => {
-    setSectionOverrides((prev) => {
-      const updated = { ...prev, [orderId]: next };
-      saveSectionOverrides(updated);
-      return updated;
-    });
+    const merged = { ...loadSectionOverrides(), [orderId]: next };
+    saveSectionOverrides(merged);
+    setSectionOverrides(merged);
   }, []);
 
   const grouped = useMemo(() => {
