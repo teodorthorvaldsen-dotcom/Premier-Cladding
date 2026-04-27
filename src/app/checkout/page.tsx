@@ -123,7 +123,7 @@ export default function CheckoutPage() {
             <>
               Your estimate request has been received. A confirmation message is being sent to the email address you
               provided. If it does not appear in your inbox shortly, please check your spam or junk folder—automated mail
-              is occasionally filtered. Allow up to 24 hours for delivery before following up.
+              is occasionally filtered.
             </>
           ) : (
             <>
