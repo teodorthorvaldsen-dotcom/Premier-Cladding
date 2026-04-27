@@ -92,30 +92,10 @@ type InlineImageAttachment = {
   contentId: string;
 };
 
-function siteUrlForEmails(): string | null {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (explicit) return explicit.replace(/\/$/, "");
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
-  return null;
-}
-
-/** Explains that email cannot run WebGL / 3D; optional link to the configurator. */
-function cartEmailPanelPreviewDisclaimerHtml(): string {
-  const base = siteUrlForEmails();
-  const path = "/products/acm-panels";
-  const link =
-    base != null
-      ? `<a href="${escapeHtml(`${base}${path}`)}" style="color:#1f2937;text-decoration:underline;">interactive 3D panel configurator</a>`
-      : "interactive 3D panel configurator on our website";
-  return `<p style="margin-top:14px;padding:12px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:12px;line-height:1.5;color:#4b5563;"><strong>About panel previews:</strong> Email cannot display live, rotatable 3D models. Images in this message are static snapshots from your configuration. To view and rotate panels in 3D, use the ${link}.</p>`;
-}
-
-/** Parse a browser data-URL capture into an inline CID attachment for cart emails. */
+/** Parse a browser data-URL capture into an inline CID attachment for admin email. */
 function previewDataUrlToInlineAttachment(
   raw: unknown,
-  contentId: string,
-  lineIndex: number
+  contentId: string
 ): InlineImageAttachment | null {
   if (typeof raw !== "string" || raw.length < 40 || raw.length > MAX_PREVIEW_DATA_URL_CHARS) {
     return null;
@@ -137,7 +117,7 @@ function previewDataUrlToInlineAttachment(
     }
     if (buf.length === 0 || buf.length > MAX_PREVIEW_IMAGE_BYTES) continue;
     return {
-      filename: `panel-line-${lineIndex}.${ext}`,
+      filename: `panel-preview.${ext}`,
       content: buf,
       contentType: mime,
       contentId,
@@ -154,7 +134,7 @@ function buildCartPreviewInlineAttachments(items: CartQuoteItem[]): {
   const attachments: InlineImageAttachment[] = [];
   items.forEach((item, index) => {
     const cid = `panel-line-${index}`;
-    const att = previewDataUrlToInlineAttachment(item.previewImageDataUrl, cid, index);
+    const att = previewDataUrlToInlineAttachment(item.previewImageDataUrl, cid);
     if (att) {
       attachments.push(att);
       cids.push(cid);
@@ -289,35 +269,27 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
   <p><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
 
   <p style="color: #666; font-size: 0.9em;">Submitted via ACM Panel Cart Checkout.</p>
-  ${cartEmailPanelPreviewDisclaimerHtml()}
 </body>
 </html>
 `;
 }
 
-function buildCartCustomerEmailHtml(
-  payload: CartQuotePayload,
-  orderId: string,
-  previewCids: (string | null)[]
-): string {
+function buildCartCustomerEmailHtml(payload: CartQuotePayload, orderId: string): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
 
   const itemsHtml = payload.items
-    .map((i, rowIndex) => {
+    .map((i) => {
       const color = getColorLabel(i.colorId);
       const thicknessLabel = getThicknessLabel(i.thicknessId);
       const finishLabel = getFinishLabel(i.finishId);
       const unit = i.unitPrice;
       const lineTotal = i.unitPrice * i.quantity;
       const lineSqFt = i.areaFt2 * i.quantity;
-      const cid = previewCids[rowIndex] ?? null;
-      const previewBlock = cid
-        ? `<div style="margin:0 0 10px 0;"><img src="cid:${escapeHtml(cid)}" alt="Panel preview" width="320" style="max-width:100%;height:auto;border:1px solid #e5e7eb;border-radius:10px;background:#f4f5f7;display:block" /></div>`
-        : i.previewImageDataUrl
-          ? `<div style="margin:0 0 10px 0;font-size:12px;color:#6b7280;">A preview was submitted but could not be embedded (too large or unsupported format).</div>`
-          : "";
+      const previewBlock = i.previewImageDataUrl
+        ? `<div style="margin:0 0 10px 0;font-size:12px;color:#6b7280;">3D preview was submitted with this line (omitted from email).</div>`
+        : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       const customBlock =
         i.customColorReference || i.customColorSpecFileName
@@ -367,7 +339,6 @@ function buildCartCustomerEmailHtml(
   <p style="margin-top:14px;"><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
   ${customerNotes ? `<p style="margin-top:12px;color:#374151;"><strong>Your notes:</strong><br><span style="white-space:pre-wrap;">${escapeHtml(customerNotes)}</span></p>` : ""}
   <p style="color:#4b5563;font-size:13px;">Final pricing will be confirmed after we verify inventory and prepare your estimate.</p>
-  ${cartEmailPanelPreviewDisclaimerHtml()}
   <p style="color: #6b7280; font-size: 0.9em;">— Premier Cladding</p>
 </body>
 </html>
@@ -444,18 +415,10 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
-      const { cids: previewCids, attachments: previewAttachments } = buildCartPreviewInlineAttachments(payload.items);
-      const teamHtml = buildCartEmailHtml(payload, previewCids);
-      const customerHtml = buildCartCustomerEmailHtml(payload, orderId, previewCids);
-      const previewAttachmentPayload =
-        previewAttachments.length > 0
-          ? previewAttachments.map((a) => ({
-              filename: a.filename,
-              content: a.content,
-              contentType: a.contentType,
-              contentId: a.contentId,
-            }))
-          : null;
+      const { cids: adminPreviewCids, attachments: adminPreviewAttachments } =
+        buildCartPreviewInlineAttachments(payload.items);
+      const teamHtml = buildCartEmailHtml(payload, adminPreviewCids);
+      const customerHtml = buildCartCustomerEmailHtml(payload, orderId);
 
       const businessResult = await resend.emails.send({
         from: fromEmail,
@@ -463,7 +426,16 @@ export async function POST(request: NextRequest) {
         replyTo: payload.email.trim(),
         subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
         html: teamHtml,
-        ...(previewAttachmentPayload ? { attachments: previewAttachmentPayload } : {}),
+        ...(adminPreviewAttachments.length > 0
+          ? {
+              attachments: adminPreviewAttachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                contentType: a.contentType,
+                contentId: a.contentId,
+              })),
+            }
+          : {}),
       });
 
       const businessAccepted = resendEmailAccepted(businessResult);
@@ -476,7 +448,6 @@ export async function POST(request: NextRequest) {
         to: [payload.email.trim()],
         subject: `Estimate request received – ${orderId}`,
         html: customerHtml,
-        ...(previewAttachmentPayload ? { attachments: previewAttachmentPayload } : {}),
       });
       const customerAccepted = resendEmailAccepted(customerResult);
       if (customerResult.error && !customerAccepted) {
