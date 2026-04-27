@@ -82,6 +82,69 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
 }
 
+const MAX_PREVIEW_DATA_URL_CHARS = 2_800_000;
+const MAX_PREVIEW_IMAGE_BYTES = 900_000;
+
+type InlineImageAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+  contentId: string;
+};
+
+/** Parse a browser data-URL capture into an inline CID attachment for admin email. */
+function previewDataUrlToInlineAttachment(
+  raw: unknown,
+  contentId: string
+): InlineImageAttachment | null {
+  if (typeof raw !== "string" || raw.length < 40 || raw.length > MAX_PREVIEW_DATA_URL_CHARS) {
+    return null;
+  }
+  const rules: { lead: string; ext: string; mime: string }[] = [
+    { lead: "data:image/jpeg;base64,", ext: "jpg", mime: "image/jpeg" },
+    { lead: "data:image/png;base64,", ext: "png", mime: "image/png" },
+    { lead: "data:image/webp;base64,", ext: "webp", mime: "image/webp" },
+  ];
+  for (const { lead, ext, mime } of rules) {
+    if (!raw.startsWith(lead)) continue;
+    const b64 = raw.slice(lead.length).replace(/\s/g, "");
+    if (b64.length < 24) continue;
+    let buf: Buffer;
+    try {
+      buf = Buffer.from(b64, "base64");
+    } catch {
+      continue;
+    }
+    if (buf.length === 0 || buf.length > MAX_PREVIEW_IMAGE_BYTES) continue;
+    return {
+      filename: `panel-preview.${ext}`,
+      content: buf,
+      contentType: mime,
+      contentId,
+    };
+  }
+  return null;
+}
+
+function buildCartPreviewInlineAttachments(items: CartQuoteItem[]): {
+  cids: (string | null)[];
+  attachments: InlineImageAttachment[];
+} {
+  const cids: (string | null)[] = [];
+  const attachments: InlineImageAttachment[] = [];
+  items.forEach((item, index) => {
+    const cid = `panel-line-${index}`;
+    const att = previewDataUrlToInlineAttachment(item.previewImageDataUrl, cid);
+    if (att) {
+      attachments.push(att);
+      cids.push(cid);
+    } else {
+      cids.push(null);
+    }
+  });
+  return { cids, attachments };
+}
+
 function getColorLabel(colorId: string): { name: string; code: string } {
   const c = colors.find((x) => x.id === colorId);
   if (!c) return { name: colorId, code: "" };
@@ -112,12 +175,12 @@ function trayMeasurementsHtml(sidesUnknown: unknown): string {
   return `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#374151;"><div style="font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#6b7280;font-size:11px;margin-bottom:4px;">Measurements</div>${rows}</div>`;
 }
 
-function buildCartEmailHtml(payload: CartQuotePayload): string {
+function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | null)[]): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const rows = payload.items
-    .map((i) => {
+    .map((i, rowIndex) => {
       const color = getColorLabel(i.colorId);
       const thicknessLabel = getThicknessLabel(i.thicknessId);
       const finishLabel = getFinishLabel(i.finishId);
@@ -135,9 +198,12 @@ function buildCartEmailHtml(payload: CartQuotePayload): string {
               }
             </div>`
           : "";
-      const previewBlock = i.previewImageDataUrl
-        ? `<div style="margin-bottom:8px;font-size:12px;color:#666;">3D preview was submitted with this line (omitted from email).</div>`
-        : "";
+      const cid = previewCids[rowIndex] ?? null;
+      const previewBlock = cid
+        ? `<div style="margin-bottom:8px;"><img src="cid:${escapeHtml(cid)}" alt="3D panel preview" width="280" style="max-width:280px;height:auto;border:1px solid #ddd;border-radius:8px;background:#f4f5f7;display:block" /></div>`
+        : i.previewImageDataUrl
+          ? `<div style="margin-bottom:8px;font-size:12px;color:#666;">3D preview was submitted but could not be embedded (too large or unsupported format).</div>`
+          : "";
       const specRaw = typeof i.trayBuildSpec === "string" ? i.trayBuildSpec : "";
       const specTrimmed = specRaw ? truncateForEmail(specRaw, 12_000) : "";
       const specBlock = specTrimmed
@@ -349,7 +415,9 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
-      const teamHtml = buildCartEmailHtml(payload);
+      const { cids: adminPreviewCids, attachments: adminPreviewAttachments } =
+        buildCartPreviewInlineAttachments(payload.items);
+      const teamHtml = buildCartEmailHtml(payload, adminPreviewCids);
       const customerHtml = buildCartCustomerEmailHtml(payload, orderId);
 
       const businessResult = await resend.emails.send({
@@ -358,6 +426,16 @@ export async function POST(request: NextRequest) {
         replyTo: payload.email.trim(),
         subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
         html: teamHtml,
+        ...(adminPreviewAttachments.length > 0
+          ? {
+              attachments: adminPreviewAttachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                contentType: a.contentType,
+                contentId: a.contentId,
+              })),
+            }
+          : {}),
       });
 
       const businessAccepted = resendEmailAccepted(businessResult);
