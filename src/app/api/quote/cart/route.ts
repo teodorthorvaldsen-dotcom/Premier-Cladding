@@ -4,7 +4,6 @@ import { normalizeBoxTraySides } from "@/lib/boxTray";
 import { resendEmailAccepted } from "@/lib/resendResult";
 import { buildPortalOrderFromCartQuote } from "@/lib/portalOrders";
 import { appendDynamicQuoteOrder } from "@/lib/portalPersistence";
-import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { colors, finishes, thicknesses } from "@/data/acm";
 
@@ -193,7 +192,6 @@ function trayMeasurementsHtml(sidesUnknown: unknown): string {
 
 function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | null)[], orderId: string): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
   const workspaceHero = staffAcmWorkspaceUrl(orderId, 0);
   const workspaceHeroBlock = workspaceHero
@@ -210,7 +208,6 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
       const finishLabel = getFinishLabel(i.finishId);
       const unit = i.unitPrice;
       const lineTotal = i.unitPrice * i.quantity;
-      const lineSqFt = i.areaFt2 * i.quantity;
       const extra =
         i.customColorReference || i.customColorSpecFileName
           ? `<div style="margin-top: 6px; font-size: 0.88em; color: #555;">
@@ -234,16 +231,6 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
         ? `<pre style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:6px;font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;color:#333;max-height:280px;overflow:auto">${escapeHtml(specTrimmed)}</pre>`
         : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
-      let revitBlock = "";
-      try {
-        if (Array.isArray(i.boxTraySides)) {
-          const tray = normalizeBoxTraySides(i.boxTraySides as BoxTraySideRow[]);
-          const code = formatRevitTrayExportJson(i.widthIn, i.heightIn, tray);
-          revitBlock = `<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;color:#3730a3;">Revit / BIM JSON (all-cladding-tray-panel/v1)</summary><pre style="margin-top:6px;padding:8px;background:#eef2ff;border-radius:6px;font-size:10px;line-height:1.3;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto">${escapeHtml(code)}</pre></details>`;
-        }
-      } catch {
-        revitBlock = "";
-      }
       const workspaceLine = staffAcmWorkspaceUrl(orderId, rowIndex);
       const workspaceLineBlock = workspaceLine
         ? `<div style="margin-top:8px;"><a href="${escapeHtml(workspaceLine)}" style="font-size:12px;color:#1d4ed8;text-decoration:underline;">Open this line in staff ACM workspace (3D)</a></div>`
@@ -251,11 +238,11 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
       const metaBlock = `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#111827;">
         <div><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
         <div>${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
-        <div>${i.widthIn}″ × ${i.heightIn}″ · ${lineSqFt.toFixed(2)} ft² · Qty ${i.quantity}</div>
+        <div>${i.widthIn}″ × ${i.heightIn}″ · Qty ${i.quantity}</div>
         <div style="margin-top:4px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
       </div>`;
       return `<tr>
-          <td style="padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${workspaceLineBlock}${metaBlock}${measurementsBlock}${extra}${specBlock}${revitBlock}</td>
+          <td style="padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${workspaceLineBlock}${metaBlock}${measurementsBlock}${extra}${specBlock}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(lineTotal)}</td>
@@ -295,7 +282,7 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
     </thead>
     <tbody>${rows}</tbody>
   </table>
-  <p><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
+  <p><strong>Subtotal: ${formatUSD(subtotal)}</strong></p>
 
   <p style="color: #666; font-size: 0.9em;">Submitted via ACM Panel Cart Checkout.</p>
 </body>
@@ -309,7 +296,6 @@ function buildCartCustomerEmailHtml(
   previewCids: (string | null)[]
 ): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
 
   const itemsHtml = payload.items
@@ -319,7 +305,6 @@ function buildCartCustomerEmailHtml(
       const finishLabel = getFinishLabel(i.finishId);
       const unit = i.unitPrice;
       const lineTotal = i.unitPrice * i.quantity;
-      const lineSqFt = i.areaFt2 * i.quantity;
       const cid = previewCids[rowIndex] ?? null;
       const previewBlock = cid
         ? `<div style="margin:0 0 10px 0;"><img src="cid:${escapeHtml(cid)}" alt="Panel preview" width="280" style="max-width:280px;height:auto;border:1px solid #e5e7eb;border-radius:8px;background:#f4f5f7;display:block" /></div>`
@@ -343,7 +328,7 @@ function buildCartCustomerEmailHtml(
         <div style="font-size:14px;color:#111827;">
           <div style="font-weight:700;">${i.widthIn}″ × ${i.heightIn}″${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
           <div style="margin-top:4px;"><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
-          <div style="color:#374151;">${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)} · Qty ${i.quantity} · ${lineSqFt.toFixed(2)} ft²</div>
+          <div style="color:#374151;">${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)} · Qty ${i.quantity}</div>
           <div style="margin-top:6px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
           ${measurementsBlock}
           ${customBlock}
@@ -372,7 +357,7 @@ function buildCartCustomerEmailHtml(
   <h3 style="margin: 18px 0 8px 0; font-size: 1em;">Order summary</h3>
   <div style="border-top:1px solid #eef2f7;">${itemsHtml}</div>
 
-  <p style="margin-top:14px;"><strong>Subtotal: ${formatUSD(subtotal)}</strong> · ${totalSqFt.toFixed(1)} ft² total</p>
+  <p style="margin-top:14px;"><strong>Subtotal: ${formatUSD(subtotal)}</strong></p>
   ${customerNotes ? `<p style="margin-top:12px;color:#374151;"><strong>Your notes:</strong><br><span style="white-space:pre-wrap;">${escapeHtml(customerNotes)}</span></p>` : ""}
   <p style="color:#4b5563;font-size:13px;">Final pricing will be confirmed after we verify inventory and prepare your estimate.</p>
   <p style="color: #6b7280; font-size: 0.9em;">— Premier Cladding</p>

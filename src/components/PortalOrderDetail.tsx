@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { CartItemMeasurementBlock } from "@/components/CartItemMeasurementBlock";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { colors } from "@/data/acm";
 import type { OrderRecord } from "@/lib/demoData";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
@@ -138,9 +137,7 @@ function LineItemCard({
             <p className="text-sm font-medium text-gray-900">
               {describeCartLineItem(item)} <span className="text-gray-500">· Line {index + 1}</span>
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
-            </p>
+            <p className="mt-1 text-xs text-gray-500">{formatUSD(item.unitPrice)} per panel</p>
 
             <div className="mt-3">
               <CartItemMeasurementBlock item={item} />
@@ -175,7 +172,6 @@ function LineItemCard({
               </details>
             ) : null}
 
-            {item.boxTraySides?.length ? <RevitTrayExportBlock item={item} /> : null}
           </div>
         </div>
 
@@ -193,8 +189,6 @@ function LineItemCard({
 export function PortalOrderDetail({ order }: { order: OrderRecord }) {
   const items = useMemo(() => order.cartLineItems ?? [order.lineItem], [order.cartLineItems, order.lineItem]);
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0), [items]);
-  const totalSqFt = useMemo(() => items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0), [items]);
-
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const previewItem = previewItemId ? items.find((i) => i.id === previewItemId) ?? null : null;
 
@@ -209,7 +203,7 @@ export function PortalOrderDetail({ order }: { order: OrderRecord }) {
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Line items</h2>
             <p className="mt-1 text-sm text-gray-600">
-              {items.length} line{items.length === 1 ? "" : "s"} · {totalSqFt.toFixed(1)} ft² total
+              {items.length} line{items.length === 1 ? "" : "s"}
             </p>
           </div>
           <p className="text-sm font-semibold text-gray-900">Subtotal: {formatUSD(subtotal)}</p>

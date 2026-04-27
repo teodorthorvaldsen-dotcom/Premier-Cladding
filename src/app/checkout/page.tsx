@@ -31,7 +31,6 @@ export default function CheckoutPage() {
   const [submittedEmailSent, setSubmittedEmailSent] = useState(true);
 
   const subtotal = items.reduce((sum, i) => sum + cartItemLineTotal(i), 0);
-  const totalSqFt = items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -214,9 +213,7 @@ export default function CheckoutPage() {
                     <p className="text-sm font-medium text-gray-900">
                       {describeCartLineItem(item)} <span className="text-gray-500">× {item.quantity}</span>
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {item.areaFt2.toFixed(2)} ft² per panel · {formatUSD(item.unitPrice)} per panel
-                    </p>
+                    <p className="mt-1 text-xs text-gray-500">{formatUSD(item.unitPrice)} per panel</p>
                     {item.trayBuildSpec ? (
                       <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md bg-gray-50 p-2 text-[11px] leading-snug text-gray-700">
                         {item.trayBuildSpec}
@@ -232,7 +229,7 @@ export default function CheckoutPage() {
           ))}
         </ul>
         <p className="mt-4 border-t border-gray-100 pt-4 text-sm font-semibold text-gray-900">
-          Subtotal: {formatUSD(subtotal)} · {totalSqFt.toFixed(1)} ft² total
+          Subtotal: {formatUSD(subtotal)}
         </p>
         <p className="mt-2 text-[14px] text-gray-500">
           Final cost will be confirmed in your written quote after we check inventory and prepare the estimate.
