@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ContactForm } from "@/components/ContactForm";
 
 const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
@@ -21,27 +20,6 @@ const TRUST_ITEMS = [
   {
     title: "Installation",
     description: "We recommend installers that can bid your project.",
-  },
-];
-
-const PRODUCT_HIGHLIGHTS = [
-  {
-    title: "ACM Panels",
-    description: "Fire-rated aluminum composite material. Configure online and receive a quote.",
-    href: "/products/acm-panels",
-    cta: "Configure & get estimate",
-  },
-  {
-    title: "Custom Shop Drawings",
-    description: "Inquire about purchasing shop drawings prepared by our team.",
-    href: "/custom-shop-drawings",
-    cta: "Inquire about shop drawings",
-  },
-  {
-    title: "Installation",
-    description: "We recommend installers that can bid your project.",
-    href: "/consultation",
-    cta: "Recommend installers",
   },
 ];
 
@@ -102,35 +80,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Product highlights */}
-      <section className="mx-auto max-w-7xl px-4 py-28 sm:px-6 lg:px-8 lg:py-32">
-        <h2 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          Products &amp; services
-        </h2>
-        <p className="mt-2 text-[15px] text-gray-500">
-          Fire-rated ACM panels. Submit drawings for consultation or discuss your project with our team.
-        </p>
-        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {PRODUCT_HIGHLIGHTS.map((card) => (
-            <Link
-              key={card.title}
-              href={card.href}
-              className="group rounded-2xl border border-gray-200/60 bg-white p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-gray-300/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              <h3 className="text-lg font-medium text-gray-900 group-hover:text-gray-800">
-                {card.title}
-              </h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
-                {card.description}
-              </p>
-              <span className="mt-4 inline-block text-[15px] font-medium text-gray-900 group-hover:underline">
-                {card.cta} →
-              </span>
-            </Link>
-          ))}
         </div>
       </section>
 
