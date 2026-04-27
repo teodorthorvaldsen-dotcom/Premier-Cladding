@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const MIN_LENGTH_IN = 12;
 const VALID_WIDTHS_IN = allWidths.map((w) => w.widthIn);
 const VALID_THICKNESS_MM = [4] as const;
-const VALID_PANEL_TYPES = ["basic", "custom"] as const;
+const VALID_PANEL_TYPES = ["basic", "tray"] as const;
 
 function getMaxLengthIn(thicknessMm: number): number {
   return maxLengthByThicknessMm[thicknessMm] ?? 300;
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const lengthIn = clampLength(lengthNum, thicknessMm);
 
     const panelType: PanelType =
-      rawPanelType === "basic" || rawPanelType === "custom" ? rawPanelType : "basic";
+      rawPanelType === "basic" || rawPanelType === "tray" ? rawPanelType : "basic";
 
     const qty = Math.max(1, Math.floor(Number(rawQty)) || 1);
 

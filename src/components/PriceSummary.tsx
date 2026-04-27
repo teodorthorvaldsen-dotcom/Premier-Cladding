@@ -62,7 +62,7 @@ export function PriceSummary({
             Updating price…
           </p>
         )}
-        {pricing.panelType !== "custom" && (
+        {pricing.panelType !== "tray" && (
           <div className={compact ? "mb-3" : "mb-6"}>
             <p
               className={
@@ -87,7 +87,7 @@ export function PriceSummary({
             <dt className="text-gray-600">Total sq ft</dt>
             <dd className="tabular-nums">{pricing.totalSqFt.toFixed(2)} ft²</dd>
           </div>
-          {pricing.panelType !== "custom" && (
+          {pricing.panelType !== "tray" && (
             <div
               className={
                 compact

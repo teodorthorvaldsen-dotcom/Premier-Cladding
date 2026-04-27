@@ -417,7 +417,7 @@ export function Configurator() {
                 className="pb-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
                 <PanelTypePicker value={panelType} onChange={setPanelType} />
-                {panelType === "custom" && (
+                {panelType === "tray" && (
                   <div className="mt-4 rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
                     <p className="text-[15px] text-gray-700">Non-square panels will need drawings.</p>
                     <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-900 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2">

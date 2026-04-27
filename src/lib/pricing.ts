@@ -1,7 +1,7 @@
-export type PanelType = "basic" | "custom";
+export type PanelType = "basic" | "tray";
 
 const PRICE_PER_SQFT_BASIC = 24;
-const PRICE_PER_SQFT_CUSTOM = 40; // estimate provided with final quote
+const PRICE_PER_SQFT_TRAY = 40; // estimate provided with final quote
 
 export interface PricingInput {
   areaFt2: number;
@@ -20,13 +20,13 @@ export interface PricingResult {
 
 const PANEL_TYPE_LABELS: Record<PanelType, string> = {
   basic: "Basic Rectangular",
-  custom: "Custom Fabricated",
+  tray: "Tray / Returns",
 };
 
 export function calculatePricing(input: PricingInput): PricingResult {
   const totalSqFt = input.areaFt2 * input.quantity;
   const pricePerSqFt =
-    input.panelType === "basic" ? PRICE_PER_SQFT_BASIC : PRICE_PER_SQFT_CUSTOM;
+    input.panelType === "basic" ? PRICE_PER_SQFT_BASIC : PRICE_PER_SQFT_TRAY;
   const total = totalSqFt * pricePerSqFt;
 
   return {
