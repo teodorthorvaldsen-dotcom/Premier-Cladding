@@ -1,7 +1,7 @@
 /** Same narrative as checkout “Order process” — single source of truth. */
 export const ORDER_PROCESS_STEPS = [
   "We receive your order.",
-  "A copy is sent to us at allcladdingsolutions@gmail.com.",
+  "A copy is sent to us at premiercladdingsolutions@gmail.com.",
   "Email confirmation is sent to you.",
   "We check inventory and prepare your estimate.",
   "We send you the finalized cost for your signature.",
