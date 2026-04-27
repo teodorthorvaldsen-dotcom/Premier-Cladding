@@ -21,7 +21,7 @@ export function Footer() {
             <ul className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
               <li>
                 <Link
-                  href="/#questions-contact"
+                  href="/about#about-contact"
                   className="text-sm text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset rounded sm:text-base"
                 >
                   Contact

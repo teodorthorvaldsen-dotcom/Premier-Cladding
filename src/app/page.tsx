@@ -1,9 +1,3 @@
-import { ContactForm } from "@/components/ContactForm";
-
-const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
-const BUSINESS_PHONE = "+1 (706) 464-7953";
-const BUSINESS_PHONE_TEL = "+17064647953";
-
 const TRUST_ITEMS = [
   {
     title: "Lead times",
@@ -80,38 +74,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section
-        id="questions-contact"
-        className="border-t border-gray-200 bg-white"
-        aria-labelledby="questions-contact-heading"
-      >
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-          <h2
-            id="questions-contact-heading"
-            className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl"
-          >
-            Questions? Contact us here
-          </h2>
-          <p className="mt-6 text-[15px] text-gray-700">
-            <a
-              href={`mailto:${BUSINESS_EMAIL}`}
-              className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
-            >
-              {BUSINESS_EMAIL}
-            </a>
-          </p>
-          <p className="mt-2 text-[15px] text-gray-700">
-            <a
-              href={`tel:${BUSINESS_PHONE_TEL}`}
-              className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
-            >
-              {BUSINESS_PHONE}
-            </a>
-          </p>
-          <ContactForm />
         </div>
       </section>
     </div>

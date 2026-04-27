@@ -262,7 +262,7 @@ export function ColorSwatches({
             <p className="mt-0.5 text-[15px] text-gray-500">
               Request physical finish samples to review color and appearance under your lighting before you order panels.{" "}
               <Link
-                href="/#questions-contact"
+                href="/about#about-contact"
                 className="font-medium text-blue-900 underline decoration-blue-900/30 underline-offset-2 hover:text-blue-950"
               >
                 Contact us
