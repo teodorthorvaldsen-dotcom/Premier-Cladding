@@ -20,6 +20,11 @@ const DEFAULT_ADMIN = {
   demoPassword: "gator825",
 };
 
+/** Registry rows with these emails are upgraded or removed on seed (see mergeDefaultAdmin). */
+const LEGACY_ADMIN_EMAILS = new Set(
+  ["allcladdingsolutions@gmail.com", "picken.cycle@gmail.com"].map((e) => e.toLowerCase())
+);
+
 /** Staff subcontractor merged if missing (bcrypt hash written to JSON only). */
 const DEFAULT_SUBCONTRACTOR = {
   email: "Subcontractor@gmail.com",
@@ -49,11 +54,16 @@ function readRegistry() {
   }
 }
 
+function normEmail(e) {
+  return typeof e === "string" ? e.trim().toLowerCase() : "";
+}
+
+/**
+ * Ensures one canonical demo admin row. Migrates legacy admin emails in place; drops extra legacy
+ * rows if the canonical admin already exists.
+ * @returns {"added"|"migrated"|"removed-legacy"|false}
+ */
 function mergeDefaultAdmin(registry) {
-  const email = DEFAULT_ADMIN.email.trim().toLowerCase();
-  if (registry.admins.some((a) => typeof a.email === "string" && a.email.trim().toLowerCase() === email)) {
-    return false;
-  }
   let bcrypt;
   try {
     bcrypt = require("bcryptjs");
@@ -61,6 +71,36 @@ function mergeDefaultAdmin(registry) {
     process.stderr.write("[seed-portal-registry] bcryptjs not found, skip default admin merge\n");
     return false;
   }
+
+  const targetNorm = DEFAULT_ADMIN.email.trim().toLowerCase();
+  const hasCanonical = registry.admins.some((a) => normEmail(a.email) === targetNorm);
+
+  if (hasCanonical) {
+    const before = registry.admins.length;
+    registry.admins = registry.admins.filter((a) => {
+      const n = normEmail(a.email);
+      if (n === targetNorm) return true;
+      if (LEGACY_ADMIN_EMAILS.has(n)) return false;
+      return true;
+    });
+    return registry.admins.length < before ? "removed-legacy" : false;
+  }
+
+  const legacyIdx = registry.admins.findIndex((a) => LEGACY_ADMIN_EMAILS.has(normEmail(a.email)));
+  if (legacyIdx >= 0) {
+    const row = registry.admins[legacyIdx];
+    row.email = DEFAULT_ADMIN.email.trim();
+    row.name = DEFAULT_ADMIN.name;
+    row.passwordHash = bcrypt.hashSync(DEFAULT_ADMIN.demoPassword, 10);
+    registry.admins = registry.admins.filter((a, i) => {
+      if (i === legacyIdx) return true;
+      const n = normEmail(a.email);
+      if (LEGACY_ADMIN_EMAILS.has(n)) return false;
+      return true;
+    });
+    return "migrated";
+  }
+
   registry.admins.push({
     id: randomUUID(),
     email: DEFAULT_ADMIN.email.trim(),
@@ -68,7 +108,7 @@ function mergeDefaultAdmin(registry) {
     name: DEFAULT_ADMIN.name,
     createdAt: new Date().toISOString(),
   });
-  return true;
+  return "added";
 }
 
 function mergeDefaultSubcontractor(registry) {
@@ -99,7 +139,7 @@ function main() {
   mkdirSync(dataDir, { recursive: true });
   const existed = existsSync(registryPath);
   const registry = existed ? readRegistry() : { ...EMPTY_REGISTRY };
-  const addedAdmin = mergeDefaultAdmin(registry);
+  const adminResult = mergeDefaultAdmin(registry);
   const addedSub = mergeDefaultSubcontractor(registry);
   writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
   if (!existed) {
@@ -107,8 +147,14 @@ function main() {
   } else {
     process.stdout.write(`[seed-portal-registry] updated ${registryPath}\n`);
   }
-  if (addedAdmin) {
+  if (adminResult === "added") {
     process.stdout.write(`[seed-portal-registry] merged default admin ${DEFAULT_ADMIN.email}\n`);
+  } else if (adminResult === "migrated") {
+    process.stdout.write(
+      `[seed-portal-registry] migrated legacy admin row → ${DEFAULT_ADMIN.email} (password reset to demo default)\n`
+    );
+  } else if (adminResult === "removed-legacy") {
+    process.stdout.write(`[seed-portal-registry] removed legacy duplicate admin row(s); kept ${DEFAULT_ADMIN.email}\n`);
   } else {
     process.stdout.write(`[seed-portal-registry] default admin already present, skip merge\n`);
   }
