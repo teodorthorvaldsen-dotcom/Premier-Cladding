@@ -337,13 +337,23 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    if (businessResult.error || customerResult.error) {
+    const businessAccepted = Boolean((businessResult as any)?.data?.id);
+    const customerAccepted = Boolean((customerResult as any)?.data?.id);
+    if (!businessAccepted && !customerAccepted) {
       const err = businessResult.error ?? customerResult.error;
       console.error("[Quote email error]", err);
       return NextResponse.json(
         { error: "Failed to send email. Please try again." },
         { status: 500 }
       );
+    }
+    if (businessResult.error || customerResult.error) {
+      console.warn("[Quote email partial failure]", {
+        businessError: businessResult.error ?? null,
+        customerError: customerResult.error ?? null,
+        businessAccepted,
+        customerAccepted,
+      });
     }
 
     const record = {
@@ -362,7 +372,7 @@ export async function POST(request: NextRequest) {
     await mkdir(dataDir, { recursive: true });
     await appendFile(QUOTES_JSONL_PATH, JSON.stringify(record) + "\n");
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, emailSent: customerAccepted });
   } catch (e) {
     console.error("[Quote API error]", e);
     return NextResponse.json(

@@ -359,12 +359,9 @@ export async function POST(request: NextRequest) {
         html: teamHtml,
       });
 
-      if (businessResult.error) {
+      const businessAccepted = Boolean((businessResult as any)?.data?.id);
+      if (businessResult.error && !businessAccepted) {
         console.error("[Cart quote email error] team notification", businessResult.error);
-        return NextResponse.json(
-          { error: resendErrorMessage(businessResult.error) },
-          { status: 500 }
-        );
       }
 
       const customerResult = await resend.emails.send({
@@ -373,15 +370,26 @@ export async function POST(request: NextRequest) {
         subject: `Estimate request received – ${orderId}`,
         html: customerHtml,
       });
-      if (customerResult.error) {
+      const customerAccepted = Boolean((customerResult as any)?.data?.id);
+      if (customerResult.error && !customerAccepted) {
         console.error("[Cart quote email error] customer confirmation", customerResult.error);
-        return NextResponse.json(
-          { error: resendErrorMessage(customerResult.error) },
-          { status: 500 }
-        );
       }
 
-      emailSent = true;
+      if (!businessAccepted && !customerAccepted) {
+        const err = customerResult.error ?? businessResult.error;
+        console.error("[Cart quote email error]", err);
+        return NextResponse.json({ error: resendErrorMessage(err) }, { status: 500 });
+      }
+
+      if (businessResult.error || customerResult.error) {
+        console.warn("[Cart quote email partial failure]", {
+          businessError: businessResult.error ?? null,
+          customerError: customerResult.error ?? null,
+          businessAccepted,
+          customerAccepted,
+        });
+      }
+      emailSent = customerAccepted;
     } else {
       console.warn(
         "[Cart quote] Email not sent: set RESEND_API_KEY and EMAIL_FROM (e.g. in Vercel → Project → Settings → Environment Variables).",

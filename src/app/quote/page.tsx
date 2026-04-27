@@ -181,7 +181,8 @@ export default function QuotePage() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Thank you.</h1>
         <p className="mt-3 text-base text-gray-600">
-          Our team will review your request and respond within 1 business day.
+          Thank you for your order. We have received it and we will get back to you soon. Please check your spam/junk
+          folder incase your order copy did not come though your main mailbox and please give it 24 hours.
         </p>
         {sessionLoading ? (
           <p className="mt-8 text-sm text-gray-500">Loading…</p>
