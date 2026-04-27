@@ -35,6 +35,28 @@ export default async function PortalStaffOrderDetailPage({ params }: Props) {
           {order.customerName} · {order.customerEmail}
         </p>
 
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href={`/portal/acm-panels?orderId=${encodeURIComponent(order.id)}&line=0`}
+            className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+          >
+            Open 3D panel workspace
+          </Link>
+          {(order.cartLineItems?.length ?? 0) > 1 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {order.cartLineItems?.map((_, i) => (
+                <Link
+                  key={i}
+                  href={`/portal/acm-panels?orderId=${encodeURIComponent(order.id)}&line=${i}`}
+                  className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  Line {i + 1}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         <PortalStaffOrderControls order={order} showDetailLink={false} />
       </div>
     </div>

@@ -87,12 +87,20 @@ export function PortalStaffOrderControls({
         </p>
       ) : null}
       {showDetailLink ? (
-        <Link
-          href={`/portal/${encodeURIComponent(order.id)}`}
-          className="inline-block text-sm font-medium text-gray-900 underline-offset-2 hover:underline"
-        >
-          Open order details →
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/portal/${encodeURIComponent(order.id)}`}
+            className="inline-block text-sm font-medium text-gray-900 underline-offset-2 hover:underline"
+          >
+            Open order details →
+          </Link>
+          <Link
+            href={`/portal/acm-panels?orderId=${encodeURIComponent(order.id)}&line=0`}
+            className="inline-block text-sm font-medium text-indigo-700 underline-offset-2 hover:text-indigo-800 hover:underline"
+          >
+            Open 3D panel workspace →
+          </Link>
+        </div>
       ) : null}
     </div>
   );
