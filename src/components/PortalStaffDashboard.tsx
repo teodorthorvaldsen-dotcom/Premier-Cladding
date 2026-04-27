@@ -16,6 +16,34 @@ import type { PortalAccountSummary } from "@/lib/portalPersistence";
 type Tab = "orders" | "accounts" | "insurance";
 
 const SECTION_ORDER: PortalOrderSection[] = ["new", "in_production", "finished"];
+const PORTAL_SECTION_OVERRIDES_KEY = "portalSectionOverrides-v1";
+
+function loadSectionOverrides(): Record<string, PortalOrderSection> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(PORTAL_SECTION_OVERRIDES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, PortalOrderSection> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string" && (PORTAL_ORDER_SECTIONS as readonly string[]).includes(v)) {
+        out[k] = v as PortalOrderSection;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function saveSectionOverrides(next: Record<string, PortalOrderSection>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(PORTAL_SECTION_OVERRIDES_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
 
 function formatDate(iso: string): string {
   try {
@@ -69,7 +97,15 @@ function PortalOrdersAutoRefresh({ orders }: { orders: OrderRecord[] }) {
   return null;
 }
 
-function PortalOrderSectionMover({ orderId, section }: { orderId: string; section: PortalOrderSection }) {
+function PortalOrderSectionMover({
+  orderId,
+  section,
+  onMoved,
+}: {
+  orderId: string;
+  section: PortalOrderSection;
+  onMoved?: (next: PortalOrderSection) => void;
+}) {
   const router = useRouter();
   const [sel, setSel] = useState<PortalOrderSection>(section);
   const [pending, setPending] = useState(false);
@@ -83,6 +119,7 @@ function PortalOrderSectionMover({ orderId, section }: { orderId: string; sectio
     if (sel === section) return;
     setPending(true);
     setError(null);
+    onMoved?.(sel);
     try {
       const res = await fetch("/api/portal/order-section", {
         method: "POST",
@@ -97,7 +134,8 @@ function PortalOrderSectionMover({ orderId, section }: { orderId: string; sectio
       }
       router.refresh();
     } catch {
-      setError("Something went wrong.");
+      // On serverless hosts, filesystem persistence may be unavailable. Keep the UI move via local override.
+      setError("Saved locally. (Server persistence unavailable.)");
     } finally {
       setPending(false);
     }
@@ -140,8 +178,16 @@ function PortalOrderSectionMover({ orderId, section }: { orderId: string; sectio
   );
 }
 
-function StaffOrderCard({ order }: { order: OrderRecord }) {
-  const section = order.portalSection ?? "new";
+function StaffOrderCard({
+  order,
+  sectionOverride,
+  onMove,
+}: {
+  order: OrderRecord;
+  sectionOverride?: PortalOrderSection;
+  onMove?: (orderId: string, next: PortalOrderSection) => void;
+}) {
+  const section = sectionOverride ?? order.portalSection ?? "new";
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm outline-none ring-black transition hover:border-gray-300 hover:shadow-md">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -158,7 +204,7 @@ function StaffOrderCard({ order }: { order: OrderRecord }) {
               {PORTAL_ORDER_SECTION_LABEL[section]}
             </div>
           </div>
-          <PortalOrderSectionMover orderId={order.id} section={section} />
+          <PortalOrderSectionMover orderId={order.id} section={section} onMoved={(next) => onMove?.(order.id, next)} />
         </div>
       </div>
 
@@ -218,6 +264,19 @@ export function PortalStaffDashboard({
   showInsuranceTab: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("orders");
+  const [sectionOverrides, setSectionOverrides] = useState<Record<string, PortalOrderSection>>({});
+
+  useEffect(() => {
+    setSectionOverrides(loadSectionOverrides());
+  }, []);
+
+  const onMove = useCallback((orderId: string, next: PortalOrderSection) => {
+    setSectionOverrides((prev) => {
+      const updated = { ...prev, [orderId]: next };
+      saveSectionOverrides(updated);
+      return updated;
+    });
+  }, []);
 
   const grouped = useMemo(() => {
     const map: Record<PortalOrderSection, OrderRecord[]> = {
@@ -226,14 +285,14 @@ export function PortalStaffDashboard({
       finished: [],
     };
     for (const o of orders) {
-      const sec = o.portalSection ?? "new";
+      const sec = sectionOverrides[o.id] ?? o.portalSection ?? "new";
       map[sec].push(o);
     }
     for (const sec of SECTION_ORDER) {
       map[sec].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     return map;
-  }, [orders]);
+  }, [orders, sectionOverrides]);
 
   const tabBtn = (id: Tab, label: string) => (
     <button
@@ -282,7 +341,14 @@ export function PortalStaffDashboard({
                       No orders
                     </p>
                   ) : (
-                    grouped[section].map((order) => <StaffOrderCard key={order.id} order={order} />)
+                    grouped[section].map((order) => (
+                      <StaffOrderCard
+                        key={order.id}
+                        order={order}
+                        sectionOverride={sectionOverrides[order.id]}
+                        onMove={onMove}
+                      />
+                    ))
                   )}
                 </div>
               </section>
