@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 
 type NavItem =
   | { id: string; label: string; href: string }
@@ -141,8 +142,20 @@ export function Header() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const { totalCount } = useCart();
+  const { isStaff } = usePortalSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuId = useId();
+
+  const navItems = NAV_ITEMS.map((item) => {
+    if ("href" in item && item.id === "portal-login") {
+      return {
+        ...item,
+        label: isStaff ? "Staff portal" : "Staff login",
+        href: isStaff ? "/portal" : "/login",
+      };
+    }
+    return item;
+  });
 
   useEffect(() => {
     setMobileOpen(false);
@@ -256,7 +269,7 @@ export function Header() {
               className="hidden w-full min-w-0 flex-1 flex-wrap items-stretch justify-evenly gap-x-4 gap-y-2 md:flex md:gap-x-6 lg:gap-x-10"
               aria-label="Main"
             >
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 if ("href" in item) {
                   const active = itemIsActive(pathname ?? "", item.href);
                   return <DesktopLink key={item.id} href={item.href} label={item.label} active={active} />;
@@ -275,7 +288,7 @@ export function Header() {
               aria-label="Mobile navigation"
             >
               <ul className="space-y-1">
-                {NAV_ITEMS.map((item) => {
+                {navItems.map((item) => {
                   if ("href" in item) {
                     const active = itemIsActive(pathname ?? "", item.href);
                     return (
