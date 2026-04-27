@@ -467,3 +467,94 @@ export function savePortalOrderSection(orderId: string, section: PortalOrderSect
   current[orderId] = section;
   writeFileSync(orderPortalSectionsPath(), JSON.stringify(current, null, 2), "utf-8");
 }
+
+/** Subcontractor compliance uploads (PDFs on disk + index JSON under data dir). */
+export type ComplianceDocSlot = "generalLiability" | "workersComp" | "businessLicense";
+
+export type ComplianceSubmissionFileMeta = {
+  slot: ComplianceDocSlot;
+  /** File name on disk under compliance-uploads/{submissionId}/ */
+  storedFileName: string;
+  /** Client-provided original file name (display only). */
+  originalName: string;
+  /** YYYY-MM-DD for GL / WC */
+  expiry?: string;
+};
+
+export type ComplianceSubmissionRecord = {
+  id: string;
+  orderId: string;
+  /** Customer company on the order at upload time (for grouping downloads). */
+  companyName: string;
+  subcontractorEmail: string;
+  submittedAt: string;
+  files: ComplianceSubmissionFileMeta[];
+};
+
+function complianceSubmissionsPath(): string {
+  return join(getDataDir(), "portal-compliance-submissions.json");
+}
+
+export function complianceUploadDirForSubmission(submissionId: string): string {
+  return join(getDataDir(), "compliance-uploads", submissionId);
+}
+
+export function loadComplianceSubmissions(): ComplianceSubmissionRecord[] {
+  ensureDataDir();
+  const path = complianceSubmissionsPath();
+  if (!existsSync(path)) {
+    return [];
+  }
+  try {
+    const raw = readFileSync(path, "utf-8");
+    const parsed = JSON.parse(raw) as { submissions?: unknown };
+    if (!Array.isArray(parsed.submissions)) return [];
+    const out: ComplianceSubmissionRecord[] = [];
+    for (const row of parsed.submissions) {
+      if (!row || typeof row !== "object") continue;
+      const r = row as Record<string, unknown>;
+      const id = typeof r.id === "string" ? r.id : "";
+      const orderId = typeof r.orderId === "string" ? r.orderId : "";
+      const companyName = typeof r.companyName === "string" ? r.companyName : "";
+      const subcontractorEmail = typeof r.subcontractorEmail === "string" ? r.subcontractorEmail : "";
+      const submittedAt = typeof r.submittedAt === "string" ? r.submittedAt : "";
+      const filesRaw = r.files;
+      if (!id || !orderId || !Array.isArray(filesRaw)) continue;
+      const files: ComplianceSubmissionFileMeta[] = [];
+      for (const f of filesRaw) {
+        if (!f || typeof f !== "object") continue;
+        const fr = f as Record<string, unknown>;
+        const slot = fr.slot;
+        if (slot !== "generalLiability" && slot !== "workersComp" && slot !== "businessLicense") continue;
+        const storedFileName = typeof fr.storedFileName === "string" ? fr.storedFileName : "";
+        const originalName = typeof fr.originalName === "string" ? fr.originalName : "";
+        if (!storedFileName || !originalName) continue;
+        const expiry = typeof fr.expiry === "string" ? fr.expiry : undefined;
+        files.push({ slot, storedFileName, originalName, expiry });
+      }
+      if (files.length === 0) continue;
+      out.push({
+        id,
+        orderId,
+        companyName: companyName || "—",
+        subcontractorEmail,
+        submittedAt: submittedAt || new Date(0).toISOString(),
+        files,
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export function appendComplianceSubmission(rec: ComplianceSubmissionRecord): void {
+  ensureDataDir();
+  const current = loadComplianceSubmissions();
+  current.push(rec);
+  writeFileSync(
+    complianceSubmissionsPath(),
+    JSON.stringify({ submissions: current }, null, 2),
+    "utf-8"
+  );
+}

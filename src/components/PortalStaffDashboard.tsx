@@ -389,7 +389,9 @@ export function PortalStaffDashboard({
       ) : null}
 
       {tab === "insurance" && showInsuranceTab ? (
-        <PortalSubcontractorComplianceForm orderIds={orders.map((o) => o.id)} />
+        <PortalSubcontractorComplianceForm
+          orderSummaries={orders.map((o) => ({ id: o.id, companyName: o.companyName }))}
+        />
       ) : null}
     </div>
   );
