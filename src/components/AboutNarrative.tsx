@@ -1,5 +1,5 @@
 /**
- * Company narrative: Who we are, capabilities, service area, quality.
+ * Company narrative: Who we are, capabilities, service area.
  */
 export function AboutNarrative() {
   return (
@@ -42,18 +42,6 @@ export function AboutNarrative() {
         <p className="mt-4 text-[15px] leading-relaxed text-gray-700">
           We ship nationwide across the United States. Availability and lead times are confirmed with your final quote based on project size, finish selection, and delivery location.
         </p>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="text-[15px] font-medium uppercase tracking-wider text-gray-500">
-          Quality &amp; Process
-        </h2>
-        <ul className="mt-4 space-y-2 text-[15px] leading-relaxed text-gray-700">
-          <li>• Fire-rated panels meet building code requirements for exterior applications</li>
-          <li>• Kynar PVDF finish for durability and color retention</li>
-          <li>• Transparent pricing and responsive quote process</li>
-          <li>• Orders confirmed before fabrication begins</li>
-        </ul>
       </section>
     </>
   );
