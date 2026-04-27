@@ -116,7 +116,7 @@ function DesktopDropdown({
       {open ? (
         <div
           role="menu"
-          className="absolute left-1/2 z-50 mt-2 w-[min(24rem,92vw)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.1)] max-h-[min(60vh,26rem)] overflow-y-auto overscroll-contain"
+          className="absolute left-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.1)] max-h-[min(60vh,26rem)] overflow-y-auto overscroll-contain"
         >
           <ul className="space-y-1">
             {items.map((it) => (
@@ -222,7 +222,7 @@ export function Header() {
             {/* Mobile: logo + actions (home: logo row above; toolbar row is nav + cart only) */}
             <div
               className={`flex min-w-0 items-center gap-3 lg:contents ${
-                isHome ? "justify-end" : "justify-between"
+                isHome ? "justify-end md:hidden" : "justify-between"
               }`}
             >
               {!isHome ? (
@@ -244,7 +244,7 @@ export function Header() {
                 </Link>
               ) : null}
 
-              <div className="flex shrink-0 items-center gap-2.5 lg:hidden">
+              <div className="flex shrink-0 items-center gap-2.5 md:hidden">
                 <Link
                   href="/cart"
                   className="rounded-lg px-3 py-2 text-center text-sm font-semibold tracking-wide text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-inset min-[360px]:text-base"
