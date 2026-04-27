@@ -13,6 +13,7 @@ import {
 import { type QuoteDraft, QUOTE_DRAFT_STORAGE_KEY } from "@/types/quote";
 import type { PanelType } from "@/lib/pricing";
 import { useCart } from "@/context/CartContext";
+import { usePortalSession } from "@/hooks/usePortalSession";
 import { ColorSwatches } from "./ColorSwatches";
 import { PanelTypePicker } from "./PanelTypePicker";
 import { PriceSummary } from "./PriceSummary";
@@ -46,6 +47,23 @@ export interface PriceResult {
 const DEBOUNCE_MS = 300;
 /** PDFs up to this size are embedded in the quote draft for submission; larger files use the filename + quote-form reminder only. */
 const MAX_CUSTOM_SPEC_EMBED_BYTES = 1024 * 1024;
+
+type PortalOrderSummary = {
+  id: string;
+  projectName: string;
+  createdAt?: string;
+  lineCount?: number;
+};
+
+function normalizeColorId(raw: string | undefined): ColorId {
+  if (raw && colors.some((c) => c.id === raw)) return raw as ColorId;
+  return "classic-white";
+}
+
+function normalizeThicknessId(raw: string | undefined): ThicknessId {
+  if (raw && thicknesses.some((t) => t.id === raw)) return raw as ThicknessId;
+  return "4mm";
+}
 
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -101,7 +119,15 @@ export function Configurator() {
   );
   const router = useRouter();
   const { addItem } = useCart();
+  const { isStaff } = usePortalSession();
   const previewGlCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const [orders, setOrders] = useState<PortalOrderSummary[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [selectedLineIndex, setSelectedLineIndex] = useState(0);
+  const [loadFromOrderLoading, setLoadFromOrderLoading] = useState(false);
 
   useEffect(() => {
     if (colorId !== "custom-color-match") {
@@ -109,6 +135,91 @@ export function Configurator() {
       setCustomColorSpecFile(null);
     }
   }, [colorId]);
+
+  useEffect(() => {
+    if (!isStaff) return;
+    let cancelled = false;
+    setOrdersLoading(true);
+    setOrdersError(null);
+    fetch("/api/portal/orders", { credentials: "include" })
+      .then(async (r) => {
+        const data = (await r.json()) as { orders?: PortalOrderSummary[]; error?: string };
+        if (!r.ok) throw new Error(data?.error ?? "Failed to load orders.");
+        return data.orders ?? [];
+      })
+      .then((o) => {
+        if (cancelled) return;
+        setOrders(o);
+        if (!selectedOrderId && o.length > 0) {
+          setSelectedOrderId(o[0]?.id ?? "");
+          setSelectedLineIndex(0);
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setOrdersError(e instanceof Error ? e.message : "Failed to load orders.");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setOrdersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isStaff, selectedOrderId]);
+
+  const loadFromOrder = useCallback(async () => {
+    if (!selectedOrderId) return;
+    setLoadFromOrderLoading(true);
+    setOrdersError(null);
+    try {
+      const res = await fetch(
+        `/api/portal/staff-acm-config?orderId=${encodeURIComponent(selectedOrderId)}&line=${String(selectedLineIndex)}`,
+        { credentials: "include" }
+      );
+      const data = (await res.json()) as {
+        lineItem?: {
+          widthIn: number;
+          heightIn: number;
+          colorId: string;
+          thicknessId: string;
+          quantity: number;
+          panelType?: string;
+          boxTraySides?: unknown;
+          customColorReference?: string;
+        };
+        error?: string;
+      };
+      if (!res.ok || !data.lineItem) {
+        throw new Error(data?.error ?? "Failed to load order configuration.");
+      }
+
+      const li = data.lineItem;
+      setSize((prev) => ({
+        ...prev,
+        widthId: "custom",
+        widthIn: li.widthIn,
+        lengthIn: li.heightIn,
+        boxSides: normalizeBoxTraySides(li.boxTraySides ?? prev.boxSides),
+      }));
+      setThicknessId(normalizeThicknessId(li.thicknessId));
+      setQuantity(Math.max(1, Math.floor(li.quantity || 1)));
+      if (li.panelType === "tray" || li.panelType === "basic") {
+        setPanelType(li.panelType);
+      }
+      const cref = li.customColorReference?.trim() ?? "";
+      setCustomColorReference(cref);
+      if (cref) {
+        setColorId("custom-color-match");
+      } else {
+        setColorId(normalizeColorId(li.colorId));
+      }
+    } catch (e: unknown) {
+      setOrdersError(e instanceof Error ? e.message : "Failed to load order configuration.");
+    } finally {
+      setLoadFromOrderLoading(false);
+    }
+  }, [selectedOrderId, selectedLineIndex]);
 
   const fetchPrice = useCallback(
     async (
@@ -350,6 +461,77 @@ export function Configurator() {
                 id="quantity"
                 className="pt-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
+                {isStaff ? (
+                  <details className="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-indigo-950">
+                      Load an existing order into the configurator
+                    </summary>
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
+                      <label className="block text-sm">
+                        <span className="block text-xs font-medium uppercase tracking-wide text-indigo-900/80">
+                          Order
+                        </span>
+                        <select
+                          value={selectedOrderId}
+                          onChange={(e) => {
+                            setSelectedOrderId(e.target.value);
+                            setSelectedLineIndex(0);
+                          }}
+                          className="mt-1 h-11 w-full rounded-xl border border-indigo-200 bg-white px-3 text-[15px] text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+                          disabled={ordersLoading || orders.length === 0}
+                        >
+                          {orders.length === 0 ? (
+                            <option value="">No orders found</option>
+                          ) : (
+                            orders.map((o) => (
+                              <option key={o.id} value={o.id}>
+                                {o.projectName} · {o.id}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </label>
+
+                      <label className="block text-sm">
+                        <span className="block text-xs font-medium uppercase tracking-wide text-indigo-900/80">
+                          Line
+                        </span>
+                        <select
+                          value={String(selectedLineIndex)}
+                          onChange={(e) => setSelectedLineIndex(Number(e.target.value) || 0)}
+                          className="mt-1 h-11 w-full rounded-xl border border-indigo-200 bg-white px-3 text-[15px] text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+                          disabled={!selectedOrderId}
+                        >
+                          {(() => {
+                            const lineCount =
+                              orders.find((o) => o.id === selectedOrderId)?.lineCount ?? 1;
+                            return Array.from({ length: Math.max(1, lineCount) }).map((_, i) => (
+                              <option key={i} value={String(i)}>
+                                Line {i + 1} of {Math.max(1, lineCount)}
+                              </option>
+                            ));
+                          })()}
+                        </select>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={loadFromOrder}
+                        disabled={!selectedOrderId || loadFromOrderLoading}
+                        className="h-11 rounded-xl bg-indigo-700 px-4 text-[15px] font-medium text-white transition hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-indigo-400"
+                      >
+                        {loadFromOrderLoading ? "Loading…" : "Load order"}
+                      </button>
+                    </div>
+                    {ordersError ? (
+                      <p className="mt-3 text-sm text-red-700">{ordersError}</p>
+                    ) : null}
+                    <p className="mt-3 text-xs text-indigo-900/70">
+                      Loads the saved panel configuration (size, returns, color, thickness, quantity) so you can preview
+                      and adjust it here.
+                    </p>
+                  </details>
+                ) : null}
                 <QuantityPicker value={quantity} onChange={setQuantity} />
               </div>
             </div>

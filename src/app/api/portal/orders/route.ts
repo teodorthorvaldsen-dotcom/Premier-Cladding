@@ -13,6 +13,8 @@ export async function GET() {
       id: o.id,
       projectName: o.projectName,
       jobStage: o.jobStage ?? "ordering",
+      createdAt: o.createdAt,
+      lineCount: o.cartLineItems?.length ?? 1,
     })),
   });
 }
