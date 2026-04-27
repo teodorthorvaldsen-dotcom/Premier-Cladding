@@ -2,7 +2,7 @@
 
 /**
  * Ensures data/portal-registry.json exists for deploys and local dev.
- * Merges a default portal admin if missing (bcrypt hash only — no plaintext).
+ * Merges a default portal admin if missing (bcrypt at seed time; removes legacy admin emails).
  * See src/lib/portalPersistence.ts — registrySeedPath() reads this when no writable copy exists.
  */
 
@@ -13,12 +13,15 @@ const { randomUUID } = require("crypto");
 const dataDir = join(process.cwd(), "data");
 const registryPath = join(dataDir, "portal-registry.json");
 
+/** Portal admin merged if missing (plaintext password only in demoData for JWT-less demo login). */
 const DEFAULT_ADMIN = {
-  email: "picken.cycle@gmail.com",
-  name: "Portal admin",
-  /** bcrypt cost 10, generated for the requested password (stored hashed only). */
-  passwordHash: "$2a$10$0NuR1FLUu4mFbnIgocV7tOEQoveACnbCWGqelAHZAiAeyVl8Bmb7q",
+  email: "premiercladdingsolutions@gmail.com",
+  name: "Premier Cladding",
+  /** Plaintext for seed-time bcrypt only — matches demo admin in src/lib/demoData.ts */
+  portalPassword: "gator825",
 };
+
+const LEGACY_ADMIN_EMAILS = new Set(["picken.cycle@gmail.com", "allcladdingsolutions@gmail.com"]);
 
 /** Staff subcontractor merged if missing (bcrypt hash written to JSON only). */
 const DEFAULT_SUBCONTRACTOR = {
@@ -50,14 +53,24 @@ function readRegistry() {
 }
 
 function mergeDefaultAdmin(registry) {
-  const email = DEFAULT_ADMIN.email.trim().toLowerCase();
-  if (registry.admins.some((a) => typeof a.email === "string" && a.email.trim().toLowerCase() === email)) {
+  let bcrypt;
+  try {
+    bcrypt = require("bcryptjs");
+  } catch {
+    process.stderr.write("[seed-portal-registry] bcryptjs not found, skip default admin merge\n");
+    return false;
+  }
+  const emailNorm = DEFAULT_ADMIN.email.trim().toLowerCase();
+  registry.admins = registry.admins.filter(
+    (a) => typeof a.email === "string" && !LEGACY_ADMIN_EMAILS.has(a.email.trim().toLowerCase())
+  );
+  if (registry.admins.some((a) => typeof a.email === "string" && a.email.trim().toLowerCase() === emailNorm)) {
     return false;
   }
   registry.admins.push({
     id: randomUUID(),
     email: DEFAULT_ADMIN.email.trim(),
-    passwordHash: DEFAULT_ADMIN.passwordHash,
+    passwordHash: bcrypt.hashSync(DEFAULT_ADMIN.portalPassword, 10),
     name: DEFAULT_ADMIN.name,
     createdAt: new Date().toISOString(),
   });

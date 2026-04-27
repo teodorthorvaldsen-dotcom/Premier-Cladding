@@ -77,7 +77,7 @@ export const demoUsers: UserRecord[] = [
   },
   {
     id: "u3",
-    email: "allcladdingsolutions@gmail.com",
+    email: "premiercladdingsolutions@gmail.com",
     password: "gator825",
     role: "admin",
     name: "Premier Cladding",
