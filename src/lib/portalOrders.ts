@@ -1,14 +1,27 @@
 import { colors } from "@/data/acm";
 import type { SessionUser } from "@/lib/auth";
 import { demoOrders, getDemoOrderById, type OrderRecord } from "@/lib/demoData";
+import type { JobStage } from "@/lib/jobStage";
 import { resolveJobStage } from "@/lib/jobStage";
-import { loadDynamicOrders, loadPersistedJobStages } from "@/lib/portalPersistence";
+import { resolvePortalOrderSection } from "@/lib/portalOrderSection";
+import {
+  loadDynamicOrders,
+  loadPersistedJobStages,
+  loadPersistedPortalOrderSections,
+} from "@/lib/portalPersistence";
 import type { CartItem } from "@/types/cart";
 
-export function mergeJobStageIntoOrder(order: OrderRecord): OrderRecord {
-  const persisted = loadPersistedJobStages()[order.id];
-  const jobStage = resolveJobStage(order, persisted);
-  return { ...order, jobStage };
+export function enrichPortalOrder(
+  order: OrderRecord,
+  jobStages?: Record<string, JobStage>,
+  portalSections?: ReturnType<typeof loadPersistedPortalOrderSections>
+): OrderRecord {
+  const stages = jobStages ?? loadPersistedJobStages();
+  const sections = portalSections ?? loadPersistedPortalOrderSections();
+  const jobStage = resolveJobStage(order, stages[order.id]);
+  const withStage: OrderRecord = { ...order, jobStage };
+  const portalSection = resolvePortalOrderSection(withStage, sections);
+  return { ...withStage, portalSection };
 }
 
 export type CartQuoteItemLike = {
@@ -32,7 +45,7 @@ export type CartQuoteItemLike = {
 
 export function getPortalOrderById(orderId: string): OrderRecord | undefined {
   const raw = getDemoOrderById(orderId) ?? loadDynamicOrders().find((o) => o.id === orderId);
-  return raw ? mergeJobStageIntoOrder(raw) : undefined;
+  return raw ? enrichPortalOrder(raw) : undefined;
 }
 
 export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
@@ -41,8 +54,10 @@ export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
     const byId = new Map<string, OrderRecord>();
     demoOrders.forEach((o) => byId.set(o.id, o));
     dynamic.forEach((o) => byId.set(o.id, o));
+    const stages = loadPersistedJobStages();
+    const sections = loadPersistedPortalOrderSections();
     return Array.from(byId.values())
-      .map(mergeJobStageIntoOrder)
+      .map((o) => enrichPortalOrder(o, stages, sections))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
   const demo = demoOrders.filter((o) => o.customerId === user.customerId);
@@ -53,8 +68,10 @@ export function getPortalOrdersForUser(user: SessionUser): OrderRecord[] {
   );
   const byId = new Map<string, OrderRecord>();
   [...demo, ...dyn].forEach((o) => byId.set(o.id, o));
+  const stages = loadPersistedJobStages();
+  const sections = loadPersistedPortalOrderSections();
   return Array.from(byId.values())
-    .map(mergeJobStageIntoOrder)
+    .map((o) => enrichPortalOrder(o, stages, sections))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

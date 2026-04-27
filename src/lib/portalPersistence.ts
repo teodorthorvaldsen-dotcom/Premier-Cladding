@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { demoUsers } from "@/lib/demoData";
 import type { OrderRecord, Role } from "@/lib/demoData";
 import { JOB_STAGES, type JobStage } from "@/lib/jobStage";
+import { isPortalOrderSection, type PortalOrderSection } from "@/lib/portalOrderSection";
 
 /** Writable directory for JSON persistence. Override with PORTAL_DATA_DIR (e.g. mounted volume). */
 let cachedDataDir: string | null = null;
@@ -51,6 +52,10 @@ function ordersPath(): string {
 
 function jobStagesPath(): string {
   return join(getDataDir(), "order-job-stages.json");
+}
+
+function orderPortalSectionsPath(): string {
+  return join(getDataDir(), "order-portal-sections.json");
 }
 
 type StoredCustomer = {
@@ -432,4 +437,33 @@ export function saveJobStageForOrder(orderId: string, stage: JobStage): void {
   const current = loadPersistedJobStages();
   current[orderId] = stage;
   writeFileSync(jobStagesPath(), JSON.stringify(current, null, 2), "utf-8");
+}
+
+/** Staff portal board columns (New / In production / Finished) keyed by order id. */
+export function loadPersistedPortalOrderSections(): Record<string, PortalOrderSection> {
+  ensureDataDir();
+  const path = orderPortalSectionsPath();
+  if (!existsSync(path)) {
+    return {};
+  }
+  try {
+    const raw = readFileSync(path, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, PortalOrderSection> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string" && isPortalOrderSection(v)) {
+        out[k] = v;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function savePortalOrderSection(orderId: string, section: PortalOrderSection): void {
+  ensureDataDir();
+  const current = loadPersistedPortalOrderSections();
+  current[orderId] = section;
+  writeFileSync(orderPortalSectionsPath(), JSON.stringify(current, null, 2), "utf-8");
 }

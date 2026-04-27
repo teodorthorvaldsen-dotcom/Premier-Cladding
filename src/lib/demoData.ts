@@ -1,5 +1,6 @@
 import type { CartItem } from "@/types/cart";
 import type { JobStage } from "@/lib/jobStage";
+import type { PortalOrderSection } from "@/lib/portalOrderSection";
 
 export type Role = "customer" | "subcontractor" | "admin";
 
@@ -31,6 +32,8 @@ export type OrderRecord = {
   status: "Pending" | "In Production" | "Completed" | "Shipped";
   /** Production workflow; optional overlay from persisted job stages. */
   jobStage?: JobStage;
+  /** Staff portal column; merged from persisted overrides + legacy status. */
+  portalSection?: PortalOrderSection;
   createdAt: string;
   projectName: string;
   measurements: {
