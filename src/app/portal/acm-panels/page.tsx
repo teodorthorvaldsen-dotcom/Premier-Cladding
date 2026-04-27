@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { SubcontractorAcmWorkspace } from "@/components/SubcontractorAcmWorkspace";
 import { getSessionUser } from "@/lib/auth";
@@ -10,5 +11,9 @@ export default async function PortalAcmPanelsWorkspacePage() {
   if (user.role !== "subcontractor" && user.role !== "admin") {
     redirect("/");
   }
-  return <SubcontractorAcmWorkspace />;
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-600">Loading workspace…</div>}>
+      <SubcontractorAcmWorkspace />
+    </Suspense>
+  );
 }

@@ -65,6 +65,20 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function siteUrlForEmails(): string | null {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
+  return null;
+}
+
+function staffAcmWorkspaceUrl(orderId: string, lineIndex: number): string | null {
+  const base = siteUrlForEmails();
+  if (!base) return null;
+  return `${base}/portal/acm-panels?orderId=${encodeURIComponent(orderId)}&line=${String(lineIndex)}`;
+}
+
 function resendErrorMessage(e: unknown): string {
   if (e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string") {
     return (e as { message: string }).message;
@@ -175,10 +189,18 @@ function trayMeasurementsHtml(sidesUnknown: unknown): string {
   return `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#374151;"><div style="font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#6b7280;font-size:11px;margin-bottom:4px;">Measurements</div>${rows}</div>`;
 }
 
-function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | null)[]): string {
+function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | null)[], orderId: string): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
+  const workspaceHero = staffAcmWorkspaceUrl(orderId, 0);
+  const workspaceHeroBlock = workspaceHero
+    ? `<div style="margin:0 0 16px 0;padding:12px 14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
+        <div style="font-size:13px;color:#1e3a8a;font-weight:600;margin-bottom:6px;">3D preview in the staff workspace</div>
+        <a href="${escapeHtml(workspaceHero)}" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;">Open staff ACM panel workspace</a>
+        <div style="margin-top:8px;font-size:12px;color:#334155;">Sign in with your admin or subcontractor account. For carts with multiple lines, use the link on each row to open that line.</div>
+      </div>`
+    : `<p style="margin:0 0 12px 0;font-size:12px;color:#64748b;">Configure <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">NEXT_PUBLIC_SITE_URL</code> on the server so workspace links appear in this email (Vercel also provides <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">VERCEL_URL</code>).</p>`;
   const rows = payload.items
     .map((i, rowIndex) => {
       const color = getColorLabel(i.colorId);
@@ -220,6 +242,10 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
       } catch {
         revitBlock = "";
       }
+      const workspaceLine = staffAcmWorkspaceUrl(orderId, rowIndex);
+      const workspaceLineBlock = workspaceLine
+        ? `<div style="margin-top:8px;"><a href="${escapeHtml(workspaceLine)}" style="font-size:12px;color:#1d4ed8;text-decoration:underline;">Open this line in staff ACM workspace (3D)</a></div>`
+        : "";
       const metaBlock = `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#111827;">
         <div><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
         <div>${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
@@ -227,7 +253,7 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
         <div style="margin-top:4px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
       </div>`;
       return `<tr>
-          <td style="padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${metaBlock}${measurementsBlock}${extra}${specBlock}${revitBlock}</td>
+          <td style="padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; vertical-align: top;">${previewBlock}${workspaceLineBlock}${metaBlock}${measurementsBlock}${extra}${specBlock}${revitBlock}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${escapeHtml(i.panelTypeLabel ?? "")}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${i.quantity}</td>
           <td style="padding: 6px 12px; border-bottom: 1px solid #eee; vertical-align: top;">${formatUSD(lineTotal)}</td>
@@ -253,6 +279,7 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Signature</td><td>${escapeHtml(payload.signature)}</td></tr>
     ${payload.notes ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Notes</td><td>${escapeHtml(payload.notes)}</td></tr>` : ""}
   </table>
+  ${workspaceHeroBlock}
 
   <h3 style="margin-bottom: 0.5em; font-size: 1em;">Line Items</h3>
   <table style="border-collapse: collapse; margin-bottom: 1.5em; width: 100%;">
@@ -417,7 +444,7 @@ export async function POST(request: NextRequest) {
       const resend = new Resend(apiKey);
       const { cids: adminPreviewCids, attachments: adminPreviewAttachments } =
         buildCartPreviewInlineAttachments(payload.items);
-      const teamHtml = buildCartEmailHtml(payload, adminPreviewCids);
+      const teamHtml = buildCartEmailHtml(payload, adminPreviewCids, orderId);
       const customerHtml = buildCartCustomerEmailHtml(payload, orderId);
 
       const businessResult = await resend.emails.send({

@@ -48,6 +48,8 @@ export type OrderRecord = {
   previewImageSrc: string;
   /** Cart-shaped configuration for checkout-parity UI (preview modal, DXF/CSV export). */
   lineItem: CartItem;
+  /** Multi-line cart quotes: all lines (first is also `lineItem`). */
+  cartLineItems?: CartItem[];
 };
 
 export const demoUsers: UserRecord[] = [

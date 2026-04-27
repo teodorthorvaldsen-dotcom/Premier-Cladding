@@ -94,8 +94,10 @@ export function buildPortalOrderFromCartQuote(input: {
   items: CartQuoteItemLike[];
 }): OrderRecord {
   const first = input.items[0];
-  const lineId = `${input.orderId}-line`;
-  const lineItem = cartQuoteItemToCartItem(first, lineId);
+  const cartLineItems = input.items.map((it, i) =>
+    cartQuoteItemToCartItem(it, `${input.orderId}-line-${i}`)
+  );
+  const lineItem = cartLineItems[0];
   const colorName = colors.find((c) => c.id === first.colorId)?.name ?? first.colorId;
   const projectName =
     input.items.length > 1
@@ -128,5 +130,6 @@ export function buildPortalOrderFromCartQuote(input: {
     color: colorName,
     previewImageSrc: "/portal-orders/ord-1001-preview.svg",
     lineItem,
+    cartLineItems,
   };
 }
