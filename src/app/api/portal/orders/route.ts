@@ -13,6 +13,7 @@ export async function GET() {
       id: o.id,
       projectName: o.projectName,
       jobStage: o.jobStage ?? "ordering",
+      portalSection: o.portalSection ?? "new",
       createdAt: o.createdAt,
       lineCount: o.cartLineItems?.length ?? 1,
     })),

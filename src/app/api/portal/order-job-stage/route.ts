@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getDemoOrderById } from "@/lib/demoData";
 import { JOB_STAGE_PROGRESS_PCT, JOB_STAGES, type JobStage } from "@/lib/jobStage";
+import { getPortalOrdersForUser } from "@/lib/portalOrders";
 import { loadDynamicOrders, saveJobStageForOrder } from "@/lib/portalPersistence";
 
 export const runtime = "nodejs";
@@ -34,6 +35,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "orderId required" }, { status: 400 });
   }
   if (!orderExists(orderId)) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
+  const visible = new Set(getPortalOrdersForUser(user).map((o) => o.id));
+  if (!visible.has(orderId)) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
   if (!isJobStage(stageRaw)) {

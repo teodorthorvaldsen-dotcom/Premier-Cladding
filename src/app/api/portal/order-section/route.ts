@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getDemoOrderById } from "@/lib/demoData";
 import { isPortalOrderSection } from "@/lib/portalOrderSection";
+import { getPortalOrdersForUser } from "@/lib/portalOrders";
 import { loadDynamicOrders, savePortalOrderSection } from "@/lib/portalPersistence";
 
 export const runtime = "nodejs";
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "orderId required" }, { status: 400 });
   }
   if (!orderExists(orderId)) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
+  const visible = new Set(getPortalOrdersForUser(user).map((o) => o.id));
+  if (!visible.has(orderId)) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
   if (!isPortalOrderSection(sectionRaw)) {

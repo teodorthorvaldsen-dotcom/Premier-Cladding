@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PortalStaffOrderControls } from "@/components/PortalStaffOrderControls";
 import PortalSubcontractorComplianceForm from "@/components/PortalSubcontractorComplianceForm";
 import type { OrderRecord } from "@/lib/demoData";
@@ -16,33 +16,26 @@ import type { PortalAccountSummary } from "@/lib/portalPersistence";
 type Tab = "orders" | "accounts" | "insurance";
 
 const SECTION_ORDER: PortalOrderSection[] = ["new", "in_production", "finished"];
-const PORTAL_SECTION_OVERRIDES_KEY = "portalSectionOverrides-v1";
 
-function loadSectionOverrides(): Record<string, PortalOrderSection> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(PORTAL_SECTION_OVERRIDES_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const out: Record<string, PortalOrderSection> = {};
-    for (const [k, v] of Object.entries(parsed)) {
-      if (typeof v === "string" && (PORTAL_ORDER_SECTIONS as readonly string[]).includes(v)) {
-        out[k] = v as PortalOrderSection;
-      }
-    }
-    return out;
-  } catch {
-    return {};
-  }
+/** Stable fingerprint so column (portal) + job stage changes trigger refresh for all viewers. */
+function ordersBoardSignature(orders: OrderRecord[]): string {
+  return orders
+    .map((o) => {
+      const sec = o.portalSection ?? "new";
+      const stage = o.jobStage ?? "ordering";
+      return `${o.id}:${sec}:${stage}`;
+    })
+    .sort()
+    .join("|");
 }
 
-function saveSectionOverrides(next: Record<string, PortalOrderSection>): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(PORTAL_SECTION_OVERRIDES_KEY, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
+function ordersBoardSignatureFromPoll(
+  rows: Array<{ id: string; portalSection?: string; jobStage?: string }>
+): string {
+  return rows
+    .map((o) => `${o.id}:${o.portalSection ?? "new"}:${o.jobStage ?? "ordering"}`)
+    .sort()
+    .join("|");
 }
 
 function formatDate(iso: string): string {
@@ -58,23 +51,17 @@ function PortalOrdersAutoRefresh({ orders }: { orders: OrderRecord[] }) {
   const baselineRef = useRef("");
 
   useEffect(() => {
-    baselineRef.current = orders
-      .map((o) => o.id)
-      .slice()
-      .sort()
-      .join("|");
+    baselineRef.current = ordersBoardSignature(orders);
   }, [orders]);
 
   const check = useCallback(async () => {
     try {
       const res = await fetch("/api/portal/orders", { credentials: "include" });
       if (!res.ok) return;
-      const data = (await res.json()) as { orders?: Array<{ id: string }> };
-      const next = (data.orders ?? [])
-        .map((o) => o.id)
-        .slice()
-        .sort()
-        .join("|");
+      const data = (await res.json()) as {
+        orders?: Array<{ id: string; portalSection?: string; jobStage?: string }>;
+      };
+      const next = ordersBoardSignatureFromPoll(data.orders ?? []);
       if (next !== baselineRef.current) {
         baselineRef.current = next;
         router.refresh();
@@ -97,15 +84,7 @@ function PortalOrdersAutoRefresh({ orders }: { orders: OrderRecord[] }) {
   return null;
 }
 
-function PortalOrderSectionMover({
-  orderId,
-  section,
-  onMoved,
-}: {
-  orderId: string;
-  section: PortalOrderSection;
-  onMoved?: (next: PortalOrderSection) => void;
-}) {
+function PortalOrderSectionMover({ orderId, section }: { orderId: string; section: PortalOrderSection }) {
   const router = useRouter();
   const [sel, setSel] = useState<PortalOrderSection>(section);
   const [pending, setPending] = useState(false);
@@ -119,7 +98,6 @@ function PortalOrderSectionMover({
     if (sel === section) return;
     setPending(true);
     setError(null);
-    onMoved?.(sel);
     try {
       const res = await fetch("/api/portal/order-section", {
         method: "POST",
@@ -134,8 +112,7 @@ function PortalOrderSectionMover({
       }
       router.refresh();
     } catch {
-      // On serverless hosts, filesystem persistence may be unavailable. Keep the UI move via local override.
-      setError("Saved locally. (Server persistence unavailable.)");
+      setError("Could not reach server. Try again.");
     } finally {
       setPending(false);
     }
@@ -178,16 +155,8 @@ function PortalOrderSectionMover({
   );
 }
 
-function StaffOrderCard({
-  order,
-  sectionOverride,
-  onMove,
-}: {
-  order: OrderRecord;
-  sectionOverride?: PortalOrderSection;
-  onMove?: (orderId: string, next: PortalOrderSection) => void;
-}) {
-  const section = sectionOverride ?? order.portalSection ?? "new";
+function StaffOrderCard({ order }: { order: OrderRecord }) {
+  const section = order.portalSection ?? "new";
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm outline-none ring-black transition hover:border-gray-300 hover:shadow-md">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -204,7 +173,7 @@ function StaffOrderCard({
               {PORTAL_ORDER_SECTION_LABEL[section]}
             </div>
           </div>
-          <PortalOrderSectionMover orderId={order.id} section={section} onMoved={(next) => onMove?.(order.id, next)} />
+          <PortalOrderSectionMover orderId={order.id} section={section} />
         </div>
       </div>
 
@@ -266,30 +235,12 @@ export function PortalStaffDashboard({
   showInsuranceTab: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("orders");
-  const [sectionOverrides, setSectionOverrides] = useState<Record<string, PortalOrderSection>>({});
-
-  /** Load persisted column placement before paint so orders do not briefly appear in the wrong column. */
-  useLayoutEffect(() => {
-    setSectionOverrides(loadSectionOverrides());
-  }, []);
 
   useEffect(() => {
     if (!showAccountsTab && tab === "accounts") {
       setTab("orders");
     }
   }, [showAccountsTab, tab]);
-
-  useEffect(() => {
-    const onFocus = () => setSectionOverrides(loadSectionOverrides());
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
-
-  const onMove = useCallback((orderId: string, next: PortalOrderSection) => {
-    const merged = { ...loadSectionOverrides(), [orderId]: next };
-    saveSectionOverrides(merged);
-    setSectionOverrides(merged);
-  }, []);
 
   const grouped = useMemo(() => {
     const map: Record<PortalOrderSection, OrderRecord[]> = {
@@ -298,14 +249,14 @@ export function PortalStaffDashboard({
       finished: [],
     };
     for (const o of orders) {
-      const sec = sectionOverrides[o.id] ?? o.portalSection ?? "new";
+      const sec = o.portalSection ?? "new";
       map[sec].push(o);
     }
     for (const sec of SECTION_ORDER) {
       map[sec].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     return map;
-  }, [orders, sectionOverrides]);
+  }, [orders]);
 
   const tabBtn = (id: Tab, label: string) => (
     <button
@@ -333,8 +284,9 @@ export function PortalStaffDashboard({
       {tab === "orders" ? (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            New checkout orders appear here automatically. This board refreshes on focus and every 20 seconds while you
-            keep the portal open.
+            New checkout orders appear here automatically. Column moves (New / In production / Finished) and job
+            stages are saved for everyone: this board refreshes on focus and every 20 seconds so all staff see the same
+            view.
           </p>
           <PortalOrdersAutoRefresh orders={orders} />
           <div className="grid gap-6 lg:grid-cols-3">
@@ -354,14 +306,7 @@ export function PortalStaffDashboard({
                       No orders
                     </p>
                   ) : (
-                    grouped[section].map((order) => (
-                      <StaffOrderCard
-                        key={order.id}
-                        order={order}
-                        sectionOverride={sectionOverrides[order.id]}
-                        onMove={onMove}
-                      />
-                    ))
+                    grouped[section].map((order) => <StaffOrderCard key={order.id} order={order} />)
                   )}
                 </div>
               </section>
