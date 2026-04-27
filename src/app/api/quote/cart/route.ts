@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { resendEmailAccepted } from "@/lib/resendResult";
 import { buildPortalOrderFromCartQuote } from "@/lib/portalOrders";
 import { appendDynamicQuoteOrder } from "@/lib/portalPersistence";
 import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
@@ -359,7 +360,7 @@ export async function POST(request: NextRequest) {
         html: teamHtml,
       });
 
-      const businessAccepted = Boolean((businessResult as any)?.data?.id);
+      const businessAccepted = resendEmailAccepted(businessResult);
       if (businessResult.error && !businessAccepted) {
         console.error("[Cart quote email error] team notification", businessResult.error);
       }
@@ -370,7 +371,7 @@ export async function POST(request: NextRequest) {
         subject: `Estimate request received – ${orderId}`,
         html: customerHtml,
       });
-      const customerAccepted = Boolean((customerResult as any)?.data?.id);
+      const customerAccepted = resendEmailAccepted(customerResult);
       if (customerResult.error && !customerAccepted) {
         console.error("[Cart quote email error] customer confirmation", customerResult.error);
       }
@@ -381,7 +382,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: resendErrorMessage(err) }, { status: 500 });
       }
 
-      if (businessResult.error || customerResult.error) {
+      if (!businessAccepted || !customerAccepted) {
         console.warn("[Cart quote email partial failure]", {
           businessError: businessResult.error ?? null,
           customerError: customerResult.error ?? null,

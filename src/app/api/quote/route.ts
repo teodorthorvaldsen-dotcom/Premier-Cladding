@@ -6,6 +6,7 @@ import type { QuoteDraft } from "@/types/quote";
 import type { BoxTrayEdge } from "@/types/boxTray";
 import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
+import { resendEmailAccepted } from "@/lib/resendResult";
 
 const BOX_EDGE_EMAIL_LABEL: Record<BoxTrayEdge, string> = {
   south: "Front",
@@ -337,8 +338,8 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    const businessAccepted = Boolean((businessResult as any)?.data?.id);
-    const customerAccepted = Boolean((customerResult as any)?.data?.id);
+    const businessAccepted = resendEmailAccepted(businessResult);
+    const customerAccepted = resendEmailAccepted(customerResult);
     if (!businessAccepted && !customerAccepted) {
       const err = businessResult.error ?? customerResult.error;
       console.error("[Quote email error]", err);
@@ -347,7 +348,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    if (businessResult.error || customerResult.error) {
+    if (!businessAccepted || !customerAccepted) {
       console.warn("[Quote email partial failure]", {
         businessError: businessResult.error ?? null,
         customerError: customerResult.error ?? null,

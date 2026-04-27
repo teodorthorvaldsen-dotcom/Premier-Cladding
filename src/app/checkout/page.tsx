@@ -120,8 +120,22 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Thank you.</h1>
         <p className="mt-3 text-base text-gray-600">
-          Thank you for your order. We have received it and we will get back to you soon. Please check your spam/junk
-          folder incase your order copy did not come though your main mailbox and please give it 24 hours.
+          {submittedEmailSent ? (
+            <>
+              Thank you for your order. We have received it and we will get back to you soon. Please check your
+              spam/junk folder in case your order copy did not come through your main mailbox and please give it 24
+              hours.
+            </>
+          ) : (
+            <>
+              We have received your request. Email is not configured on this server, so neither you nor our team
+              received an automatic email for this request. Add{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">RESEND_API_KEY</code> and{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">EMAIL_FROM</code> in your hosting environment
+              (e.g. Vercel → Environment Variables), then redeploy. We will still review your request using the contact
+              information you provided.
+            </>
+          )}
         </p>
         <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left text-[15px] text-gray-700">
           <p className="font-medium text-gray-900">What happens next</p>
