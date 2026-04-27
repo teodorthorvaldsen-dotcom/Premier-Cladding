@@ -3,7 +3,6 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
-import { RevitTrayExportBlock } from "@/components/RevitTrayExportBlock";
 import { useCart } from "@/context/CartContext";
 import { usePortalSession } from "@/hooks/usePortalSession";
 import { describeCartLineItem } from "@/lib/describeCartLineItem";
@@ -223,7 +222,6 @@ export default function CheckoutPage() {
                         {item.trayBuildSpec}
                       </pre>
                     ) : null}
-                    <RevitTrayExportBlock item={item} />
                   </div>
                 </div>
               </div>
