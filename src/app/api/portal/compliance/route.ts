@@ -24,8 +24,8 @@ const DISK_NAMES: Record<ComplianceDocSlot, string> = {
   businessLicense: "business-license.pdf",
 };
 
-function isPdfFile(f: File | null): boolean {
-  if (!f || f.size === 0) return false;
+function isPdfFile(f: File): boolean {
+  if (f.size === 0) return false;
   if (f.size > MAX_PDF_BYTES) return false;
   const type = f.type.toLowerCase();
   return type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
@@ -83,6 +83,16 @@ export async function POST(req: NextRequest) {
   const glFile = gl instanceof File ? gl : null;
   const wcFile = wc instanceof File ? wc : null;
   const blFile = bl instanceof File ? bl : null;
+
+  if (!glFile) {
+    return NextResponse.json({ error: "Missing general liability file." }, { status: 400 });
+  }
+  if (!wcFile) {
+    return NextResponse.json({ error: "Missing workers comp file." }, { status: 400 });
+  }
+  if (!blFile) {
+    return NextResponse.json({ error: "Missing business license file." }, { status: 400 });
+  }
 
   if (!isPdfFile(glFile) || !isPdfFile(wcFile) || !isPdfFile(blFile)) {
     return NextResponse.json({ error: "Each upload must be a PDF under 12 MB." }, { status: 400 });
