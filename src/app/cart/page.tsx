@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CartItemMeasurementBlock } from "@/components/CartItemMeasurementBlock";
 import { PanelPreviewModal } from "@/components/PanelPreviewModal";
 import { colors } from "@/data/acm";
@@ -40,6 +40,17 @@ function CartLine({
 }) {
   const color = colors.find((c) => c.id === item.colorId);
   const imageSrc = swatchImageSrc(color);
+  const [qtyDraft, setQtyDraft] = useState<string>(String(item.quantity));
+
+  useEffect(() => {
+    setQtyDraft(String(item.quantity));
+  }, [item.quantity]);
+
+  const commitQty = (raw: string) => {
+    const next = Math.max(0, Math.floor(Number(raw) || 0));
+    setQtyDraft(String(next));
+    onQuantityChange(next < 1 ? 1 : next);
+  };
   const lineTotal = cartItemLineTotal(item);
 
   return (
@@ -107,11 +118,16 @@ function CartLine({
           <span className="text-gray-600">Qty</span>
           <input
             type="number"
-            min={1}
-            value={item.quantity}
-            onChange={(e) =>
-              onQuantityChange(Math.max(1, Math.floor(Number(e.target.value)) || 1))
-            }
+            min={0}
+            value={qtyDraft}
+            onChange={(e) => setQtyDraft(e.target.value)}
+            onBlur={(e) => commitQty(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                commitQty((e.target as HTMLInputElement).value);
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
             className="h-11 w-20 rounded-xl border border-gray-200 px-3 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             aria-label={`Quantity for ${describeCartLineItem(item)}`}
           />
