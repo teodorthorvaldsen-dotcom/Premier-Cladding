@@ -303,22 +303,29 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
 `;
 }
 
-function buildCartCustomerEmailHtml(payload: CartQuotePayload, orderId: string): string {
+function buildCartCustomerEmailHtml(
+  payload: CartQuotePayload,
+  orderId: string,
+  previewCids: (string | null)[]
+): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
 
   const itemsHtml = payload.items
-    .map((i) => {
+    .map((i, rowIndex) => {
       const color = getColorLabel(i.colorId);
       const thicknessLabel = getThicknessLabel(i.thicknessId);
       const finishLabel = getFinishLabel(i.finishId);
       const unit = i.unitPrice;
       const lineTotal = i.unitPrice * i.quantity;
       const lineSqFt = i.areaFt2 * i.quantity;
-      const previewBlock = i.previewImageDataUrl
-        ? `<div style="margin:0 0 10px 0;font-size:12px;color:#6b7280;">3D preview was submitted with this line (omitted from email).</div>`
-        : "";
+      const cid = previewCids[rowIndex] ?? null;
+      const previewBlock = cid
+        ? `<div style="margin:0 0 10px 0;"><img src="cid:${escapeHtml(cid)}" alt="Panel preview" width="280" style="max-width:280px;height:auto;border:1px solid #e5e7eb;border-radius:8px;background:#f4f5f7;display:block" /></div>`
+        : i.previewImageDataUrl
+          ? `<div style="margin:0 0 10px 0;font-size:12px;color:#6b7280;">A panel preview was captured but could not be embedded in this email (too large or unsupported format).</div>`
+          : "";
       const measurementsBlock = trayMeasurementsHtml(i.boxTraySides);
       const customBlock =
         i.customColorReference || i.customColorSpecFileName
@@ -444,10 +451,10 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
-      const { cids: adminPreviewCids, attachments: adminPreviewAttachments } =
+      const { cids: previewCids, attachments: previewAttachments } =
         buildCartPreviewInlineAttachments(payload.items);
-      const teamHtml = buildCartEmailHtml(payload, adminPreviewCids, orderId);
-      const customerHtml = buildCartCustomerEmailHtml(payload, orderId);
+      const teamHtml = buildCartEmailHtml(payload, previewCids, orderId);
+      const customerHtml = buildCartCustomerEmailHtml(payload, orderId, previewCids);
 
       const businessResult = await resend.emails.send({
         from: fromEmail,
@@ -455,9 +462,9 @@ export async function POST(request: NextRequest) {
         replyTo: payload.email.trim(),
         subject: `Cart Quote Request: ${payload.fullName} – ${payload.items.length} item(s)`,
         html: teamHtml,
-        ...(adminPreviewAttachments.length > 0
+        ...(previewAttachments.length > 0
           ? {
-              attachments: adminPreviewAttachments.map((a) => ({
+              attachments: previewAttachments.map((a) => ({
                 filename: a.filename,
                 content: a.content,
                 contentType: a.contentType,
@@ -477,6 +484,16 @@ export async function POST(request: NextRequest) {
         to: [payload.email.trim()],
         subject: `Estimate request received – ${orderId}`,
         html: customerHtml,
+        ...(previewAttachments.length > 0
+          ? {
+              attachments: previewAttachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                contentType: a.contentType,
+                contentId: a.contentId,
+              })),
+            }
+          : {}),
       });
       const customerAccepted = resendEmailAccepted(customerResult);
       if (customerResult.error && !customerAccepted) {
