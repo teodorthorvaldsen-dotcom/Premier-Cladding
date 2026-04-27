@@ -19,7 +19,7 @@ export default async function PortalPage() {
   }
 
   const orders = getPortalOrdersForUser(user);
-  const accounts = listRegistryAccounts();
+  const accounts = user.role === "admin" ? listRegistryAccounts() : [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -45,7 +45,12 @@ export default async function PortalPage() {
         <PortalLogoutButton />
       </div>
 
-      <PortalStaffDashboard orders={orders} accounts={accounts} showInsuranceTab={user.role === "subcontractor"} />
+      <PortalStaffDashboard
+        orders={orders}
+        accounts={accounts}
+        showAccountsTab={user.role === "admin"}
+        showInsuranceTab={user.role === "subcontractor"}
+      />
     </div>
   );
 }

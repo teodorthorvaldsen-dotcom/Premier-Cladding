@@ -257,10 +257,12 @@ function StaffOrderCard({
 export function PortalStaffDashboard({
   orders,
   accounts,
+  showAccountsTab,
   showInsuranceTab,
 }: {
   orders: OrderRecord[];
   accounts: PortalAccountSummary[];
+  showAccountsTab: boolean;
   showInsuranceTab: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("orders");
@@ -270,6 +272,12 @@ export function PortalStaffDashboard({
   useLayoutEffect(() => {
     setSectionOverrides(loadSectionOverrides());
   }, []);
+
+  useEffect(() => {
+    if (!showAccountsTab && tab === "accounts") {
+      setTab("orders");
+    }
+  }, [showAccountsTab, tab]);
 
   useEffect(() => {
     const onFocus = () => setSectionOverrides(loadSectionOverrides());
@@ -318,7 +326,7 @@ export function PortalStaffDashboard({
     <div className="mt-8 space-y-6">
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
         {tabBtn("orders", "Orders")}
-        {tabBtn("accounts", "Manage accounts")}
+        {showAccountsTab ? tabBtn("accounts", "Manage accounts") : null}
         {showInsuranceTab ? tabBtn("insurance", "Insurance & license") : null}
       </div>
 
@@ -362,7 +370,7 @@ export function PortalStaffDashboard({
         </div>
       ) : null}
 
-      {tab === "accounts" ? (
+      {tab === "accounts" && showAccountsTab ? (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="grid grid-cols-12 gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600">
             <div className="col-span-4">Name</div>
