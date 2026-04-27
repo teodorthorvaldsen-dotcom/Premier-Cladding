@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { PortalOrderDetail } from "@/components/PortalOrderDetail";
 import { PortalStaffOrderControls } from "@/components/PortalStaffOrderControls";
 import { getSessionUser } from "@/lib/auth";
 import { getPortalOrderById } from "@/lib/portalOrders";
@@ -23,7 +24,7 @@ export default async function PortalStaffOrderDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <Link href="/portal" className="text-sm font-medium text-gray-700 underline-offset-2 hover:text-gray-900 hover:underline">
         ← Back to orders
       </Link>
@@ -59,6 +60,8 @@ export default async function PortalStaffOrderDetailPage({ params }: Props) {
 
         <PortalStaffOrderControls order={order} showDetailLink={false} />
       </div>
+
+      <PortalOrderDetail order={order} />
     </div>
   );
 }
