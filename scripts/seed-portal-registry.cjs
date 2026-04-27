@@ -1,15 +1,24 @@
 "use strict";
 
 /**
- * Ensures data/portal-registry.json exists (empty registry) for deploys and local dev.
- * See src/lib/portalPersistence.ts — registrySeedPath() reads this file when no writable copy exists.
+ * Ensures data/portal-registry.json exists for deploys and local dev.
+ * Merges a default portal admin if missing (bcrypt hash only — no plaintext).
+ * See src/lib/portalPersistence.ts — registrySeedPath() reads this when no writable copy exists.
  */
 
-const { existsSync, mkdirSync, writeFileSync } = require("fs");
+const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("fs");
 const { join } = require("path");
+const { randomUUID } = require("crypto");
 
 const dataDir = join(process.cwd(), "data");
 const registryPath = join(dataDir, "portal-registry.json");
+
+const DEFAULT_ADMIN = {
+  email: "picken.cycle@gmail.com",
+  name: "Portal admin",
+  /** bcrypt cost 10, generated for the requested password (stored hashed only). */
+  passwordHash: "$2a$10$0NuR1FLUu4mFbnIgocV7tOEQoveACnbCWGqelAHZAiAeyVl8Bmb7q",
+};
 
 const EMPTY_REGISTRY = {
   customers: [],
@@ -17,13 +26,53 @@ const EMPTY_REGISTRY = {
   admins: [],
 };
 
+function readRegistry() {
+  if (!existsSync(registryPath)) {
+    return { ...EMPTY_REGISTRY };
+  }
+  try {
+    const raw = readFileSync(registryPath, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      customers: Array.isArray(parsed.customers) ? parsed.customers : [],
+      employees: Array.isArray(parsed.employees) ? parsed.employees : [],
+      admins: Array.isArray(parsed.admins) ? parsed.admins : [],
+    };
+  } catch {
+    return { ...EMPTY_REGISTRY };
+  }
+}
+
+function mergeDefaultAdmin(registry) {
+  const email = DEFAULT_ADMIN.email.trim().toLowerCase();
+  if (registry.admins.some((a) => typeof a.email === "string" && a.email.trim().toLowerCase() === email)) {
+    return false;
+  }
+  registry.admins.push({
+    id: randomUUID(),
+    email: DEFAULT_ADMIN.email.trim(),
+    passwordHash: DEFAULT_ADMIN.passwordHash,
+    name: DEFAULT_ADMIN.name,
+    createdAt: new Date().toISOString(),
+  });
+  return true;
+}
+
 function main() {
   mkdirSync(dataDir, { recursive: true });
-  if (!existsSync(registryPath)) {
-    writeFileSync(registryPath, `${JSON.stringify(EMPTY_REGISTRY, null, 2)}\n`, "utf8");
+  const existed = existsSync(registryPath);
+  const registry = existed ? readRegistry() : { ...EMPTY_REGISTRY };
+  const added = mergeDefaultAdmin(registry);
+  writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
+  if (!existed) {
     process.stdout.write(`[seed-portal-registry] created ${registryPath}\n`);
   } else {
-    process.stdout.write(`[seed-portal-registry] already present, skip ${registryPath}\n`);
+    process.stdout.write(`[seed-portal-registry] updated ${registryPath}\n`);
+  }
+  if (added) {
+    process.stdout.write(`[seed-portal-registry] merged default admin ${DEFAULT_ADMIN.email}\n`);
+  } else {
+    process.stdout.write(`[seed-portal-registry] default admin already present, skip merge\n`);
   }
 }
 
