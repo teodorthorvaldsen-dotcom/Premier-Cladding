@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { colors } from "@/data/acm";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 import type { CartItem } from "@/types/cart";
@@ -41,7 +42,7 @@ export function PanelPreviewModal({
       ? (color as { swatchImage: string }).swatchImage
       : undefined;
 
-  return (
+  const modal = (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
       role="dialog"
@@ -81,4 +82,8 @@ export function PanelPreviewModal({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(modal, document.body);
 }
