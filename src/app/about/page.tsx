@@ -1,6 +1,11 @@
 import Image from "next/image";
 import { AboutNarrative } from "@/components/AboutNarrative";
+import { ContactForm } from "@/components/ContactForm";
 import { OUR_WORK_IMAGES } from "@/data/ourWorkImages";
+
+const BUSINESS_EMAIL = "premiercladdingsolutions@gmail.com";
+const BUSINESS_PHONE = "+1 (706) 464-7953";
+const BUSINESS_PHONE_TEL = "+17064647953";
 
 export default function AboutPage() {
   return (
@@ -90,6 +95,38 @@ export default function AboutPage() {
             </ul>
           </section>
         </div>
+
+        <section
+          id="about-contact"
+          className="mt-20 scroll-mt-28 border-t border-gray-200 pt-16"
+          aria-labelledby="about-contact-heading"
+        >
+          <div className="mx-auto max-w-3xl">
+            <h2
+              id="about-contact-heading"
+              className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl"
+            >
+              Questions? Contact us here
+            </h2>
+            <p className="mt-6 text-[15px] text-gray-700">
+              <a
+                href={`mailto:${BUSINESS_EMAIL}`}
+                className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
+              >
+                {BUSINESS_EMAIL}
+              </a>
+            </p>
+            <p className="mt-2 text-[15px] text-gray-700">
+              <a
+                href={`tel:${BUSINESS_PHONE_TEL}`}
+                className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
+              >
+                {BUSINESS_PHONE}
+              </a>
+            </p>
+            <ContactForm />
+          </div>
+        </section>
       </section>
     </div>
   );
