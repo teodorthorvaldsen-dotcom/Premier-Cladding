@@ -20,6 +20,12 @@ const DEFAULT_ADMIN = {
   passwordHash: "$2a$10$0NuR1FLUu4mFbnIgocV7tOEQoveACnbCWGqelAHZAiAeyVl8Bmb7q",
 };
 
+/** Staff subcontractor merged if missing (bcrypt hash written to JSON only). */
+const DEFAULT_SUBCONTRACTOR = {
+  email: "Subcontractor@gmail.com",
+  name: "Premier Subcontractor",
+};
+
 const EMPTY_REGISTRY = {
   customers: [],
   employees: [],
@@ -58,21 +64,51 @@ function mergeDefaultAdmin(registry) {
   return true;
 }
 
+function mergeDefaultSubcontractor(registry) {
+  const emailNorm = DEFAULT_SUBCONTRACTOR.email.trim().toLowerCase();
+  if (
+    registry.employees.some((e) => typeof e.email === "string" && e.email.trim().toLowerCase() === emailNorm)
+  ) {
+    return false;
+  }
+  let bcrypt;
+  try {
+    bcrypt = require("bcryptjs");
+  } catch {
+    process.stderr.write("[seed-portal-registry] bcryptjs not found, skip default subcontractor merge\n");
+    return false;
+  }
+  registry.employees.push({
+    id: randomUUID(),
+    email: DEFAULT_SUBCONTRACTOR.email.trim(),
+    passwordHash: bcrypt.hashSync("Premiercladding", 10),
+    name: DEFAULT_SUBCONTRACTOR.name,
+    createdAt: new Date().toISOString(),
+  });
+  return true;
+}
+
 function main() {
   mkdirSync(dataDir, { recursive: true });
   const existed = existsSync(registryPath);
   const registry = existed ? readRegistry() : { ...EMPTY_REGISTRY };
-  const added = mergeDefaultAdmin(registry);
+  const addedAdmin = mergeDefaultAdmin(registry);
+  const addedSub = mergeDefaultSubcontractor(registry);
   writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
   if (!existed) {
     process.stdout.write(`[seed-portal-registry] created ${registryPath}\n`);
   } else {
     process.stdout.write(`[seed-portal-registry] updated ${registryPath}\n`);
   }
-  if (added) {
+  if (addedAdmin) {
     process.stdout.write(`[seed-portal-registry] merged default admin ${DEFAULT_ADMIN.email}\n`);
   } else {
     process.stdout.write(`[seed-portal-registry] default admin already present, skip merge\n`);
+  }
+  if (addedSub) {
+    process.stdout.write(`[seed-portal-registry] merged default subcontractor ${DEFAULT_SUBCONTRACTOR.email}\n`);
+  } else {
+    process.stdout.write(`[seed-portal-registry] default subcontractor already present, skip merge\n`);
   }
 }
 
