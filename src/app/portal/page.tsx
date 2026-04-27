@@ -6,6 +6,8 @@ import { getSessionUser } from "@/lib/auth";
 import { listRegistryAccounts } from "@/lib/portalPersistence";
 import { getPortalOrdersForUser } from "@/lib/portalOrders";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalPage() {
   const user = await getSessionUser();
 

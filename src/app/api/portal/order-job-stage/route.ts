@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getDemoOrderById } from "@/lib/demoData";
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
     const message = e instanceof Error ? e.message : "Failed to persist stage.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  revalidatePath("/portal");
 
   return NextResponse.json({
     ok: true,

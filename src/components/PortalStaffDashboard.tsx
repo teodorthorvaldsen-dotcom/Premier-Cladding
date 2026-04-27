@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PortalStaffOrderControls } from "@/components/PortalStaffOrderControls";
 import PortalSubcontractorComplianceForm from "@/components/PortalSubcontractorComplianceForm";
 import type { OrderRecord } from "@/lib/demoData";
@@ -110,7 +110,9 @@ function PortalOrderSectionMover({ orderId, section }: { orderId: string; sectio
         setError(typeof data.error === "string" ? data.error : "Could not move order.");
         return;
       }
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     } catch {
       setError("Could not reach server. Try again.");
     } finally {
@@ -173,7 +175,7 @@ function StaffOrderCard({ order }: { order: OrderRecord }) {
               {PORTAL_ORDER_SECTION_LABEL[section]}
             </div>
           </div>
-          <PortalOrderSectionMover orderId={order.id} section={section} />
+          <PortalOrderSectionMover key={`${order.id}-${section}`} orderId={order.id} section={section} />
         </div>
       </div>
 
