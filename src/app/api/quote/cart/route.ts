@@ -8,6 +8,8 @@ import { formatRevitTrayExportJson } from "@/lib/revitTrayExport";
 import type { BoxTraySideRow } from "@/types/boxTray";
 import { colors, finishes, thicknesses } from "@/data/acm";
 
+export const runtime = "nodejs";
+
 const ORDER_COPY_EMAIL = "premiercladdingsolutions@gmail.com";
 
 const BOX_EDGE_EMAIL_LABEL: Record<string, string> = {
