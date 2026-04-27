@@ -24,13 +24,6 @@ const TRUST_ITEMS = [
   },
 ];
 
-const CAPABILITIES = [
-  { title: "ACM Panels", description: "Fire-rated aluminum composite material. Consultation and quotes nationwide." },
-  { title: "Custom Shop Drawings", description: "Inquire about purchasing shop drawings prepared by our team." },
-  { title: "Nationwide", description: "Shipping across the United States. Delivery options and pricing with your quote." },
-  { title: "Installation", description: "We recommend installers that can bid your project." },
-];
-
 const PRODUCT_HIGHLIGHTS = [
   {
     title: "ACM Panels",
@@ -94,7 +87,7 @@ export default function HomePage() {
       {/* Trust bar */}
       <section
         className="border-y border-gray-200 bg-white"
-        aria-label="Capabilities"
+        aria-label="Service highlights"
       >
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -138,36 +131,6 @@ export default function HomePage() {
               </span>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* Capabilities */}
-      <section
-        className="bg-[#0f0f10] py-28 lg:py-32"
-        aria-labelledby="capabilities-heading"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 id="capabilities-heading" className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Capabilities
-          </h2>
-          <p className="mt-2 text-[15px] text-gray-400">
-            Capabilities and service scope.
-          </p>
-          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {CAPABILITIES.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-white/[0.08] px-8 py-10 transition-colors duration-300 hover:border-white/15 hover:bg-white/[0.02]"
-              >
-                <h3 className="text-[15px] font-medium text-white">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
