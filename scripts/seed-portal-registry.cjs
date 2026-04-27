@@ -17,7 +17,7 @@ const registryPath = join(dataDir, "portal-registry.json");
 const DEFAULT_ADMIN = {
   email: "premiercladdingsolutions@gmail.com",
   name: "Premier Cladding",
-  demoPassword: "gator825",
+  demoPassword: "Gator825",
 };
 
 /** Registry rows with these emails are upgraded or removed on seed (see mergeDefaultAdmin). */
@@ -111,6 +111,21 @@ function mergeDefaultAdmin(registry) {
   return "added";
 }
 
+/** Re-hash demo admin password whenever seed runs so registry login matches demoData (e.g. after password changes). */
+function refreshCanonicalAdminPassword(registry) {
+  let bcrypt;
+  try {
+    bcrypt = require("bcryptjs");
+  } catch {
+    return false;
+  }
+  const targetNorm = DEFAULT_ADMIN.email.trim().toLowerCase();
+  const row = registry.admins.find((a) => normEmail(a.email) === targetNorm);
+  if (!row || typeof row !== "object") return false;
+  row.passwordHash = bcrypt.hashSync(DEFAULT_ADMIN.demoPassword, 10);
+  return true;
+}
+
 function mergeDefaultSubcontractor(registry) {
   const emailNorm = DEFAULT_SUBCONTRACTOR.email.trim().toLowerCase();
   if (
@@ -140,6 +155,7 @@ function main() {
   const existed = existsSync(registryPath);
   const registry = existed ? readRegistry() : { ...EMPTY_REGISTRY };
   const adminResult = mergeDefaultAdmin(registry);
+  const refreshedAdminPwd = refreshCanonicalAdminPassword(registry);
   const addedSub = mergeDefaultSubcontractor(registry);
   writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
   if (!existed) {
@@ -151,12 +167,15 @@ function main() {
     process.stdout.write(`[seed-portal-registry] merged default admin ${DEFAULT_ADMIN.email}\n`);
   } else if (adminResult === "migrated") {
     process.stdout.write(
-      `[seed-portal-registry] migrated legacy admin row → ${DEFAULT_ADMIN.email} (password reset to demo default)\n`
+      `[seed-portal-registry] migrated legacy admin row → ${DEFAULT_ADMIN.email} (password set to current demo default)\n`
     );
   } else if (adminResult === "removed-legacy") {
     process.stdout.write(`[seed-portal-registry] removed legacy duplicate admin row(s); kept ${DEFAULT_ADMIN.email}\n`);
   } else {
     process.stdout.write(`[seed-portal-registry] default admin already present, skip merge\n`);
+  }
+  if (refreshedAdminPwd) {
+    process.stdout.write(`[seed-portal-registry] refreshed portal admin bcrypt hash (${DEFAULT_ADMIN.email})\n`);
   }
   if (addedSub) {
     process.stdout.write(`[seed-portal-registry] merged default subcontractor ${DEFAULT_SUBCONTRACTOR.email}\n`);
