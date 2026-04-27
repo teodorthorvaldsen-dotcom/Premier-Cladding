@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { appendFile, mkdir } from "fs/promises";
-import path from "path";
-import { tmpdir } from "os";
-import jwt from "jsonwebtoken";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 import { resendEmailAccepted } from "@/lib/resendResult";
 import { buildPortalOrderFromCartQuote } from "@/lib/portalOrders";
@@ -52,21 +48,6 @@ interface CartQuotePayload {
   paymentMethod: "wire" | "credit";
   signature: string;
 }
-
-type PublicCartOrderRecord = {
-  id: string;
-  createdAt: string;
-  fullName: string;
-  company: string;
-  email: string;
-  phone: string;
-  projectCity: string;
-  projectState: string;
-  notes: string;
-  paymentMethod: "wire" | "credit";
-  signature: string;
-  items: CartQuoteItem[];
-};
 
 function formatUSD(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -117,49 +98,6 @@ function siteUrlForEmails(): string | null {
   const vercel = process.env.VERCEL_URL?.trim();
   if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
   return null;
-}
-
-function publicCartOrdersJsonlPath(): string {
-  const fromEnv = process.env.PORTAL_DATA_DIR?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path.join(process.cwd(), "data");
-  return path.join(base, "public-cart-orders.jsonl");
-}
-
-async function appendPublicCartOrder(record: PublicCartOrderRecord): Promise<void> {
-  const p = publicCartOrdersJsonlPath();
-  try {
-    await mkdir(path.dirname(p), { recursive: true });
-    await appendFile(p, JSON.stringify(record) + "\n", "utf-8");
-  } catch {
-    const fallbackDir = path.join(tmpdir(), "all-cladding-solutions-data");
-    await mkdir(fallbackDir, { recursive: true });
-    await appendFile(path.join(fallbackDir, "public-cart-orders.jsonl"), JSON.stringify(record) + "\n", "utf-8");
-  }
-}
-
-function orderViewerToken(orderId: string): string | null {
-  const secret = process.env.ORDER_VIEW_SECRET?.trim();
-  if (!secret) return null;
-  return jwt.sign({ orderId }, secret, { expiresIn: "14d" });
-}
-
-function orderViewerUrl(orderId: string, token: string | null): string | null {
-  const base = siteUrlForEmails();
-  if (!base || !token) return null;
-  return `${base}/order/${encodeURIComponent(orderId)}?t=${encodeURIComponent(token)}`;
-}
-
-function orderViewerButtonHtml(orderId: string, token: string | null): string {
-  const url = orderViewerUrl(orderId, token);
-  if (!url) return "";
-  return `
-  <div style="margin: 14px 0 18px 0;">
-    <a href="${escapeHtml(url)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;">
-      View this order in 3D
-    </a>
-    <div style="margin-top:6px;font-size:12px;color:#6b7280;">Opens the interactive 3D viewer in your browser.</div>
-  </div>
-`;
 }
 
 /** Explains that email cannot run WebGL / 3D; optional link to the configurator. */
@@ -257,12 +195,7 @@ function trayMeasurementsHtml(sidesUnknown: unknown): string {
   return `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#374151;"><div style="font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#6b7280;font-size:11px;margin-bottom:4px;">Measurements</div>${rows}</div>`;
 }
 
-function buildCartEmailHtml(
-  payload: CartQuotePayload,
-  previewCids: (string | null)[],
-  orderId: string,
-  viewerToken: string | null
-): string {
+function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | null)[]): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
   const paymentLabel = payload.paymentMethod === "wire" ? "Wire transfer" : "Credit card (3% fee)";
@@ -340,7 +273,6 @@ function buildCartEmailHtml(
     <tr><td style="padding: 4px 12px 4px 0; color: #666;">Signature</td><td>${escapeHtml(payload.signature)}</td></tr>
     ${payload.notes ? `<tr><td style="padding: 4px 12px 4px 0; color: #666;">Notes</td><td>${escapeHtml(payload.notes)}</td></tr>` : ""}
   </table>
-  ${orderViewerButtonHtml(orderId, viewerToken)}
 
   <h3 style="margin-bottom: 0.5em; font-size: 1em;">Line Items</h3>
   <table style="border-collapse: collapse; margin-bottom: 1.5em; width: 100%;">
@@ -366,8 +298,7 @@ function buildCartEmailHtml(
 function buildCartCustomerEmailHtml(
   payload: CartQuotePayload,
   orderId: string,
-  previewCids: (string | null)[],
-  viewerToken: string | null
+  previewCids: (string | null)[]
 ): string {
   const subtotal = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const totalSqFt = payload.items.reduce((sum, i) => sum + i.areaFt2 * i.quantity, 0);
@@ -429,7 +360,6 @@ function buildCartCustomerEmailHtml(
     <div style="font-size:13px;color:#374151;margin-bottom:6px;"><strong>Project:</strong> ${escapeHtml(payload.projectCity)}, ${escapeHtml(payload.projectState)}</div>
     ${payload.company ? `<div style="font-size:13px;color:#374151;"><strong>Company:</strong> ${escapeHtml(payload.company)}</div>` : ""}
   </div>
-  ${orderViewerButtonHtml(orderId, viewerToken)}
 
   <h3 style="margin: 18px 0 8px 0; font-size: 1em;">Order summary</h3>
   <div style="border-top:1px solid #eef2f7;">${itemsHtml}</div>
@@ -477,22 +407,6 @@ export async function POST(request: NextRequest) {
     };
 
     const orderId = `ORD-Q-${Date.now().toString(36)}`;
-    const viewerToken = orderViewerToken(orderId);
-
-    await appendPublicCartOrder({
-      id: orderId,
-      createdAt: new Date().toISOString(),
-      fullName: payload.fullName,
-      company: payload.company,
-      email: payload.email,
-      phone: payload.phone,
-      projectCity: payload.projectCity,
-      projectState: payload.projectState,
-      notes: payload.notes,
-      paymentMethod: payload.paymentMethod,
-      signature: payload.signature,
-      items: payload.items,
-    });
     try {
       const order = buildPortalOrderFromCartQuote({
         orderId,
@@ -531,8 +445,8 @@ export async function POST(request: NextRequest) {
     if (apiKey && fromEmail) {
       const resend = new Resend(apiKey);
       const { cids: previewCids, attachments: previewAttachments } = buildCartPreviewInlineAttachments(payload.items);
-      const teamHtml = buildCartEmailHtml(payload, previewCids, orderId, viewerToken);
-      const customerHtml = buildCartCustomerEmailHtml(payload, orderId, previewCids, viewerToken);
+      const teamHtml = buildCartEmailHtml(payload, previewCids);
+      const customerHtml = buildCartCustomerEmailHtml(payload, orderId, previewCids);
       const previewAttachmentPayload =
         previewAttachments.length > 0
           ? previewAttachments.map((a) => ({
