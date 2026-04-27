@@ -27,6 +27,7 @@ import {
   formatBoxTrayReproductionSpec,
   normalizeBoxTraySides,
 } from "@/lib/boxTray";
+import type { BoxTraySideRow } from "@/types/boxTray";
 
 const defaultSize: SizeSelection = {
   widthId: "custom",
@@ -200,7 +201,9 @@ export function Configurator() {
         widthId: "custom",
         widthIn: li.widthIn,
         lengthIn: li.heightIn,
-        boxSides: normalizeBoxTraySides(li.boxTraySides ?? prev.boxSides),
+        boxSides: normalizeBoxTraySides(
+          (li.boxTraySides ?? prev.boxSides ?? []) as BoxTraySideRow[]
+        ),
       }));
       setThicknessId(normalizeThicknessId(li.thicknessId));
       setQuantity(Math.max(1, Math.floor(li.quantity || 1)));
