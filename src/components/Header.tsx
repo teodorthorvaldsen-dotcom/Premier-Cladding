@@ -272,7 +272,9 @@ export function Header() {
               {navItems.map((item) => {
                 if ("href" in item) {
                   const active = itemIsActive(pathname ?? "", item.href);
-                  return <DesktopLink key={item.id} href={item.href} label={item.label} active={active} />;
+                  const label =
+                    item.id === "cart" ? `Cart${totalCount > 0 ? ` (${totalCount})` : ""}` : item.label;
+                  return <DesktopLink key={item.id} href={item.href} label={label} active={active} />;
                 }
                 const active = groupIsActive(pathname ?? "", item);
                 return <DesktopDropdown key={item.id} label={item.label} active={active} items={item.items} />;
