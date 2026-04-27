@@ -56,7 +56,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== "subcontractor") {
+  if (!user || !canAccessCompliance(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

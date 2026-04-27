@@ -134,8 +134,8 @@ export default function PortalSubcontractorComplianceForm({ orderSummaries }: Pr
           Insurance &amp; business license
         </h2>
         <p className="mt-2 text-[14px] text-gray-600">
-          Subcontractors: upload PDF certificates for the selected order. General liability and workers comp each require
-          an expiration date. Each submission is stored and listed below by customer company name.
+          Staff (subcontractors and admins): upload PDF certificates for the selected order. General liability and workers
+          comp each require an expiration date. Each submission is stored and listed below by customer company name.
         </p>
 
         {orderSummaries.length > 1 ? (

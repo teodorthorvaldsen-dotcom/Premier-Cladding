@@ -49,7 +49,7 @@ export default async function PortalPage() {
         orders={orders}
         accounts={accounts}
         showAccountsTab={user.role === "admin"}
-        showInsuranceTab={user.role === "subcontractor"}
+        showInsuranceTab={user.role === "subcontractor" || user.role === "admin"}
       />
     </div>
   );
