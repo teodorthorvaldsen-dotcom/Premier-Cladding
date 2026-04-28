@@ -424,7 +424,7 @@ export function Configurator({
                   id="thickness"
                   className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
                 >
-                  <ThicknessPicker value={thicknessId} onChange={setThicknessId} />
+                  <ThicknessPicker value={thicknessId} onChange={setThicknessId} variant={variant} />
                 </div>
               ) : null}
               <div
@@ -438,6 +438,8 @@ export function Configurator({
                   productNoun={variant === "flashing" ? "flashing" : "panel"}
                   minWidthIn={hideSizeMinimums ? null : undefined}
                   minLengthIn={hideSizeMinimums ? null : undefined}
+                  maxWidthIn={variant === "flashing" ? 48 : undefined}
+                  maxLengthIn={variant === "flashing" ? 120 : undefined}
                   hideAllowedText={hideSizeMinimums}
                 />
               </div>

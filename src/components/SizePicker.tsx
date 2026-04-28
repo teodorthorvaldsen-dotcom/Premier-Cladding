@@ -100,6 +100,10 @@ interface SizePickerProps {
   minWidthIn?: number | null;
   /** When set to null, do not enforce a minimum in the UI. */
   minLengthIn?: number | null;
+  /** Optional max override (e.g. flashing uses 48"). */
+  maxWidthIn?: number;
+  /** Optional max override (e.g. flashing uses 120"). */
+  maxLengthIn?: number;
   /** Hide the "Allowed:" helper text block. */
   hideAllowedText?: boolean;
 }
@@ -109,10 +113,10 @@ function getMaxLengthIn(thicknessId: ThicknessId): number {
   return maxLengthByThicknessMm[mm] ?? 190;
 }
 
-function clampWidth(val: number, minWidthIn: number): number {
+function clampWidth(val: number, minWidthIn: number, maxWidthIn: number): number {
   const n = Math.round(Number(val));
   if (Number.isNaN(n) || n < minWidthIn) return minWidthIn;
-  return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(minWidthIn, n));
+  return Math.min(maxWidthIn, Math.max(minWidthIn, n));
 }
 
 export function SizePicker({
@@ -123,10 +127,12 @@ export function SizePicker({
   productNoun = "panel",
   minWidthIn = CUSTOM_WIDTH_MIN_IN,
   minLengthIn = MIN_LENGTH_IN,
+  maxWidthIn = CUSTOM_WIDTH_MAX_IN,
+  maxLengthIn,
   hideAllowedText = false,
 }: SizePickerProps) {
   const isPanel = variant === "propertiesPanel";
-  const maxLength = getMaxLengthIn(thicknessId);
+  const maxLength = maxLengthIn ?? getMaxLengthIn(thicknessId);
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
@@ -174,7 +180,7 @@ export function SizePicker({
       });
       return;
     }
-    const w = clampWidth(num, (minWidthIn ?? 0) || 0);
+    const w = clampWidth(num, (minWidthIn ?? 0) || 0, maxWidthIn);
     const len = clampLength(value.lengthIn);
     onChange({
       ...value,
@@ -278,7 +284,7 @@ export function SizePicker({
       ) : (
         !hideAllowedText ? (
           <p className="mt-0.5 text-xs text-gray-500">
-            Enter width and length for the flat center face. Allowed: {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}&quot; wide,{" "}
+            Enter width and length for the flat center face. Allowed: {CUSTOM_WIDTH_MIN_IN}–{maxWidthIn}&quot; wide,{" "}
             {MIN_LENGTH_IN}–{maxLength}&quot; long, up to {MAX_TRAY_SIDE_ROWS} returns (first four sides default to Front, Back,
             Left, Right at 90°).
           </p>
@@ -302,7 +308,7 @@ export function SizePicker({
             type="number"
             inputMode="numeric"
             min={minWidthIn ?? undefined}
-            max={CUSTOM_WIDTH_MAX_IN}
+            max={maxWidthIn}
             value={widthStr}
             onChange={(e) => handleWidthChange(e.target.value)}
             onBlur={() => setWidthStr(String(value.widthIn))}

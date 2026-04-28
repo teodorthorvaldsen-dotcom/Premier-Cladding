@@ -5,14 +5,18 @@ import { thicknesses, type ThicknessId } from "@/data/acm";
 interface ThicknessPickerProps {
   value: ThicknessId;
   onChange: (id: ThicknessId) => void;
+  variant?: "acm" | "flashing";
 }
 
-export function ThicknessPicker({ value, onChange }: ThicknessPickerProps) {
+export function ThicknessPicker({ value, onChange, variant = "acm" }: ThicknessPickerProps) {
+  const label = variant === "flashing" ? "Flashing thickness" : "Thickness";
+  const hint = variant === "flashing" ? "Thickness shown in inches." : "Select panel thickness.";
+  const aria = variant === "flashing" ? "Flashing thickness" : "Panel thickness";
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900">Thickness</label>
-      <p className="mt-0.5 text-xs text-gray-500">Select panel thickness.</p>
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Panel thickness">
+      <label className="block text-sm font-medium text-gray-900">{label}</label>
+      <p className="mt-0.5 text-xs text-gray-500">{hint}</p>
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={aria}>
         {thicknesses.map((t) => (
           <button
             key={t.id}
@@ -25,7 +29,7 @@ export function ThicknessPicker({ value, onChange }: ThicknessPickerProps) {
                 : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
             }`}
           >
-            {t.label}
+            {variant === "flashing" ? '.039"' : t.label}
           </button>
         ))}
       </div>
