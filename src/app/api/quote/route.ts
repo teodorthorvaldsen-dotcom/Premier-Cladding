@@ -7,6 +7,10 @@ import type { BoxTrayEdge } from "@/types/boxTray";
 import { getPanelBendsFromQuoteDraft } from "@/lib/panelBends";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 import { resendEmailAccepted } from "@/lib/resendResult";
+import { appendDynamicQuoteOrder } from "@/lib/portalPersistence";
+import { colors } from "@/data/acm";
+import type { CartItem } from "@/types/cart";
+import type { OrderRecord } from "@/lib/demoData";
 
 const BOX_EDGE_EMAIL_LABEL: Record<BoxTrayEdge, string> = {
   south: "Front",
@@ -372,6 +376,64 @@ export async function POST(request: NextRequest) {
     const dataDir = path.dirname(QUOTES_JSONL_PATH);
     await mkdir(dataDir, { recursive: true });
     await appendFile(QUOTES_JSONL_PATH, JSON.stringify(record) + "\n");
+
+    // Persist into staff portal orders board (best-effort; should not fail quote submission).
+    try {
+      const cfg = payload.config;
+      const orderId = `ORD-${Date.now().toString(36)}`;
+      const unitPrice = cfg.quantity > 0 ? cfg.estimatedTotal / cfg.quantity : 0;
+      const colorName = colors.find((c) => c.id === cfg.colorId)?.name ?? cfg.colorId;
+      const lineItem: CartItem = {
+        id: `${orderId}-line-0`,
+        productKind: "acm",
+        productLabel: cfg.productLabel ?? "ACM Panels",
+        standardId: cfg.widthId,
+        widthIn: cfg.widthIn,
+        heightIn: cfg.lengthIn,
+        colorId: cfg.colorId,
+        finishId: cfg.finishId,
+        thicknessId: cfg.thicknessId,
+        quantity: cfg.quantity,
+        unitPrice,
+        areaFt2: cfg.areaFt2PerPanel,
+        panelType: cfg.panelType,
+        panelTypeLabel: cfg.panelTypeLabel,
+        ...(cfg.boxTraySides?.length ? { boxTraySides: cfg.boxTraySides } : {}),
+        ...(cfg.customColorReference ? { customColorReference: cfg.customColorReference } : {}),
+        ...(cfg.customColorSpecOversizeFileName
+          ? { customColorSpecFileName: cfg.customColorSpecOversizeFileName }
+          : {}),
+        ...(cfg.clipsPerPanel ? { clipsPerPanel: cfg.clipsPerPanel } : {}),
+        ...(cfg.clipsNeeded ? { clipsNeeded: cfg.clipsNeeded } : {}),
+      };
+      const order: OrderRecord = {
+        id: orderId,
+        customerId: `guest-${orderId}`,
+        customerName: payload.fullName.trim(),
+        companyName: payload.company.trim() || "—",
+        customerEmail: payload.email.trim(),
+        customerPhone: payload.phone?.trim() || "—",
+        shippingAddress: {
+          line1: "As provided on quote request",
+          line2: undefined,
+          city: payload.projectCity?.trim() || "—",
+          state: payload.projectState?.trim() || "—",
+          postalCode: "—",
+        },
+        status: "Pending",
+        createdAt: new Date().toISOString().slice(0, 10),
+        projectName: cfg.panelTypeLabel ?? "Quote request",
+        measurements: { width: cfg.widthIn, height: cfg.lengthIn, unit: "in" },
+        material: "ACM",
+        color: colorName,
+        previewImageSrc: "/portal-orders/ord-1001-preview.svg",
+        lineItem,
+        cartLineItems: [lineItem],
+      };
+      appendDynamicQuoteOrder(order);
+    } catch (e) {
+      console.error("[Quote portal persist]", e);
+    }
 
     return NextResponse.json({ ok: true, emailSent: customerAccepted });
   } catch (e) {
