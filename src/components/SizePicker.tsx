@@ -17,6 +17,7 @@ import {
   trayDefaultAngleDegForSlot,
   trayEdgeForSlotIndex,
   trayFoldRowTitles,
+  trayFoldRowTitlesForFlashing,
 } from "@/lib/boxTray";
 import { clampAngleDeg } from "@/lib/panelBends";
 
@@ -245,7 +246,10 @@ export function SizePicker({
     pushSides(next);
   };
 
-  const foldRowTitles = useMemo(() => trayFoldRowTitles(value.boxSides), [value.boxSides]);
+  const foldRowTitles = useMemo(
+    () => (isFlashing ? trayFoldRowTitlesForFlashing(value.boxSides) : trayFoldRowTitles(value.boxSides)),
+    [isFlashing, value.boxSides]
+  );
 
   const removeSide = (id: string) => {
     const drop = collectSubtreeIds(value.boxSides, id);

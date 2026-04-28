@@ -192,6 +192,14 @@ export function trayFoldRowTitles(sides: BoxTraySideRow[]): string[] {
   return sides.map((_, i) => formatTrayFoldTitle(rootOrdinalById, sides, i));
 }
 
+/**
+ * Flashing UI uses a simple fold index list: F1, F2, F3...
+ * (Flashing currently restricts folds to a single linear chain on one edge.)
+ */
+export function trayFoldRowTitlesForFlashing(sides: BoxTraySideRow[]): string[] {
+  return sides.map((_, i) => `F${i + 1}`);
+}
+
 /** Same as {@link trayFoldRowTitles} (face text matches form). */
 export function trayFoldRowPreviewLabels(sides: BoxTraySideRow[]): string[] {
   return trayFoldRowTitles(sides);

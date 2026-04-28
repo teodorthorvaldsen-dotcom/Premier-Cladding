@@ -508,6 +508,8 @@ export function Configurator({
                 sidedLabel={variant === "flashing" ? "sides" : "tray"}
                 defaultZoomMul={variant === "flashing" ? 1.7 : undefined}
                 allowFullRotate={variant === "flashing"}
+                foldLabelStyle={variant === "flashing" ? "flashing" : undefined}
+                rotateFlatCenterLabel={variant === "flashing"}
                 compact
                 scale={2}
                 panelSwatchImage={

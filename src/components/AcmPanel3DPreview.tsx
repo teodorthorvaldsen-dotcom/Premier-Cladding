@@ -10,6 +10,7 @@ import {
   formatBoxTrayReproductionSpec,
   normalizeBoxTraySides,
   trayFoldRowPreviewLabels,
+  trayFoldRowTitlesForFlashing,
 } from "@/lib/boxTray";
 
 /** Preview viewport height (px). */
@@ -73,6 +74,10 @@ export interface AcmPanel3DPreviewProps {
   allowFullRotate?: boolean;
   /** Rotate the entire assembly (radians). Useful for flashing orientation. */
   modelRotation?: [number, number, number];
+  /** Flashing uses simplified fold labels (F1, F2, ...). */
+  foldLabelStyle?: "default" | "flashing";
+  /** Rotate the "Flat center" label to run along the center. */
+  rotateFlatCenterLabel?: boolean;
 }
 
 type BuiltPart = {
@@ -239,7 +244,8 @@ function buildBoxTrayParts(
   widthIn: number,
   lengthIn: number,
   thicknessWorld: number,
-  sides: BoxTraySideRow[]
+  sides: BoxTraySideRow[],
+  rowTitles: string[]
 ): BuiltPart[] {
   const W = inchesToWorld(widthIn);
   const L = inchesToWorld(lengthIn);
@@ -259,8 +265,6 @@ function buildBoxTrayParts(
   let stackNorth = 0;
   let stackWest = 0;
   let stackEast = 0;
-
-  const rowTitles = trayFoldRowPreviewLabels(sides);
 
   for (let i = 0; i < sides.length; i++) {
     const side = sides[i];
@@ -439,20 +443,25 @@ function PartSurfaceLabel({
   thickness,
   spanXY,
   vertical,
+  rotateFlatCenterLabel,
 }: {
   label: string;
   thickness: number;
   spanXY: number;
   /** Side 3 / 4 (and repeating left/right in the tray cycle): run text along the flange length. */
   vertical: boolean;
+  rotateFlatCenterLabel: boolean;
 }) {
   const t = Math.max(thickness, 0.008);
   /** Higher floor so short labels (e.g. “Side 1”) read the same size as longer abbreviated folds on small flanges. */
   const fontSize = THREE.MathUtils.clamp(spanXY * 0.072, 0.125, 0.34);
+  const isFlatCenter = label === "Flat center";
   return (
     <Text
       position={[0, 0, t / 2 + 0.028]}
-      rotation={vertical ? [0, 0, Math.PI / 2] : [0, 0, 0]}
+      rotation={
+        vertical || (rotateFlatCenterLabel && isFlatCenter) ? [0, 0, Math.PI / 2] : [0, 0, 0]
+      }
       fontSize={fontSize}
       color="#000000"
       fontWeight={700}
@@ -471,10 +480,12 @@ function FoldedPanelMesh({
   parts,
   colorHex,
   mapUrl,
+  rotateFlatCenterLabel,
 }: {
   parts: BuiltPart[];
   colorHex: string;
   mapUrl?: string;
+  rotateFlatCenterLabel: boolean;
 }) {
   return (
     <group>
@@ -500,6 +511,7 @@ function FoldedPanelMesh({
                 thickness={p.args[2]}
                 spanXY={Math.max(p.args[0], p.args[1])}
                 vertical={p.key !== "base" && (p.edge === "west" || p.edge === "east")}
+                rotateFlatCenterLabel={rotateFlatCenterLabel}
               />
             </Suspense>
           </group>
@@ -520,6 +532,7 @@ function PreviewRig({
   zoomMul,
   allowFullRotate,
   modelRotation,
+  rotateFlatCenterLabel,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
@@ -529,6 +542,7 @@ function PreviewRig({
   zoomMul: number;
   allowFullRotate: boolean;
   modelRotation: [number, number, number];
+  rotateFlatCenterLabel: boolean;
 }) {
   const { camera, size } = useThree();
   const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
@@ -554,7 +568,12 @@ function PreviewRig({
         <Environment preset="apartment" environmentIntensity={0.5} />
         <group rotation={modelRotation}>
           <group position={[-center.x, -center.y, -center.z]}>
-            <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
+            <FoldedPanelMesh
+              parts={parts}
+              colorHex={colorHex}
+              mapUrl={mapUrl}
+              rotateFlatCenterLabel={rotateFlatCenterLabel}
+            />
           </group>
         </group>
       </Suspense>
@@ -583,6 +602,7 @@ function PreviewScene({
   zoomMul,
   allowFullRotate,
   modelRotation,
+  rotateFlatCenterLabel,
   glCanvasRef,
 }: {
   parts: BuiltPart[];
@@ -592,6 +612,7 @@ function PreviewScene({
   zoomMul: number;
   allowFullRotate: boolean;
   modelRotation: [number, number, number];
+  rotateFlatCenterLabel: boolean;
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
@@ -633,6 +654,7 @@ function PreviewScene({
         zoomMul={zoomMul}
         allowFullRotate={allowFullRotate}
         modelRotation={modelRotation}
+        rotateFlatCenterLabel={rotateFlatCenterLabel}
       />
     </Canvas>
   );
@@ -658,6 +680,8 @@ export function AcmPanel3DPreview({
   defaultZoomMul = 1,
   allowFullRotate = false,
   modelRotation = [0, 0, 0],
+  foldLabelStyle = "default",
+  rotateFlatCenterLabel = false,
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(() =>
     THREE.MathUtils.clamp(
@@ -668,9 +692,14 @@ export function AcmPanel3DPreview({
   );
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
 
+  const foldLabels = useMemo(
+    () => (foldLabelStyle === "flashing" ? trayFoldRowTitlesForFlashing(sidesNorm) : trayFoldRowPreviewLabels(sidesNorm)),
+    [foldLabelStyle, sidesNorm]
+  );
+
   const activeParts = useMemo(
-    () => buildBoxTrayParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), sidesNorm),
-    [panelWidthIn, panelHeightIn, panelDepthIn, sidesNorm]
+    () => buildBoxTrayParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), sidesNorm, foldLabels),
+    [panelWidthIn, panelHeightIn, panelDepthIn, sidesNorm, foldLabels]
   );
 
   const hex =
@@ -795,6 +824,7 @@ export function AcmPanel3DPreview({
           zoomMul={previewZoomMul}
           allowFullRotate={allowFullRotate}
           modelRotation={modelRotation}
+          rotateFlatCenterLabel={rotateFlatCenterLabel}
           glCanvasRef={glCanvasRef}
         />
       </div>
@@ -863,9 +893,10 @@ export function TrayInteractivePreview({
 }) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSides), [boxSides]);
+  const foldLabels = useMemo(() => trayFoldRowPreviewLabels(sidesNorm), [sidesNorm]);
   const activeParts = useMemo(
-    () => buildBoxTrayParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), sidesNorm),
-    [panelWidthIn, panelHeightIn, panelDepthIn, sidesNorm]
+    () => buildBoxTrayParts(panelWidthIn, panelHeightIn, inchesToWorld(panelDepthIn), sidesNorm, foldLabels),
+    [panelWidthIn, panelHeightIn, panelDepthIn, sidesNorm, foldLabels]
   );
   const hex =
     panelColorHex && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(panelColorHex.trim())
@@ -917,6 +948,7 @@ export function TrayInteractivePreview({
         zoomMul={previewZoomMul}
         allowFullRotate={false}
         modelRotation={[0, 0, 0]}
+        rotateFlatCenterLabel={false}
       />
     </div>
   );
