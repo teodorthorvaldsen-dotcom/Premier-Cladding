@@ -27,6 +27,16 @@ const PANEL_TYPE_LABELS: Record<PanelType, string> = {
   tray: "Custom Shape",
 };
 
+function panelTypeLabelFor(input: PricingInput): string {
+  const kind = input.productKind === "flashing" ? "flashing" : "acm";
+  if (kind === "flashing") {
+    // Flashing has no extrusions; keep labels simple.
+    if (input.panelType === "tray") return "Custom Shape";
+    return "Basic Rectangular";
+  }
+  return PANEL_TYPE_LABELS[input.panelType];
+}
+
 export function calculatePricing(input: PricingInput): PricingResult {
   const totalSqFt = input.areaFt2 * input.quantity;
   const kind = input.productKind === "flashing" ? "flashing" : "acm";
@@ -48,6 +58,6 @@ export function calculatePricing(input: PricingInput): PricingResult {
     pricePerSqFt,
     total,
     panelType: input.panelType,
-    panelTypeLabel: PANEL_TYPE_LABELS[input.panelType],
+    panelTypeLabel: panelTypeLabelFor(input),
   };
 }

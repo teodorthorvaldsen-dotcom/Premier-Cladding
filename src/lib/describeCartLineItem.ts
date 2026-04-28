@@ -61,6 +61,11 @@ export function describeCartLineItem(item: CartItem): string {
       : total != null
         ? `${total} clips total`
         : undefined;
+
+  const typeLabel =
+    item.productKind === "flashing" && item.panelTypeLabel?.toLowerCase().includes("extrusions")
+      ? "Basic Rectangular"
+      : item.panelTypeLabel;
   const parts = [
     productShort,
     sizeLabel,
@@ -69,7 +74,7 @@ export function describeCartLineItem(item: CartItem): string {
     color,
     finishLabel,
     thickness,
-    item.panelTypeLabel,
+    typeLabel,
   ].filter(Boolean);
   return parts.join(" · ");
 }

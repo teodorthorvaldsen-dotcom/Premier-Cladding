@@ -41,7 +41,11 @@ export function CartItemMeasurementBlock({ item }: { item: CartItem }) {
       : total != null
         ? `${total} clips total`
         : "";
-  const productBits = [productKindLabel, color, finishLabel, thickness, item.panelTypeLabel, clipsLabel].filter(Boolean);
+  const typeLabel =
+    item.productKind === "flashing" && item.panelTypeLabel?.toLowerCase().includes("extrusions")
+      ? "Basic Rectangular"
+      : item.panelTypeLabel;
+  const productBits = [productKindLabel, color, finishLabel, thickness, typeLabel, clipsLabel].filter(Boolean);
 
   return (
     <div className="space-y-2 text-gray-900">
