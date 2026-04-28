@@ -478,26 +478,36 @@ export function SizePicker({
                           <div className="mb-3">
                             <p className="text-[11px] font-medium text-gray-600">Edge</p>
                             {isFlashing ? (
-                              <select
-                                value={side.edge}
-                                onChange={(e) => {
-                                  const edge = e.target.value as BoxTrayEdge;
-                                  const next = value.boxSides.map((s, i) => ({
-                                    ...s,
-                                    edge,
-                                    parentId: i === 0 ? undefined : value.boxSides[i - 1]?.id,
-                                  }));
-                                  pushSides(next);
-                                }}
-                                className="mt-1 block h-11 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                                aria-label="Edge"
-                              >
-                                {Object.entries(EDGE_LABELS).map(([edge, label]) => (
-                                  <option key={edge} value={edge}>
-                                    {label}
-                                  </option>
-                                ))}
-                              </select>
+                              <>
+                                <select
+                                  value={side.edge}
+                                  onChange={(e) => {
+                                    const edge = e.target.value as BoxTrayEdge;
+                                    const next = value.boxSides.map((s, i) => ({
+                                      ...s,
+                                      edge,
+                                      parentId: i === 0 ? undefined : value.boxSides[i - 1]?.id,
+                                    }));
+                                    pushSides(next);
+                                  }}
+                                  className="mt-1 block h-11 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                                  aria-label="Edge"
+                                >
+                                  {Object.entries(EDGE_LABELS).map(([edge, label]) => (
+                                    <option key={edge} value={edge}>
+                                      {label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => addFoldOnSameEdgeAfter(index)}
+                                  disabled={!canAddSide}
+                                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Add fold on this edge
+                                </button>
+                              </>
                             ) : (
                               <>
                                 <p
