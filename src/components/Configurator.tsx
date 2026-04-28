@@ -522,6 +522,18 @@ export function Configurator({
 
             <div className="shrink-0 space-y-3 lg:space-y-4">
               <PriceSummary pricing={pricing} loading={loading} error={error} compact />
+              {showClips && clipsPerPanel > 0 ? (
+                <div className="rounded-xl border border-gray-200/80 bg-white px-4 py-3 text-[14px] text-gray-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-medium text-gray-700">Total clips</span>
+                    <span className="font-semibold tabular-nums text-gray-900">{clipsNeeded}</span>
+                  </div>
+                  <p className="mt-1 text-[12px] text-gray-500">
+                    {Math.max(1, quantity)} panel{quantity === 1 ? "" : "s"} ×{" "}
+                    {Math.max(0, Math.round(clipsPerPanel))} clips/panel
+                  </p>
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={handleAddToCart}
