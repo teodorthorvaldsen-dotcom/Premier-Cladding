@@ -67,6 +67,10 @@ export interface AcmPanel3DPreviewProps {
   returnsLabel?: string;
   /** Sided summary label (default: "tray"). */
   sidedLabel?: string;
+  /** Starting zoom multiplier (1 = default framing; > 1 zooms in). */
+  defaultZoomMul?: number;
+  /** When true, allow full 360° orbit (including over/under). */
+  allowFullRotate?: boolean;
 }
 
 type BuiltPart = {
@@ -517,6 +521,7 @@ function PreviewRig({
   colorHex,
   mapUrl,
   zoomMul,
+  allowFullRotate,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
@@ -524,6 +529,7 @@ function PreviewRig({
   mapUrl?: string;
   /** &gt; 1 moves the camera closer (zoom in). */
   zoomMul: number;
+  allowFullRotate: boolean;
 }) {
   const { camera, size } = useThree();
   const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
@@ -561,8 +567,8 @@ function PreviewRig({
         rotateSpeed={0.78}
         minDistance={cameraRadius}
         maxDistance={cameraRadius}
-        minPolarAngle={0.3 * Math.PI}
-        maxPolarAngle={0.7 * Math.PI}
+        minPolarAngle={allowFullRotate ? 0 : 0.3 * Math.PI}
+        maxPolarAngle={allowFullRotate ? Math.PI : 0.7 * Math.PI}
       />
     </>
   );
@@ -574,6 +580,7 @@ function PreviewScene({
   colorHex,
   mapUrl,
   zoomMul,
+  allowFullRotate,
   glCanvasRef,
 }: {
   parts: BuiltPart[];
@@ -581,6 +588,7 @@ function PreviewScene({
   colorHex: string;
   mapUrl?: string;
   zoomMul: number;
+  allowFullRotate: boolean;
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
@@ -620,6 +628,7 @@ function PreviewScene({
         colorHex={colorHex}
         mapUrl={mapUrl}
         zoomMul={zoomMul}
+        allowFullRotate={allowFullRotate}
       />
     </Canvas>
   );
@@ -642,8 +651,16 @@ export function AcmPanel3DPreview({
   subtitle,
   returnsLabel = "Returns",
   sidedLabel = "tray",
+  defaultZoomMul = 1,
+  allowFullRotate = false,
 }: AcmPanel3DPreviewProps) {
-  const [previewZoomMul, setPreviewZoomMul] = useState(1);
+  const [previewZoomMul, setPreviewZoomMul] = useState(() =>
+    THREE.MathUtils.clamp(
+      Number.isFinite(defaultZoomMul) ? defaultZoomMul : 1,
+      0.42,
+      3.1
+    )
+  );
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
 
   const activeParts = useMemo(
@@ -742,7 +759,15 @@ export function AcmPanel3DPreview({
             type="button"
             className="flex h-9 min-w-[2.25rem] items-center justify-center rounded-md text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
             aria-label="Reset preview zoom"
-            onClick={() => setPreviewZoomMul(1)}
+            onClick={() =>
+              setPreviewZoomMul(
+                THREE.MathUtils.clamp(
+                  Number.isFinite(defaultZoomMul) ? defaultZoomMul : 1,
+                  0.42,
+                  3.1
+                )
+              )
+            }
           >
             1×
           </button>
@@ -763,6 +788,7 @@ export function AcmPanel3DPreview({
           colorHex={hex}
           mapUrl={mapUrl}
           zoomMul={previewZoomMul}
+          allowFullRotate={allowFullRotate}
           glCanvasRef={glCanvasRef}
         />
       </div>
@@ -883,6 +909,7 @@ export function TrayInteractivePreview({
         colorHex={hex}
         mapUrl={mapUrl}
         zoomMul={previewZoomMul}
+        allowFullRotate={false}
       />
     </div>
   );
