@@ -32,6 +32,7 @@ interface CartQuoteItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
+  clipsPerPanel?: number;
   clipsNeeded?: number;
   customColorReference?: string;
   customColorSpecFileName?: string;
@@ -239,10 +240,20 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
         ? `<div style="margin-top:8px;"><a href="${escapeHtml(workspaceLine)}" style="font-size:12px;color:#1d4ed8;text-decoration:underline;">Open this line in staff ACM workspace (3D)</a></div>`
         : "";
       const productLabel = i.productLabel ?? (i.productKind === "flashing" ? "Flashing" : "ACM Panels");
-      const clipsLine =
+      const perPanel =
+        typeof i.clipsPerPanel === "number" && Number.isFinite(i.clipsPerPanel) && i.clipsPerPanel > 0
+          ? Math.round(i.clipsPerPanel)
+          : undefined;
+      const total =
         typeof i.clipsNeeded === "number" && Number.isFinite(i.clipsNeeded) && i.clipsNeeded > 0
-          ? ` · ${Math.round(i.clipsNeeded)} clips/panel`
-          : "";
+          ? Math.round(i.clipsNeeded)
+          : undefined;
+      const clipsLine =
+        perPanel != null
+          ? ` · ${perPanel} clips/panel${total != null ? ` (${total} total)` : ""}`
+          : total != null
+            ? ` · ${total} clips total`
+            : "";
       const metaBlock = `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#111827;">
         <div><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
         <div><strong>${escapeHtml(productLabel)}</strong> · ${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}${clipsLine}</div>
@@ -332,10 +343,20 @@ function buildCartCustomerEmailHtml(
             </div>`
           : "";
       const productLabel = i.productLabel ?? (i.productKind === "flashing" ? "Flashing" : "ACM Panels");
-      const clipsLine =
+      const perPanel =
+        typeof i.clipsPerPanel === "number" && Number.isFinite(i.clipsPerPanel) && i.clipsPerPanel > 0
+          ? Math.round(i.clipsPerPanel)
+          : undefined;
+      const total =
         typeof i.clipsNeeded === "number" && Number.isFinite(i.clipsNeeded) && i.clipsNeeded > 0
-          ? ` · ${Math.round(i.clipsNeeded)} clips/panel`
-          : "";
+          ? Math.round(i.clipsNeeded)
+          : undefined;
+      const clipsLine =
+        perPanel != null
+          ? ` · ${perPanel} clips/panel${total != null ? ` (${total} total)` : ""}`
+          : total != null
+            ? ` · ${total} clips total`
+            : "";
       return `<div style="padding:14px 0;border-bottom:1px solid #eef2f7;">
         ${previewBlock}
         <div style="font-size:14px;color:#111827;">

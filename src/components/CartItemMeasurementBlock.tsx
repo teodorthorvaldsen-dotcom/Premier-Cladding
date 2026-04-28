@@ -27,10 +27,20 @@ export function CartItemMeasurementBlock({ item }: { item: CartItem }) {
   const productKindLabel =
     item.productLabel ??
     (item.productKind === "flashing" ? "Flashing" : item.productKind === "acm" ? "ACM Panels" : "");
-  const clipsLabel =
+  const perPanel =
+    typeof item.clipsPerPanel === "number" && Number.isFinite(item.clipsPerPanel) && item.clipsPerPanel > 0
+      ? Math.round(item.clipsPerPanel)
+      : undefined;
+  const total =
     typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
-      ? `${Math.round(item.clipsNeeded)} clips/panel`
-      : "";
+      ? Math.round(item.clipsNeeded)
+      : undefined;
+  const clipsLabel =
+    perPanel != null
+      ? `${perPanel} clips/panel${total != null ? ` (${total} total)` : ""}`
+      : total != null
+        ? `${total} clips total`
+        : "";
   const productBits = [productKindLabel, color, finishLabel, thickness, item.panelTypeLabel, clipsLabel].filter(Boolean);
 
   return (

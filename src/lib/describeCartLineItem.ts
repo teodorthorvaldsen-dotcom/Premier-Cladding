@@ -47,10 +47,20 @@ export function describeCartLineItem(item: CartItem): string {
       : trayLines.length === 1
         ? trayLines[0]!
         : `${trayLines.length} returns`;
-  const clipsShort =
-    typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
-      ? `${Math.round(item.clipsNeeded)} clips/panel`
+  const perPanel =
+    typeof item.clipsPerPanel === "number" && Number.isFinite(item.clipsPerPanel) && item.clipsPerPanel > 0
+      ? Math.round(item.clipsPerPanel)
       : undefined;
+  const total =
+    typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
+      ? Math.round(item.clipsNeeded)
+      : undefined;
+  const clipsShort =
+    perPanel != null
+      ? `${perPanel} clips/panel${total != null ? ` (${total} total)` : ""}`
+      : total != null
+        ? `${total} clips total`
+        : undefined;
   const parts = [
     productShort,
     sizeLabel,
