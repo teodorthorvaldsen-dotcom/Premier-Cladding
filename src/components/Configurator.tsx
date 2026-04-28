@@ -472,27 +472,25 @@ export function Configurator({
         >
           <div className="flex flex-col gap-3 lg:gap-4">
             <div className="space-y-3 pr-0 lg:space-y-4">
-              <AcmPanelFlatPreview
-                panelWidthIn={size.widthIn}
-                panelHeightIn={size.lengthIn}
-                panelDepthIn={previewDepthIn}
-                panelColorHex={color.swatchHex}
-                panelColorName={color.name}
-                title={variant === "flashing" ? "Flat flashing preview" : "Flat panel preview"}
-                subtitle={
-                  variant === "flashing"
-                    ? "Rectangular sheet — color and size only (no fold)."
-                    : "Rectangular sheet — color and size only (no fold)."
-                }
-                compact
-                scale={2}
-                panelSwatchImage={
-                  "swatchImage" in color &&
-                  typeof (color as { swatchImage?: string }).swatchImage === "string"
-                    ? (color as { swatchImage: string }).swatchImage
-                    : undefined
-                }
-              />
+              {variant !== "flashing" ? (
+                <AcmPanelFlatPreview
+                  panelWidthIn={size.widthIn}
+                  panelHeightIn={size.lengthIn}
+                  panelDepthIn={previewDepthIn}
+                  panelColorHex={color.swatchHex}
+                  panelColorName={color.name}
+                  title="Flat panel preview"
+                  subtitle="Rectangular sheet — color and size only (no fold)."
+                  compact
+                  scale={2}
+                  panelSwatchImage={
+                    "swatchImage" in color &&
+                    typeof (color as { swatchImage?: string }).swatchImage === "string"
+                      ? (color as { swatchImage: string }).swatchImage
+                      : undefined
+                  }
+                />
+              ) : null}
               <AcmPanel3DPreview
                 panelWidthIn={size.widthIn}
                 panelHeightIn={size.lengthIn}
