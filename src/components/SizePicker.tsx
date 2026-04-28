@@ -421,6 +421,7 @@ export function SizePicker({
                         {
                           ...defaultFullTraySides()[0]!,
                           flangeHeightIn: defaultReturnHeightIn,
+                          edge: "east",
                         },
                       ]
                     : defaultFullTraySides()
