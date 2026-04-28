@@ -187,7 +187,7 @@ export function SizePicker({
     });
   };
 
-  const canAddSide = value.boxSides.length < MAX_TRAY_SIDE_ROWS;
+  const canAddSide = value.boxSides.length > 0 && value.boxSides.length < MAX_TRAY_SIDE_ROWS;
 
   const addSide = () => {
     if (!canAddSide) return;
@@ -267,7 +267,7 @@ export function SizePicker({
           Left, Right at 90°).
         </p>
       )}
-      <div className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"} role="group" aria-label="Panel width, length, and tray sides">
+      <div className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"} role="group" aria-label="Panel width, length, and panel sides">
         <div>
           <label htmlFor="width-input" className="block text-[10px] font-medium text-gray-700">
             Width (in)
@@ -311,7 +311,7 @@ export function SizePicker({
           }
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Tray sides (returns)</p>
+            <p className="text-xs font-medium text-gray-800">Panel Sides</p>
             <button
               type="button"
               onClick={addSide}
@@ -332,6 +332,33 @@ export function SizePicker({
               Add returns; stack folds with Add fold on this edge. Reverse bend flips direction.
             </p>
           )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => pushSides([])}
+              className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
+                value.boxSides.length === 0
+                  ? "border-gray-900 bg-gray-900 text-white"
+                  : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+              }`}
+              aria-pressed={value.boxSides.length === 0}
+            >
+              Flat panel (no sides)
+            </button>
+            <button
+              type="button"
+              onClick={() => pushSides(defaultFullTraySides())}
+              className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
+                value.boxSides.length > 0
+                  ? "border-gray-900 bg-gray-900 text-white"
+                  : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+              }`}
+              aria-pressed={value.boxSides.length > 0}
+            >
+              Panel sides (start at 1&quot;)
+            </button>
+          </div>
 
           {value.boxSides.length === 0 ? (
             <p className="mt-3 text-[13px] text-gray-600">No sides — flat panel.</p>
@@ -498,7 +525,7 @@ export function SizePicker({
             onClick={() => {
               onChange({
                 ...value,
-                boxSides: normalizeBoxTraySides(defaultFullTraySides()),
+                boxSides: [],
               });
             }}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -506,7 +533,7 @@ export function SizePicker({
             Clear all sides
           </button>
           <p className="mt-2 text-[11px] text-gray-500">
-            Restores the default four-sided tray; width and length are unchanged.
+            Removes all sides (flat panel). Width and length are unchanged.
           </p>
         </div>
       </div>

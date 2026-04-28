@@ -22,7 +22,6 @@ import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
 import {
-  defaultFullTraySides,
   formatBoxTrayReproductionSpec,
   normalizeBoxTraySides,
 } from "@/lib/boxTray";
@@ -31,7 +30,7 @@ const defaultSize: SizeSelection = {
   widthId: "custom",
   widthIn: 62,
   lengthIn: 96,
-  boxSides: defaultFullTraySides(),
+  boxSides: [],
 };
 
 export interface PriceResult {

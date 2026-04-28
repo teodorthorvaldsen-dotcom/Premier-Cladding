@@ -79,9 +79,10 @@ export async function POST(request: NextRequest) {
     }
     const lengthIn = clampLength(lengthNum, thicknessMm);
 
-    const panelType: PanelType = (VALID_PANEL_TYPES as readonly string[]).includes(rawPanelType)
-      ? (rawPanelType as PanelType)
-      : "basic";
+    const panelType: PanelType =
+      rawPanelType === "basic" || rawPanelType === "basic-no-extrusions" || rawPanelType === "tray"
+        ? rawPanelType
+        : "basic";
 
     const qty = Math.max(1, Math.floor(Number(rawQty)) || 1);
 

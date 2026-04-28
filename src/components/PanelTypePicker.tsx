@@ -22,7 +22,7 @@ export function PanelTypePicker({ value, onChange }: PanelTypePickerProps) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900">Panel type</label>
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2" role="group" aria-label="Panel type">
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3" role="group" aria-label="Panel type">
         {OPTIONS.map((opt) => (
           <button
             key={opt.value}
