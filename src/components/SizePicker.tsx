@@ -217,11 +217,15 @@ export function SizePicker({
     });
   };
 
-  const canAddSide =
-    !isFlashing && value.boxSides.length > 0 && value.boxSides.length < MAX_TRAY_SIDE_ROWS;
+  const canAddSide = value.boxSides.length > 0 && value.boxSides.length < MAX_TRAY_SIDE_ROWS;
 
   const addSide = () => {
     if (!canAddSide) return;
+    // Flashing: additional rows are folds on Side 1 only (same edge).
+    if (isFlashing) {
+      addFoldOnSameEdgeAfter(0);
+      return;
+    }
     const i = value.boxSides.length;
     pushSides([
       ...value.boxSides,
@@ -368,9 +372,18 @@ export function SizePicker({
           </div>
           {!isPanel ? (
             <p className="mt-1.5 text-[11px] text-gray-500">
-              Use <span className="font-medium text-gray-700">Add side</span> or{" "}
-              <span className="font-medium text-gray-700">Add fold on this edge</span> to build returns, then set height and angle
-              for each row.
+              {isFlashing ? (
+                <>
+                  Use <span className="font-medium text-gray-700">Add fold on this edge</span> to stack folds on{" "}
+                  <span className="font-medium text-gray-700">Side 1</span>, then set height and angle for each row.
+                </>
+              ) : (
+                <>
+                  Use <span className="font-medium text-gray-700">Add side</span> or{" "}
+                  <span className="font-medium text-gray-700">Add fold on this edge</span> to build returns, then set height and
+                  angle for each row.
+                </>
+              )}
               {!isFlashing ? (
                 <>
                   {" "}
@@ -467,9 +480,11 @@ export function SizePicker({
                                 value={side.edge}
                                 onChange={(e) => {
                                   const edge = e.target.value as BoxTrayEdge;
-                                  const next = value.boxSides.map((s, i) =>
-                                    i === index ? { ...s, edge, parentId: undefined } : s
-                                  );
+                                  const next = value.boxSides.map((s, i) => ({
+                                    ...s,
+                                    edge,
+                                    parentId: i === 0 ? undefined : value.boxSides[i - 1]?.id,
+                                  }));
                                   pushSides(next);
                                 }}
                                 className="mt-1 block h-11 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
@@ -505,7 +520,7 @@ export function SizePicker({
                             Continues from the free edge on {EDGE_LABELS[side.edge]}.
                           </p>
                         )}
-                        {!isRoot && !isFlashing ? (
+                        {!isRoot ? (
                           <button
                             type="button"
                             onClick={() => addFoldOnSameEdgeAfter(index)}

@@ -82,11 +82,18 @@ export function normalizeBoxTraySides(
 }
 
 export function normalizeBoxTraySidesForFlashing(raw: BoxTraySideRow[]): BoxTraySideRow[] {
-  // Flashing configurator supports a single return only.
-  const first = raw.length > 0 ? [raw[0]!] : [];
-  return normalizeBoxTraySides(first, { maxFlangeIn: MAX_FLANGE_FLASHING_IN }).map((r) => ({
+  // Flashing configurator supports stacked folds on Side 1 only:
+  // - clamp flange height to 0.5"
+  // - force all rows onto the same edge as the first row
+  // - force a single linear parent chain (Side 1 → F1 → F2 → …)
+  const n = normalizeBoxTraySides(raw, { maxFlangeIn: MAX_FLANGE_FLASHING_IN });
+  if (n.length === 0) return [];
+  const rootEdge = n[0]!.edge;
+  const sameEdge = n.filter((r) => r.edge === rootEdge);
+  return sameEdge.map((r, i) => ({
     ...r,
-    parentId: undefined,
+    edge: rootEdge,
+    parentId: i === 0 ? undefined : sameEdge[i - 1]!.id,
   }));
 }
 
