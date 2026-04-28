@@ -2,7 +2,8 @@ import { clampAngleDeg } from "@/lib/panelBends";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 
 const MAX_FLANGE_IN = 120;
-const MAX_FLANGE_FLASHING_IN = 0.5;
+const MAX_FLANGE_FLASHING_IN = 120;
+const MIN_FLANGE_FLASHING_IN = 0.5;
 
 /** Configurator + preview allow many rows; multiple rows may appear when cycling slots (stacked returns). */
 export const MAX_TRAY_SIDE_ROWS = 16;
@@ -52,18 +53,22 @@ function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
  */
 export function normalizeBoxTraySides(
   raw: BoxTraySideRow[],
-  opts?: { maxFlangeIn?: number }
+  opts?: { maxFlangeIn?: number; minFlangeIn?: number }
 ): BoxTraySideRow[] {
   const maxFlangeIn =
     typeof opts?.maxFlangeIn === "number" && Number.isFinite(opts.maxFlangeIn) && opts.maxFlangeIn > 0
       ? opts.maxFlangeIn
       : MAX_FLANGE_IN;
+  const minFlangeIn =
+    typeof opts?.minFlangeIn === "number" && Number.isFinite(opts.minFlangeIn) && opts.minFlangeIn > 0
+      ? opts.minFlangeIn
+      : 0.01;
   const out: BoxTraySideRow[] = [];
   for (const row of raw) {
     if (row == null || typeof row !== "object") continue;
     const idx = out.length;
     const edge = isBoxTrayEdge(row.edge) ? row.edge : trayEdgeForSlotIndex(idx);
-    const h = round2(Math.min(maxFlangeIn, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
+    const h = round2(Math.min(maxFlangeIn, Math.max(minFlangeIn, Number(row.flangeHeightIn) || minFlangeIn)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
     const id =
       typeof (row as BoxTraySideRow).id === "string" && (row as BoxTraySideRow).id.length > 0
@@ -86,7 +91,10 @@ export function normalizeBoxTraySidesForFlashing(raw: BoxTraySideRow[]): BoxTray
   // - clamp flange height to 0.5"
   // - force all rows onto the same edge as the first row
   // - force a single linear parent chain (Side 1 → F1 → F2 → …)
-  const n = normalizeBoxTraySides(raw, { maxFlangeIn: MAX_FLANGE_FLASHING_IN });
+  const n = normalizeBoxTraySides(raw, {
+    maxFlangeIn: MAX_FLANGE_FLASHING_IN,
+    minFlangeIn: MIN_FLANGE_FLASHING_IN,
+  });
   if (n.length === 0) return [];
   const rootEdge = n[0]!.edge;
   const sameEdge = n.filter((r) => r.edge === rootEdge);

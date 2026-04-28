@@ -140,8 +140,9 @@ export function SizePicker({
   const isPanel = variant === "propertiesPanel";
   const maxLength = maxLengthIn ?? getMaxLengthIn(thicknessId);
   const isFlashing = productNoun === "flashing";
-  const maxReturnHeightIn = isFlashing ? 0.5 : 120;
+  const maxReturnHeightIn = 120;
   const defaultReturnHeightIn = isFlashing ? 0.5 : 1;
+  const minReturnHeightIn = isFlashing ? 0.5 : 0.01;
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
@@ -542,7 +543,7 @@ export function SizePicker({
                               id={`side-h-${side.id}`}
                               type="number"
                               inputMode="decimal"
-                              min={0.01}
+                              min={minReturnHeightIn}
                               max={maxReturnHeightIn}
                               step={0.01}
                               value={sideDrafts[index]?.height ?? String(side.flangeHeightIn)}
