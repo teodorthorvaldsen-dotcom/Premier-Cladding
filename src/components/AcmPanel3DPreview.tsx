@@ -71,6 +71,8 @@ export interface AcmPanel3DPreviewProps {
   defaultZoomMul?: number;
   /** When true, allow full 360° orbit (including over/under). */
   allowFullRotate?: boolean;
+  /** Rotate the entire assembly (radians). Useful for flashing orientation. */
+  modelRotation?: [number, number, number];
 }
 
 type BuiltPart = {
@@ -517,6 +519,7 @@ function PreviewRig({
   mapUrl,
   zoomMul,
   allowFullRotate,
+  modelRotation,
 }: {
   parts: BuiltPart[];
   minSpanInches: number;
@@ -525,6 +528,7 @@ function PreviewRig({
   /** &gt; 1 moves the camera closer (zoom in). */
   zoomMul: number;
   allowFullRotate: boolean;
+  modelRotation: [number, number, number];
 }) {
   const { camera, size } = useThree();
   const { center, boundingSphereRadius } = useMemo(() => meshBoundsFromParts(parts), [parts]);
@@ -548,8 +552,10 @@ function PreviewRig({
       <StickyOrbitCamera radius={cameraRadius} />
       <Suspense fallback={null}>
         <Environment preset="apartment" environmentIntensity={0.5} />
-        <group position={[-center.x, -center.y, -center.z]}>
-          <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
+        <group rotation={modelRotation}>
+          <group position={[-center.x, -center.y, -center.z]}>
+            <FoldedPanelMesh parts={parts} colorHex={colorHex} mapUrl={mapUrl} />
+          </group>
         </group>
       </Suspense>
       <OrbitControls
@@ -576,6 +582,7 @@ function PreviewScene({
   mapUrl,
   zoomMul,
   allowFullRotate,
+  modelRotation,
   glCanvasRef,
 }: {
   parts: BuiltPart[];
@@ -584,6 +591,7 @@ function PreviewScene({
   mapUrl?: string;
   zoomMul: number;
   allowFullRotate: boolean;
+  modelRotation: [number, number, number];
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const p0 = PREVIEW_ORBIT_VIEW_DIR.clone().multiplyScalar(2.5);
@@ -624,6 +632,7 @@ function PreviewScene({
         mapUrl={mapUrl}
         zoomMul={zoomMul}
         allowFullRotate={allowFullRotate}
+        modelRotation={modelRotation}
       />
     </Canvas>
   );
@@ -648,6 +657,7 @@ export function AcmPanel3DPreview({
   sidedLabel = "tray",
   defaultZoomMul = 1,
   allowFullRotate = false,
+  modelRotation = [0, 0, 0],
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(() =>
     THREE.MathUtils.clamp(
@@ -784,6 +794,7 @@ export function AcmPanel3DPreview({
           mapUrl={mapUrl}
           zoomMul={previewZoomMul}
           allowFullRotate={allowFullRotate}
+          modelRotation={modelRotation}
           glCanvasRef={glCanvasRef}
         />
       </div>
@@ -905,6 +916,7 @@ export function TrayInteractivePreview({
         mapUrl={mapUrl}
         zoomMul={previewZoomMul}
         allowFullRotate={false}
+        modelRotation={[0, 0, 0]}
       />
     </div>
   );
