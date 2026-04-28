@@ -11,6 +11,7 @@ export default function FlashingConfiguratorPage() {
       defaultWidthIn={10}
       defaultLengthIn={90}
       hideSizeMinimums
+      hideThickness
     />
   );
 }

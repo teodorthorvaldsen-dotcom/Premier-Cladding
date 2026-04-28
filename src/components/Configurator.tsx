@@ -49,6 +49,8 @@ export interface ConfiguratorProps {
   defaultLengthIn?: number;
   /** When true, UI does not show/enforce width/length minimums. */
   hideSizeMinimums?: boolean;
+  /** Hide thickness selection UI (still uses default thicknessId internally). */
+  hideThickness?: boolean;
 }
 
 function readFileAsBase64(file: File): Promise<string> {
@@ -99,6 +101,7 @@ export function Configurator({
   defaultWidthIn = 62,
   defaultLengthIn = 96,
   hideSizeMinimums = false,
+  hideThickness = false,
 }: ConfiguratorProps) {
   const [size, setSize] = useState<SizeSelection>(() => ({
     widthId: "custom",
@@ -400,12 +403,14 @@ export function Configurator({
                   </div>
                 </div>
               ) : null}
-              <div
-                id="thickness"
-                className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
-              >
-                <ThicknessPicker value={thicknessId} onChange={setThicknessId} />
-              </div>
+              {!hideThickness ? (
+                <div
+                  id="thickness"
+                  className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+                >
+                  <ThicknessPicker value={thicknessId} onChange={setThicknessId} />
+                </div>
+              ) : null}
               <div
                 id="size"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
