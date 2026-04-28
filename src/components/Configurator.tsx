@@ -428,6 +428,12 @@ export function Configurator({
                 </div>
               ) : null}
               <div
+                id="quantity"
+                className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+              >
+                <QuantityPicker value={quantity} onChange={setQuantity} />
+              </div>
+              <div
                 id="size"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
@@ -455,12 +461,6 @@ export function Configurator({
                   customColorSpecFile={customColorSpecFile}
                   onCustomColorSpecFileChange={setCustomColorSpecFile}
                 />
-              </div>
-              <div
-                id="quantity"
-                className="pt-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
-              >
-                <QuantityPicker value={quantity} onChange={setQuantity} />
               </div>
             </div>
           </section>
