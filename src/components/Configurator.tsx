@@ -47,6 +47,13 @@ const DEBOUNCE_MS = 300;
 /** PDFs up to this size are embedded in the quote draft for submission; larger files use the filename + quote-form reminder only. */
 const MAX_CUSTOM_SPEC_EMBED_BYTES = 1024 * 1024;
 
+export interface ConfiguratorProps {
+  title?: string;
+  subtitle?: string;
+  productLabel?: string;
+  returnUrl?: string;
+}
+
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -84,7 +91,12 @@ function buildPriceBody(
   };
 }
 
-export function Configurator() {
+export function Configurator({
+  title = "ACM Panel Configurator",
+  subtitle = "Configure your panels. Pricing updates automatically.",
+  productLabel = "ACM Panels",
+  returnUrl = "/products/acm-panels",
+}: ConfiguratorProps) {
   const [size, setSize] = useState<SizeSelection>(defaultSize);
   const [colorId, setColorId] = useState<ColorId>("classic-white");
   const [thicknessId, setThicknessId] = useState<ThicknessId>("4mm");
@@ -259,8 +271,8 @@ export function Configurator() {
       widthAvailability: selectedWidth?.availability ?? "Made to Order",
       widthLeadTimeDaysRange: selectedWidth?.leadTimeDaysRange ?? [7, 14],
       productKind: "acm",
-      productLabel: "ACM Panels",
-      returnUrl: "/products/acm-panels",
+      productLabel,
+      returnUrl,
       ...(colorId === "custom-color-match" && customColorReference.trim()
         ? { customColorReference: customColorReference.trim() }
         : {}),
@@ -279,10 +291,10 @@ export function Configurator() {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <div className="mb-8 md:mb-10">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          ACM Panel Configurator
+          {title}
         </h1>
         <p className="mt-2 text-[15px] text-gray-500">
-          Configure your panels. Pricing updates automatically.
+          {subtitle}
         </p>
       </div>
 

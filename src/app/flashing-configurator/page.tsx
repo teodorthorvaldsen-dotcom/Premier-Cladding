@@ -1,0 +1,13 @@
+import { Configurator } from "@/components/Configurator";
+
+export default function FlashingConfiguratorPage() {
+  return (
+    <Configurator
+      title="Flashing Configurator"
+      subtitle="Configure your flashing. Pricing updates automatically."
+      productLabel="Flashing"
+      returnUrl="/flashing-configurator"
+    />
+  );
+}
+

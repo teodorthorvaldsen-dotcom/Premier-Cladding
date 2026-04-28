@@ -8,10 +8,11 @@ interface PanelTypePickerProps {
 }
 
 const OPTIONS: { value: PanelType; label: string; price: string; description?: string }[] = [
-  { value: "basic", label: "Basic Rectangular", price: "$24/sq ft" },
+  { value: "basic", label: "Basic Rectangular with Extrusions", price: "$24/sq ft" },
+  { value: "basic-no-extrusions", label: "Basic Rectangular without Extrusions", price: "$24/sq ft" },
   {
     value: "tray",
-    label: "Tray / Returns",
+    label: "Custom Shape",
     price: "Estimate will come with final quote",
     description: "Required for complex cuts, returns, angles, or non-rectangular shapes. Non-square panels will need drawings.",
   },

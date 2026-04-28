@@ -129,7 +129,7 @@ export const demoOrders: OrderRecord[] = [
       unitPrice: 992,
       areaFt2: (62 * 96) / 144,
       panelType: "basic",
-      panelTypeLabel: "Basic Rectangular",
+      panelTypeLabel: "Basic Rectangular with Extrusions",
       boxTraySides: [
         { id: "t1", edge: "south", flangeHeightIn: 30, angleDeg: 90 },
         { id: "t2", edge: "north", flangeHeightIn: 24, angleDeg: 90 },
@@ -176,7 +176,7 @@ export const demoOrders: OrderRecord[] = [
       unitPrice: 285,
       areaFt2: (36 * 84) / 144,
       panelType: "basic",
-      panelTypeLabel: "Basic Rectangular",
+      panelTypeLabel: "Basic Rectangular with Extrusions",
       boxTraySides: [],
       trayBuildSpec: `Row 1: Face blank | Edge: — | Return height: — | Single-plane window trim (field-verify jamb reveal)`,
     },

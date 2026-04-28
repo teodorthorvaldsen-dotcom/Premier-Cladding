@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "ACM Panels",
     items: [
       { id: "acm-configurator", label: "ACM Panel Configurator", href: "/products/acm-panels" },
+      { id: "flashing-configurator", label: "Flashing Configurator", href: "/flashing-configurator" },
       { id: "acm-tech-resources", label: "ACM Technical Resources", href: "/products/acm-panels/technical-resources" },
       { id: "acm-system", label: "Our ACM System", href: "/products/acm-panels/system" },
     ],
