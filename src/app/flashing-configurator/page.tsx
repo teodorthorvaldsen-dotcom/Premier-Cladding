@@ -7,6 +7,10 @@ export default function FlashingConfiguratorPage() {
       subtitle="Configure your flashing. Pricing updates automatically."
       productLabel="Flashing"
       returnUrl="/flashing-configurator"
+      variant="flashing"
+      defaultWidthIn={10}
+      defaultLengthIn={90}
+      hideSizeMinimums
     />
   );
 }

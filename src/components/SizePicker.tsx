@@ -94,6 +94,14 @@ interface SizePickerProps {
   thicknessId: ThicknessId;
   /** Narrow Revit-style properties column */
   variant?: "default" | "propertiesPanel";
+  /** UI wording ("panel" vs "flashing"). */
+  productNoun?: "panel" | "flashing";
+  /** When set to null, do not enforce a minimum in the UI. */
+  minWidthIn?: number | null;
+  /** When set to null, do not enforce a minimum in the UI. */
+  minLengthIn?: number | null;
+  /** Hide the "Allowed:" helper text block. */
+  hideAllowedText?: boolean;
 }
 
 function getMaxLengthIn(thicknessId: ThicknessId): number {
@@ -101,10 +109,10 @@ function getMaxLengthIn(thicknessId: ThicknessId): number {
   return maxLengthByThicknessMm[mm] ?? 190;
 }
 
-function clampWidth(val: number): number {
+function clampWidth(val: number, minWidthIn: number): number {
   const n = Math.round(Number(val));
-  if (Number.isNaN(n) || n < CUSTOM_WIDTH_MIN_IN) return CUSTOM_WIDTH_MIN_IN;
-  return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(CUSTOM_WIDTH_MIN_IN, n));
+  if (Number.isNaN(n) || n < minWidthIn) return minWidthIn;
+  return Math.min(CUSTOM_WIDTH_MAX_IN, Math.max(minWidthIn, n));
 }
 
 export function SizePicker({
@@ -112,6 +120,10 @@ export function SizePicker({
   onChange,
   thicknessId,
   variant = "default",
+  productNoun = "panel",
+  minWidthIn = CUSTOM_WIDTH_MIN_IN,
+  minLengthIn = MIN_LENGTH_IN,
+  hideAllowedText = false,
 }: SizePickerProps) {
   const isPanel = variant === "propertiesPanel";
   const maxLength = getMaxLengthIn(thicknessId);
@@ -135,8 +147,9 @@ export function SizePicker({
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
-    if (Number.isNaN(n) || n < MIN_LENGTH_IN) return MIN_LENGTH_IN;
-    return Math.min(maxLength, Math.max(MIN_LENGTH_IN, n));
+    const minLen = minLengthIn ?? 0;
+    if (Number.isNaN(n) || n < minLen) return minLen;
+    return Math.min(maxLength, Math.max(minLen, n));
   };
 
   const pushSides = (next: BoxTraySideRow[]) => {
@@ -148,9 +161,10 @@ export function SizePicker({
 
   const handleWidthChange = (raw: string) => {
     setWidthStr(raw);
+    if (raw === "") return;
     const num = Number(raw);
-    if (raw === "" || Number.isNaN(num)) {
-      const w = CUSTOM_WIDTH_MIN_IN;
+    if (Number.isNaN(num)) {
+      const w = (minWidthIn ?? 0) || 0;
       const len = clampLength(value.lengthIn);
       onChange({
         ...value,
@@ -160,7 +174,7 @@ export function SizePicker({
       });
       return;
     }
-    const w = clampWidth(num);
+    const w = clampWidth(num, (minWidthIn ?? 0) || 0);
     const len = clampLength(value.lengthIn);
     onChange({
       ...value,
@@ -172,11 +186,12 @@ export function SizePicker({
 
   const handleLengthChange = (raw: string) => {
     setLengthStr(raw);
+    if (raw === "") return;
     const num = Number(raw);
-    if (raw === "" || Number.isNaN(num)) {
+    if (Number.isNaN(num)) {
       onChange({
         ...value,
-        lengthIn: MIN_LENGTH_IN,
+        lengthIn: (minLengthIn ?? 0) || 0,
       });
       return;
     }
@@ -261,13 +276,23 @@ export function SizePicker({
           3D preview.
         </p>
       ) : (
-        <p className="mt-0.5 text-xs text-gray-500">
-          Enter width and length for the flat center face. Allowed: {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}&quot; wide,{" "}
-          {MIN_LENGTH_IN}–{maxLength}&quot; long, up to {MAX_TRAY_SIDE_ROWS} returns (first four sides default to Front, Back,
-          Left, Right at 90°).
-        </p>
+        !hideAllowedText ? (
+          <p className="mt-0.5 text-xs text-gray-500">
+            Enter width and length for the flat center face. Allowed: {CUSTOM_WIDTH_MIN_IN}–{CUSTOM_WIDTH_MAX_IN}&quot; wide,{" "}
+            {MIN_LENGTH_IN}–{maxLength}&quot; long, up to {MAX_TRAY_SIDE_ROWS} returns (first four sides default to Front, Back,
+            Left, Right at 90°).
+          </p>
+        ) : null
       )}
-      <div className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"} role="group" aria-label="Panel width, length, and panel sides">
+      <div
+        className={isPanel ? "mt-2 space-y-3" : "mt-3 space-y-4"}
+        role="group"
+        aria-label={
+          productNoun === "flashing"
+            ? "Flashing width, length, and sides"
+            : "Panel width, length, and panel sides"
+        }
+      >
         <div>
           <label htmlFor="width-input" className="block text-[10px] font-medium text-gray-700">
             Width (in)
@@ -276,7 +301,7 @@ export function SizePicker({
             id="width-input"
             type="number"
             inputMode="numeric"
-            min={CUSTOM_WIDTH_MIN_IN}
+            min={minWidthIn ?? undefined}
             max={CUSTOM_WIDTH_MAX_IN}
             value={widthStr}
             onChange={(e) => handleWidthChange(e.target.value)}
@@ -293,7 +318,7 @@ export function SizePicker({
             id="length-input"
             type="number"
             inputMode="numeric"
-            min={MIN_LENGTH_IN}
+            min={minLengthIn ?? undefined}
             max={maxLength}
             value={lengthStr}
             onChange={(e) => handleLengthChange(e.target.value)}
@@ -311,7 +336,9 @@ export function SizePicker({
           }
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium text-gray-800">Panel Sides</p>
+            <p className="text-xs font-medium text-gray-800">
+              {productNoun === "flashing" ? "Flashing Sides" : "Panel Sides"}
+            </p>
             <button
               type="button"
               onClick={addSide}
@@ -344,7 +371,7 @@ export function SizePicker({
               }`}
               aria-pressed={value.boxSides.length === 0}
             >
-              Flat panel (no sides)
+              {productNoun === "flashing" ? "Flat flashing (no sides)" : "Flat panel (no sides)"}
             </button>
             <button
               type="button"
@@ -356,12 +383,16 @@ export function SizePicker({
               }`}
               aria-pressed={value.boxSides.length > 0}
             >
-              Panel sides (start at 1&quot;)
+              {productNoun === "flashing"
+                ? "Flashing sides (start at 1\")"
+                : "Panel sides (start at 1\")"}
             </button>
           </div>
 
           {value.boxSides.length === 0 ? (
-            <p className="mt-3 text-[13px] text-gray-600">No sides — flat panel.</p>
+            <p className="mt-3 text-[13px] text-gray-600">
+              {productNoun === "flashing" ? "No sides — flat flashing." : "No sides — flat panel."}
+            </p>
           ) : (
             <ul className="mt-3 space-y-4">
               {value.boxSides

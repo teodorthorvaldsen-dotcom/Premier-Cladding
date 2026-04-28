@@ -26,13 +26,6 @@ import {
   normalizeBoxTraySides,
 } from "@/lib/boxTray";
 
-const defaultSize: SizeSelection = {
-  widthId: "custom",
-  widthIn: 62,
-  lengthIn: 96,
-  boxSides: [],
-};
-
 export interface PriceResult {
   areaFt2: number;
   totalSqFt: number;
@@ -51,6 +44,11 @@ export interface ConfiguratorProps {
   subtitle?: string;
   productLabel?: string;
   returnUrl?: string;
+  variant?: "acm" | "flashing";
+  defaultWidthIn?: number;
+  defaultLengthIn?: number;
+  /** When true, UI does not show/enforce width/length minimums. */
+  hideSizeMinimums?: boolean;
 }
 
 function readFileAsBase64(file: File): Promise<string> {
@@ -77,7 +75,8 @@ function buildPriceBody(
   thicknessId: ThicknessId,
   colorId: ColorId,
   qty: number,
-  panelType: PanelType
+  panelType: PanelType,
+  variant: NonNullable<ConfiguratorProps["variant"]>
 ) {
   const thicknessMm = Number(thicknessId.replace("mm", ""));
   return {
@@ -87,6 +86,7 @@ function buildPriceBody(
     colorId,
     qty,
     panelType,
+    productKind: variant,
   };
 }
 
@@ -95,8 +95,17 @@ export function Configurator({
   subtitle = "Configure your panels. Pricing updates automatically.",
   productLabel = "ACM Panels",
   returnUrl = "/products/acm-panels",
+  variant = "acm",
+  defaultWidthIn = 62,
+  defaultLengthIn = 96,
+  hideSizeMinimums = false,
 }: ConfiguratorProps) {
-  const [size, setSize] = useState<SizeSelection>(defaultSize);
+  const [size, setSize] = useState<SizeSelection>(() => ({
+    widthId: "custom",
+    widthIn: defaultWidthIn,
+    lengthIn: defaultLengthIn,
+    boxSides: [],
+  }));
   const [colorId, setColorId] = useState<ColorId>("classic-white");
   const [thicknessId, setThicknessId] = useState<ThicknessId>("4mm");
   const [quantity, setQuantity] = useState(1);
@@ -129,7 +138,7 @@ export function Configurator({
       qty: number,
       pType: PanelType
     ) => {
-      const body = buildPriceBody(sizeVal, thickness, color, qty, pType);
+      const body = buildPriceBody(sizeVal, thickness, color, qty, pType, variant);
       const res = await fetch("/api/price", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -141,7 +150,7 @@ export function Configurator({
       }
       return data as PriceResult;
     },
-    []
+    [variant]
   );
 
   useEffect(() => {
@@ -166,6 +175,7 @@ export function Configurator({
   const metalThicknessIn = thicknessMm / 25.4;
   /** Illustrative depth so thin ACM reads clearly in the 3D preview (not sheet metal thickness). */
   const previewDepthIn = Math.min(3, Math.max(0.5, metalThicknessIn * 1.45 + 0.4));
+  const noun = variant === "flashing" ? "flashing" : "panels";
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -313,10 +323,14 @@ export function Configurator({
                 id="panel-type"
                 className="pb-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
-                <PanelTypePicker value={panelType} onChange={setPanelType} />
+                <PanelTypePicker value={panelType} onChange={setPanelType} variant={variant} />
                 {panelType === "tray" && (
                   <div className="mt-4 rounded-xl border border-gray-200/80 bg-gray-50/50 p-4">
-                    <p className="text-[15px] text-gray-700">Non-square panels will need drawings.</p>
+                    <p className="text-[15px] text-gray-700">
+                      {variant === "flashing"
+                        ? "Non-square flashing will need drawings."
+                        : "Non-square panels will need drawings."}
+                    </p>
                     <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[14px] font-medium text-gray-900 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-gray-400 focus-within:ring-offset-2">
                       <input
                         type="file"
@@ -324,7 +338,7 @@ export function Configurator({
                         className="sr-only"
                         onChange={(e) => setPanelDrawingFile(e.target.files?.[0] ?? null)}
                       />
-                      Upload panel drawing
+                      Upload drawing
                     </label>
                     {panelDrawingFile && (
                       <p className="mt-2 text-[14px] text-gray-600">{panelDrawingFile.name}</p>
@@ -342,7 +356,15 @@ export function Configurator({
                 id="size"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
-                <SizePicker value={size} onChange={setSize} thicknessId={thicknessId} />
+                <SizePicker
+                  value={size}
+                  onChange={setSize}
+                  thicknessId={thicknessId}
+                  productNoun={variant === "flashing" ? "flashing" : "panel"}
+                  minWidthIn={hideSizeMinimums ? null : undefined}
+                  minLengthIn={hideSizeMinimums ? null : undefined}
+                  hideAllowedText={hideSizeMinimums}
+                />
               </div>
               <div
                 id="color"
@@ -379,6 +401,12 @@ export function Configurator({
                 panelDepthIn={previewDepthIn}
                 panelColorHex={color.swatchHex}
                 panelColorName={color.name}
+                title={variant === "flashing" ? "Flat flashing preview" : "Flat panel preview"}
+                subtitle={
+                  variant === "flashing"
+                    ? "Rectangular sheet — color and size only (no fold)."
+                    : "Rectangular sheet — color and size only (no fold)."
+                }
                 compact
                 scale={2}
                 panelSwatchImage={
@@ -395,6 +423,14 @@ export function Configurator({
                 boxSides={size.boxSides}
                 panelColorHex={color.swatchHex}
                 panelColorName={color.name}
+                title={variant === "flashing" ? "Fold & bend preview" : undefined}
+                subtitle={
+                  variant === "flashing"
+                    ? "Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each side; stacked folds may repeat on the same edge."
+                    : undefined
+                }
+                returnsLabel={variant === "flashing" ? "Sides" : "Returns"}
+                sidedLabel={variant === "flashing" ? "sides" : "tray"}
                 compact
                 scale={2}
                 panelSwatchImage={
@@ -428,9 +464,13 @@ export function Configurator({
         </h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-medium text-gray-900">FR Rated Panels</h3>
+            <h3 className="text-[15px] font-medium text-gray-900">
+              {variant === "flashing" ? "FR Rated Flashing" : "FR Rated Panels"}
+            </h3>
             <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              Fire-resistant ACM panels meet building codes for exterior applications.
+              {variant === "flashing"
+                ? "Fire-resistant ACM flashing meets building codes for exterior applications."
+                : "Fire-resistant ACM panels meet building codes for exterior applications."}
             </p>
           </div>
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -442,7 +482,7 @@ export function Configurator({
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <h3 className="text-[15px] font-medium text-gray-900">Cut-to-Length</h3>
             <p className="mt-1.5 text-[15px] leading-relaxed text-gray-500">
-              Custom lengths from 12 in to 300 in. Specify your size when configuring.
+              Custom lengths up to 300 in. Specify your size when configuring.
             </p>
           </div>
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">

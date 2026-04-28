@@ -62,6 +62,11 @@ export interface AcmPanel3DPreviewProps {
   compact?: boolean;
   /** Multiply the preview viewport size (e.g. 2 = 2× bigger). */
   scale?: number;
+  title?: string;
+  subtitle?: string;
+  returnsLabel?: string;
+  /** Sided summary label (default: "tray"). */
+  sidedLabel?: string;
 }
 
 type BuiltPart = {
@@ -633,6 +638,10 @@ export function AcmPanel3DPreview({
   workspaceLayout = false,
   compact = false,
   scale = 1,
+  title,
+  subtitle,
+  returnsLabel = "Returns",
+  sidedLabel = "tray",
 }: AcmPanel3DPreviewProps) {
   const [previewZoomMul, setPreviewZoomMul] = useState(1);
   const sidesNorm = useMemo(() => normalizeBoxTraySides(boxSidesProp), [boxSidesProp]);
@@ -661,7 +670,7 @@ export function AcmPanel3DPreview({
   const sizeHeadline =
     sidesNorm.length === 0
       ? `${panelWidthIn}" × ${panelHeightIn}" flat`
-      : `${panelWidthIn}" × ${panelHeightIn}" tray`;
+      : `${panelWidthIn}" × ${panelHeightIn}" ${sidedLabel}`;
 
   const measurementsTitle = `${sizeHeadline} · ${panelColorName}`;
 
@@ -708,11 +717,11 @@ export function AcmPanel3DPreview({
             id="acm-panel-3d-preview-heading"
             className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
           >
-            Fold &amp; bend preview
+            {title ?? "Fold & bend preview"}
           </h2>
           <p className="mt-0.5 text-xs text-gray-500">
-            Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each return; stacked folds may repeat on
-            the same edge.
+            {subtitle ??
+              "Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each return; stacked folds may repeat on the same edge."}
           </p>
         </>
       )}
@@ -781,7 +790,7 @@ export function AcmPanel3DPreview({
           {measurementLines.length > 0 ? (
             <div className="mx-auto mt-3 max-w-lg">
               <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Returns
+                {returnsLabel}
               </p>
               <ol className="list-decimal space-y-2 border border-gray-100 bg-gray-50/90 px-4 py-3 text-left text-[13px] text-gray-800 sm:px-5 marker:font-semibold marker:text-gray-500">
                 {measurementLines.map((line, i) => (

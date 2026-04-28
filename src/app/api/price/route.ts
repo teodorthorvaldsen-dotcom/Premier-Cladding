@@ -34,18 +34,23 @@ export async function POST(request: NextRequest) {
       colorId,
       qty: rawQty,
       panelType: rawPanelType,
+      productKind,
     } = body;
+
+    const kind: "acm" | "flashing" = productKind === "flashing" ? "flashing" : "acm";
+    const minWidthIn = kind === "flashing" ? 1 : CUSTOM_WIDTH_MIN_IN;
+    const minLengthIn = kind === "flashing" ? 1 : MIN_LENGTH_IN;
 
     const widthIn = Number(rawWidthIn);
     const isStandardWidth = (VALID_WIDTHS_IN as readonly number[]).includes(widthIn);
     const isCustomWidthInRange =
       !Number.isNaN(widthIn) &&
-      widthIn >= CUSTOM_WIDTH_MIN_IN &&
+      widthIn >= minWidthIn &&
       widthIn <= CUSTOM_WIDTH_MAX_IN;
     if (!isStandardWidth && !isCustomWidthInRange) {
       return NextResponse.json(
         {
-          error: `Invalid width. Width must be between ${CUSTOM_WIDTH_MIN_IN} and ${CUSTOM_WIDTH_MAX_IN} in.`,
+          error: `Invalid width. Width must be between ${minWidthIn} and ${CUSTOM_WIDTH_MAX_IN} in.`,
         },
         { status: 400 }
       );
@@ -60,10 +65,10 @@ export async function POST(request: NextRequest) {
     }
 
     const lengthNum = rawLengthIn != null ? Number(rawLengthIn) : NaN;
-    if (Number.isNaN(lengthNum) || lengthNum < MIN_LENGTH_IN) {
+    if (Number.isNaN(lengthNum) || lengthNum < minLengthIn) {
       return NextResponse.json(
         {
-          error: `Length must be at least ${MIN_LENGTH_IN} in.`,
+          error: `Length must be at least ${minLengthIn} in.`,
         },
         { status: 400 }
       );
@@ -77,7 +82,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const lengthIn = clampLength(lengthNum, thicknessMm);
+    const lengthIn = Math.min(
+      maxLength,
+      Math.max(minLengthIn, Math.round(Number(lengthNum)) || minLengthIn)
+    );
 
     const panelType: PanelType =
       rawPanelType === "basic" || rawPanelType === "basic-no-extrusions" || rawPanelType === "tray"

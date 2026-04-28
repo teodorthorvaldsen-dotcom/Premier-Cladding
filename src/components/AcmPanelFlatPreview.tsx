@@ -18,6 +18,8 @@ export interface AcmPanelFlatPreviewProps {
   panelColorHex: string;
   panelColorName: string;
   panelSwatchImage?: string;
+  title?: string;
+  subtitle?: string;
   /** Smaller viewport for sticky sidebar layouts (so multiple previews fit in one screen). */
   compact?: boolean;
   /** Multiply the preview viewport size (e.g. 2 = 2× bigger). */
@@ -31,6 +33,8 @@ export function AcmPanelFlatPreview({
   panelColorHex,
   panelColorName,
   panelSwatchImage,
+  title = "Flat panel preview",
+  subtitle = "Rectangular sheet — color and size only (no fold).",
   compact = false,
   scale = 1,
 }: AcmPanelFlatPreviewProps) {
@@ -80,10 +84,10 @@ export function AcmPanelFlatPreview({
         id="acm-panel-flat-preview-heading"
         className="text-[15px] font-medium uppercase tracking-wider text-gray-500"
       >
-        Flat panel preview
+        {title}
       </h2>
       <p className="mt-0.5 text-xs text-gray-500">
-        Rectangular sheet — color and size only (no fold).
+        {subtitle}
       </p>
 
       <div
