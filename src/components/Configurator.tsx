@@ -208,6 +208,8 @@ export function Configurator({
       requestAnimationFrame(() => {
         const previewImageDataUrl = capturePreview();
         addItem({
+          productKind: variant,
+          productLabel,
           widthIn: size.widthIn,
           heightIn: size.lengthIn,
           standardId: size.widthId,

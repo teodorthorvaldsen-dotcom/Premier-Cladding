@@ -32,6 +32,9 @@ export function getCartTrayLines(item: CartItem): string[] {
  */
 export function describeCartLineItem(item: CartItem): string {
   const sizeLabel = getCartSizeLabel(item);
+  const productShort =
+    item.productLabel ??
+    (item.productKind === "flashing" ? "Flashing" : item.productKind === "acm" ? "ACM Panels" : undefined);
   const color = colors.find((c) => c.id === item.colorId)?.name ?? item.colorId;
   const finishLabel = item.finishId
     ? finishes.find((f) => f.id === item.finishId)?.label ?? ""
@@ -46,9 +49,10 @@ export function describeCartLineItem(item: CartItem): string {
         : `${trayLines.length} returns`;
   const clipsShort =
     typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
-      ? `${Math.round(item.clipsNeeded)} clips`
+      ? `${Math.round(item.clipsNeeded)} clips/panel`
       : undefined;
   const parts = [
+    productShort,
     sizeLabel,
     trayShort || undefined,
     clipsShort,

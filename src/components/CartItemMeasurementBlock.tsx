@@ -24,7 +24,14 @@ export function CartItemMeasurementBlock({ item }: { item: CartItem }) {
       ? `Width: ${formatPanelBendsAlongWidthSummary(item.panelBendsAlongWidth)}`
       : "";
 
-  const productBits = [color, finishLabel, thickness, item.panelTypeLabel].filter(Boolean);
+  const productKindLabel =
+    item.productLabel ??
+    (item.productKind === "flashing" ? "Flashing" : item.productKind === "acm" ? "ACM Panels" : "");
+  const clipsLabel =
+    typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
+      ? `${Math.round(item.clipsNeeded)} clips/panel`
+      : "";
+  const productBits = [productKindLabel, color, finishLabel, thickness, item.panelTypeLabel, clipsLabel].filter(Boolean);
 
   return (
     <div className="space-y-2 text-gray-900">

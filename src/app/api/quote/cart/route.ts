@@ -19,6 +19,8 @@ const BOX_EDGE_EMAIL_LABEL: Record<string, string> = {
 };
 
 interface CartQuoteItem {
+  productKind?: "acm" | "flashing";
+  productLabel?: string;
   widthIn: number;
   heightIn: number;
   standardId: string | null;
@@ -30,6 +32,7 @@ interface CartQuoteItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
+  clipsNeeded?: number;
   customColorReference?: string;
   customColorSpecFileName?: string;
   boxTraySides?: unknown;
@@ -235,9 +238,14 @@ function buildCartEmailHtml(payload: CartQuotePayload, previewCids: (string | nu
       const workspaceLineBlock = workspaceLine
         ? `<div style="margin-top:8px;"><a href="${escapeHtml(workspaceLine)}" style="font-size:12px;color:#1d4ed8;text-decoration:underline;">Open this line in staff ACM workspace (3D)</a></div>`
         : "";
+      const productLabel = i.productLabel ?? (i.productKind === "flashing" ? "Flashing" : "ACM Panels");
+      const clipsLine =
+        typeof i.clipsNeeded === "number" && Number.isFinite(i.clipsNeeded) && i.clipsNeeded > 0
+          ? ` · ${Math.round(i.clipsNeeded)} clips/panel`
+          : "";
       const metaBlock = `<div style="margin-top:6px;font-size:12px;line-height:1.35;color:#111827;">
         <div><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
-        <div>${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
+        <div><strong>${escapeHtml(productLabel)}</strong> · ${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)}${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}${clipsLine}</div>
         <div>${i.widthIn}″ × ${i.heightIn}″ · Qty ${i.quantity}</div>
         <div style="margin-top:4px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>
       </div>`;
@@ -323,10 +331,15 @@ function buildCartCustomerEmailHtml(
               }
             </div>`
           : "";
+      const productLabel = i.productLabel ?? (i.productKind === "flashing" ? "Flashing" : "ACM Panels");
+      const clipsLine =
+        typeof i.clipsNeeded === "number" && Number.isFinite(i.clipsNeeded) && i.clipsNeeded > 0
+          ? ` · ${Math.round(i.clipsNeeded)} clips/panel`
+          : "";
       return `<div style="padding:14px 0;border-bottom:1px solid #eef2f7;">
         ${previewBlock}
         <div style="font-size:14px;color:#111827;">
-          <div style="font-weight:700;">${i.widthIn}″ × ${i.heightIn}″${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}</div>
+          <div style="font-weight:700;">${escapeHtml(productLabel)} · ${i.widthIn}″ × ${i.heightIn}″${i.panelTypeLabel ? ` · ${escapeHtml(i.panelTypeLabel)}` : ""}${clipsLine}</div>
           <div style="margin-top:4px;"><strong>${escapeHtml(color.name)}</strong>${color.code ? ` · ${escapeHtml(color.code)}` : ""}</div>
           <div style="color:#374151;">${escapeHtml(thicknessLabel)} · ${escapeHtml(finishLabel)} · Qty ${i.quantity}</div>
           <div style="margin-top:6px;color:#374151;">${escapeHtml(formatUSD(unit))} / panel · <strong>${escapeHtml(formatUSD(lineTotal))}</strong></div>

@@ -3,6 +3,9 @@ import type { BoxTraySideRow } from "@/types/boxTray";
 
 export interface CartItem {
   id: string;
+  /** Product family for display + pricing context. */
+  productKind?: "acm" | "flashing";
+  productLabel?: string;
   widthIn: number;
   heightIn: number;
   standardId: string | null;
