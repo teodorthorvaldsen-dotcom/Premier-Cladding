@@ -305,14 +305,10 @@ function buildBoxTrayParts(
           qAdd.setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(deg), 0, 0, EULER_ORDER));
           break;
         case "north":
-          qAdd.setFromEuler(
-            new THREE.Euler(-THREE.MathUtils.degToRad(deg), 0, 0, EULER_ORDER)
-          );
+          qAdd.setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(deg), 0, 0, EULER_ORDER));
           break;
         case "west":
-          qAdd.setFromEuler(
-            new THREE.Euler(0, -THREE.MathUtils.degToRad(deg), 0, EULER_ORDER)
-          );
+          qAdd.setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(deg), 0, EULER_ORDER));
           break;
         case "east":
           qAdd.setFromEuler(
@@ -358,7 +354,7 @@ function buildBoxTrayParts(
         break;
       }
       case "north": {
-        const rx = -THREE.MathUtils.degToRad(deg);
+        const rx = THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(rx, 0, 0, EULER_ORDER);
         const hingeY = L + stackNorth;
         p = partFromHinge(
@@ -374,8 +370,7 @@ function buildBoxTrayParts(
         break;
       }
       case "west": {
-        /** Invert vs former math so +90° matches front/back “inward” convention; −90° tips the other way. */
-        const ry = -THREE.MathUtils.degToRad(deg);
+        const ry = THREE.MathUtils.degToRad(deg);
         const e = new THREE.Euler(0, ry, 0, EULER_ORDER);
         const hingeX = -W / 2 - stackWest;
         p = partFromHinge(
