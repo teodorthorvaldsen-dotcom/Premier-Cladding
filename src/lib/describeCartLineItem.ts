@@ -44,8 +44,18 @@ export function describeCartLineItem(item: CartItem): string {
       : trayLines.length === 1
         ? trayLines[0]!
         : `${trayLines.length} returns`;
-  const parts = [sizeLabel, trayShort || undefined, color, finishLabel, thickness, item.panelTypeLabel].filter(
-    Boolean
-  );
+  const clipsShort =
+    typeof item.clipsNeeded === "number" && Number.isFinite(item.clipsNeeded) && item.clipsNeeded > 0
+      ? `${Math.round(item.clipsNeeded)} clips`
+      : undefined;
+  const parts = [
+    sizeLabel,
+    trayShort || undefined,
+    clipsShort,
+    color,
+    finishLabel,
+    thickness,
+    item.panelTypeLabel,
+  ].filter(Boolean);
   return parts.join(" · ");
 }

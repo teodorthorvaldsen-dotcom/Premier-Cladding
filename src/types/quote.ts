@@ -25,6 +25,8 @@ export interface QuoteDraft {
   estimatedTotal: number;
   panelType?: string;
   panelTypeLabel?: string;
+  /** For ACM "with extrusions" selection: requested number of clips. */
+  clipsNeeded?: number;
   /** Display labels for summary (width label, thickness label, color name, color code, finish label). */
   widthLabel: string;
   thicknessLabel: string;

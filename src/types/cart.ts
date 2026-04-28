@@ -14,6 +14,8 @@ export interface CartItem {
   areaFt2: number;
   panelType?: string;
   panelTypeLabel?: string;
+  /** For ACM "with extrusions" selection: requested number of clips. */
+  clipsNeeded?: number;
   /** Folds along panel length (in order from reference edge); informational. */
   panelBends?: PanelBendSpec[];
   /** Folds along panel width (hinge parallel to length); informational. */

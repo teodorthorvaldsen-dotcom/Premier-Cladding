@@ -110,6 +110,7 @@ export function Configurator({
   const [thicknessId, setThicknessId] = useState<ThicknessId>("4mm");
   const [quantity, setQuantity] = useState(1);
   const [panelType, setPanelType] = useState<PanelType>("basic");
+  const [clipsNeeded, setClipsNeeded] = useState(0);
 
   const [pricing, setPricing] = useState<PriceResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -176,6 +177,11 @@ export function Configurator({
   /** Illustrative depth so thin ACM reads clearly in the 3D preview (not sheet metal thickness). */
   const previewDepthIn = Math.min(3, Math.max(0.5, metalThicknessIn * 1.45 + 0.4));
   const noun = variant === "flashing" ? "flashing" : "panels";
+  const showClips = variant === "acm" && panelType === "basic";
+
+  useEffect(() => {
+    if (!showClips) setClipsNeeded(0);
+  }, [showClips]);
 
   const handleAddToCart = () => {
     if (!pricing) return;
@@ -213,6 +219,7 @@ export function Configurator({
           areaFt2: pricing.areaFt2,
           panelType: pricing.panelType,
           panelTypeLabel: pricing.panelTypeLabel,
+          ...(showClips && clipsNeeded > 0 ? { clipsNeeded } : {}),
           ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
           ...(trayBuildSpec ? { trayBuildSpec } : {}),
           ...(previewImageDataUrl ? { previewImageDataUrl } : {}),
@@ -270,6 +277,7 @@ export function Configurator({
       estimatedTotal: pricing.total,
       panelType: pricing.panelType,
       panelTypeLabel: pricing.panelTypeLabel,
+      ...(showClips && clipsNeeded > 0 ? { clipsNeeded } : {}),
       widthLabel,
       thicknessLabel: thickness?.label ?? thicknessId,
       colorName: color.name,
@@ -346,6 +354,50 @@ export function Configurator({
                   </div>
                 )}
               </div>
+              {showClips ? (
+                <div
+                  id="clips"
+                  className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900">Clips needed</label>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Optional. Add the number of clips you want with these extruded panels.
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setClipsNeeded((n) => Math.max(0, Math.round(n) - 1))}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-xl font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                        aria-label="Decrease clips needed"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        step={1}
+                        value={clipsNeeded}
+                        onChange={(e) => {
+                          const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                          setClipsNeeded(v);
+                        }}
+                        className="h-11 w-28 rounded-xl border border-gray-200 px-3 text-[15px] font-medium tabular-nums text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                        aria-label="Clips needed"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setClipsNeeded((n) => Math.min(9999, Math.round(n) + 1))}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-xl font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                        aria-label="Increase clips needed"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div
                 id="thickness"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
