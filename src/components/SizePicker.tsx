@@ -217,7 +217,8 @@ export function SizePicker({
     });
   };
 
-  const canAddSide = value.boxSides.length > 0 && value.boxSides.length < MAX_TRAY_SIDE_ROWS;
+  const canAddSide =
+    !isFlashing && value.boxSides.length > 0 && value.boxSides.length < MAX_TRAY_SIDE_ROWS;
 
   const addSide = () => {
     if (!canAddSide) return;
@@ -354,14 +355,16 @@ export function SizePicker({
             <p className="text-xs font-medium text-gray-800">
               {productNoun === "flashing" ? "Flashing Sides" : "Panel Sides"}
             </p>
-            <button
-              type="button"
-              onClick={addSide}
-              disabled={!canAddSide}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Add side
-            </button>
+            {!isFlashing ? (
+              <button
+                type="button"
+                onClick={addSide}
+                disabled={!canAddSide}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Add side
+              </button>
+            ) : null}
           </div>
           {!isPanel ? (
             <p className="mt-1.5 text-[11px] text-gray-500">
@@ -400,7 +403,12 @@ export function SizePicker({
               onClick={() =>
                 pushSides(
                   isFlashing
-                    ? defaultFullTraySides().map((s) => ({ ...s, flangeHeightIn: defaultReturnHeightIn }))
+                    ? [
+                        {
+                          ...defaultFullTraySides()[0]!,
+                          flangeHeightIn: defaultReturnHeightIn,
+                        },
+                      ]
                     : defaultFullTraySides()
                 )
               }
@@ -412,7 +420,7 @@ export function SizePicker({
               aria-pressed={value.boxSides.length > 0}
             >
               {productNoun === "flashing"
-                ? "Flashing sides (start at 0.5\")"
+                ? "Flashing side (one side at 0.5\")"
                 : "Panel sides (start at 1\")"}
             </button>
           </div>
@@ -454,27 +462,50 @@ export function SizePicker({
                         {isRoot ? (
                           <div className="mb-3">
                             <p className="text-[11px] font-medium text-gray-600">Edge</p>
-                            <p
-                              className="mt-1 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2.5 text-[15px] text-gray-800"
-                              aria-label={`Edge: ${EDGE_LABELS[side.edge]}`}
-                            >
-                              {EDGE_LABELS[side.edge]}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => addFoldOnSameEdgeAfter(index)}
-                              disabled={!canAddSide}
-                              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              Add fold on this edge
-                            </button>
+                            {isFlashing ? (
+                              <select
+                                value={side.edge}
+                                onChange={(e) => {
+                                  const edge = e.target.value as BoxTrayEdge;
+                                  const next = value.boxSides.map((s, i) =>
+                                    i === index ? { ...s, edge, parentId: undefined } : s
+                                  );
+                                  pushSides(next);
+                                }}
+                                className="mt-1 block h-11 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                                aria-label="Edge"
+                              >
+                                {Object.entries(EDGE_LABELS).map(([edge, label]) => (
+                                  <option key={edge} value={edge}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <>
+                                <p
+                                  className="mt-1 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2.5 text-[15px] text-gray-800"
+                                  aria-label={`Edge: ${EDGE_LABELS[side.edge]}`}
+                                >
+                                  {EDGE_LABELS[side.edge]}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => addFoldOnSameEdgeAfter(index)}
+                                  disabled={!canAddSide}
+                                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Add fold on this edge
+                                </button>
+                              </>
+                            )}
                           </div>
                         ) : (
                           <p className="mb-2 text-[11px] text-gray-500">
                             Continues from the free edge on {EDGE_LABELS[side.edge]}.
                           </p>
                         )}
-                        {!isRoot ? (
+                        {!isRoot && !isFlashing ? (
                           <button
                             type="button"
                             onClick={() => addFoldOnSameEdgeAfter(index)}

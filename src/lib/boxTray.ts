@@ -82,7 +82,12 @@ export function normalizeBoxTraySides(
 }
 
 export function normalizeBoxTraySidesForFlashing(raw: BoxTraySideRow[]): BoxTraySideRow[] {
-  return normalizeBoxTraySides(raw, { maxFlangeIn: MAX_FLANGE_FLASHING_IN });
+  // Flashing configurator supports a single return only.
+  const first = raw.length > 0 ? [raw[0]!] : [];
+  return normalizeBoxTraySides(first, { maxFlangeIn: MAX_FLANGE_FLASHING_IN }).map((r) => ({
+    ...r,
+    parentId: undefined,
+  }));
 }
 
 function rootOrdinalMap(sides: BoxTraySideRow[]): Map<string, number> {

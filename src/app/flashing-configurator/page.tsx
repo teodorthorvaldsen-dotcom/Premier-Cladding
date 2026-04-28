@@ -9,7 +9,7 @@ export default function FlashingConfiguratorPage() {
       returnUrl="/flashing-configurator"
       variant="flashing"
       defaultWidthIn={10}
-      defaultLengthIn={90}
+      defaultLengthIn={120}
       hideSizeMinimums
     />
   );
