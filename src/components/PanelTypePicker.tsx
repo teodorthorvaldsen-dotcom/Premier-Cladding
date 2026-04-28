@@ -24,7 +24,7 @@ const OPTIONS_BY_VARIANT: Record<
     },
   ],
   flashing: [
-    { value: "basic", label: "Basic Rectangular", price: "$24/sq ft" },
+    { value: "basic", label: "Basic Rectangular", price: "$2/sq ft" },
     {
       value: "tray",
       label: "Custom Shape",

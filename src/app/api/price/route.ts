@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       areaFt2,
       quantity: qty,
       panelType,
+      productKind: kind,
     });
 
     return NextResponse.json({
