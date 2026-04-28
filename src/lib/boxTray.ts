@@ -2,6 +2,7 @@ import { clampAngleDeg } from "@/lib/panelBends";
 import type { BoxTrayEdge, BoxTraySideRow } from "@/types/boxTray";
 
 const MAX_FLANGE_IN = 120;
+const MAX_FLANGE_FLASHING_IN = 0.5;
 
 /** Configurator + preview allow many rows; multiple rows may appear when cycling slots (stacked returns). */
 export const MAX_TRAY_SIDE_ROWS = 16;
@@ -49,13 +50,20 @@ function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
  * Clamps each row, **preserves order**, keeps **`edge` from the row** when valid so stacked folds on Side 1–4 stay on the same edge.
  * If `edge` is missing or invalid, falls back to the legacy slot pattern (Side 1→front …).
  */
-export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
+export function normalizeBoxTraySides(
+  raw: BoxTraySideRow[],
+  opts?: { maxFlangeIn?: number }
+): BoxTraySideRow[] {
+  const maxFlangeIn =
+    typeof opts?.maxFlangeIn === "number" && Number.isFinite(opts.maxFlangeIn) && opts.maxFlangeIn > 0
+      ? opts.maxFlangeIn
+      : MAX_FLANGE_IN;
   const out: BoxTraySideRow[] = [];
   for (const row of raw) {
     if (row == null || typeof row !== "object") continue;
     const idx = out.length;
     const edge = isBoxTrayEdge(row.edge) ? row.edge : trayEdgeForSlotIndex(idx);
-    const h = round2(Math.min(MAX_FLANGE_IN, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
+    const h = round2(Math.min(maxFlangeIn, Math.max(0.01, Number(row.flangeHeightIn) || 0.01)));
     const a = clampAngleDeg(Number(row.angleDeg) || 0);
     const id =
       typeof (row as BoxTraySideRow).id === "string" && (row as BoxTraySideRow).id.length > 0
@@ -71,6 +79,10 @@ export function normalizeBoxTraySides(raw: BoxTraySideRow[]): BoxTraySideRow[] {
     if (out.length >= MAX_TRAY_SIDE_ROWS) break;
   }
   return out;
+}
+
+export function normalizeBoxTraySidesForFlashing(raw: BoxTraySideRow[]): BoxTraySideRow[] {
+  return normalizeBoxTraySides(raw, { maxFlangeIn: MAX_FLANGE_FLASHING_IN });
 }
 
 function rootOrdinalMap(sides: BoxTraySideRow[]): Map<string, number> {

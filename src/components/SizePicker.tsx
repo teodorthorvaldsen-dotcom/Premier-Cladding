@@ -13,6 +13,7 @@ import {
   defaultFullTraySides,
   MAX_TRAY_SIDE_ROWS,
   normalizeBoxTraySides,
+  normalizeBoxTraySidesForFlashing,
   trayDefaultAngleDegForSlot,
   trayEdgeForSlotIndex,
   trayFoldRowTitles,
@@ -52,11 +53,16 @@ function newSideId(): string {
   return `bx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function newBoxSideRow(edge: BoxTrayEdge, angleDeg = 90, parentId?: string): BoxTraySideRow {
+function newBoxSideRow(
+  edge: BoxTrayEdge,
+  flangeHeightIn: number,
+  angleDeg = 90,
+  parentId?: string
+): BoxTraySideRow {
   return {
     id: newSideId(),
     edge,
-    flangeHeightIn: 1,
+    flangeHeightIn,
     angleDeg,
     ...(parentId ? { parentId } : {}),
   };
@@ -133,6 +139,9 @@ export function SizePicker({
 }: SizePickerProps) {
   const isPanel = variant === "propertiesPanel";
   const maxLength = maxLengthIn ?? getMaxLengthIn(thicknessId);
+  const isFlashing = productNoun === "flashing";
+  const maxReturnHeightIn = isFlashing ? 0.5 : 120;
+  const defaultReturnHeightIn = isFlashing ? 0.5 : 1;
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
@@ -161,7 +170,7 @@ export function SizePicker({
   const pushSides = (next: BoxTraySideRow[]) => {
     onChange({
       ...value,
-      boxSides: normalizeBoxTraySides(next),
+      boxSides: isFlashing ? normalizeBoxTraySidesForFlashing(next) : normalizeBoxTraySides(next),
     });
   };
 
@@ -215,7 +224,7 @@ export function SizePicker({
     const i = value.boxSides.length;
     pushSides([
       ...value.boxSides,
-      newBoxSideRow(trayEdgeForSlotIndex(i), trayDefaultAngleDegForSlot(i)),
+      newBoxSideRow(trayEdgeForSlotIndex(i), defaultReturnHeightIn, trayDefaultAngleDegForSlot(i)),
     ]);
   };
 
@@ -225,7 +234,7 @@ export function SizePicker({
     const anchor = value.boxSides[afterIndex];
     if (!anchor) return;
     const leafIdx = lastDescendantIndex(value.boxSides, afterIndex);
-    const row = newBoxSideRow(anchor.edge, 90, anchor.id);
+    const row = newBoxSideRow(anchor.edge, defaultReturnHeightIn, 90, anchor.id);
     const next = [...value.boxSides.slice(0, leafIdx + 1), row, ...value.boxSides.slice(leafIdx + 1)];
     pushSides(next);
   };
@@ -358,11 +367,18 @@ export function SizePicker({
             <p className="mt-1.5 text-[11px] text-gray-500">
               Use <span className="font-medium text-gray-700">Add side</span> or{" "}
               <span className="font-medium text-gray-700">Add fold on this edge</span> to build returns, then set height and angle
-              for each row. <span className="font-medium text-gray-700">Reverse bend</span> flips the bend direction.
+              for each row.
+              {!isFlashing ? (
+                <>
+                  {" "}
+                  <span className="font-medium text-gray-700">Reverse bend</span> flips the bend direction.
+                </>
+              ) : null}
             </p>
           ) : (
             <p className="mt-1 text-[9px] leading-snug text-gray-500">
-              Add returns; stack folds with Add fold on this edge. Reverse bend flips direction.
+              Add returns; stack folds with Add fold on this edge.
+              {!isFlashing ? <> Reverse bend flips direction.</> : null}
             </p>
           )}
 
@@ -381,7 +397,13 @@ export function SizePicker({
             </button>
             <button
               type="button"
-              onClick={() => pushSides(defaultFullTraySides())}
+              onClick={() =>
+                pushSides(
+                  isFlashing
+                    ? defaultFullTraySides().map((s) => ({ ...s, flangeHeightIn: defaultReturnHeightIn }))
+                    : defaultFullTraySides()
+                )
+              }
               className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 ${
                 value.boxSides.length > 0
                   ? "border-gray-900 bg-gray-900 text-white"
@@ -390,7 +412,7 @@ export function SizePicker({
               aria-pressed={value.boxSides.length > 0}
             >
               {productNoun === "flashing"
-                ? "Flashing sides (start at 1\")"
+                ? "Flashing sides (start at 0.5\")"
                 : "Panel sides (start at 1\")"}
             </button>
           </div>
@@ -475,7 +497,7 @@ export function SizePicker({
                               type="number"
                               inputMode="decimal"
                               min={0.01}
-                              max={120}
+                              max={maxReturnHeightIn}
                               step={0.01}
                               value={sideDrafts[index]?.height ?? String(side.flangeHeightIn)}
                               onChange={(e) =>
@@ -525,13 +547,15 @@ export function SizePicker({
                                   : "mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
                               }
                             />
-                            <button
-                              type="button"
-                              onClick={() => reverseRowBend(side.id)}
-                              className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[12px] font-medium text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                            >
-                              Reverse bend
-                            </button>
+                            {!isFlashing ? (
+                              <button
+                                type="button"
+                                onClick={() => reverseRowBend(side.id)}
+                                className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[12px] font-medium text-gray-800 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                              >
+                                Reverse bend
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                         {childIndices.map((ci) => renderNode(ci, false))}
