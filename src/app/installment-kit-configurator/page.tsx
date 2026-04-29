@@ -50,6 +50,9 @@ type LayoutResult = {
 };
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const toInputValue = (n: number) => (Number.isFinite(n) ? n : "");
+const parseNumberInput = (raw: string) => (raw.trim() === "" ? Number.NaN : Number(raw));
+const printableNumber = (n: number) => (Number.isFinite(n) ? String(n) : "-");
 
 export default function InstallmentKitConfiguratorPage() {
   const [panelTypes, setPanelTypes] = useState<PanelInput[]>([
@@ -70,18 +73,16 @@ export default function InstallmentKitConfiguratorPage() {
       setInputs((prev) => ({ ...prev, [name]: value }));
       return;
     }
-    const parsed = Number(value);
-    setInputs((prev) => ({ ...prev, [name]: Number.isFinite(parsed) ? parsed : 0 }));
+    const parsed = parseNumberInput(value);
+    setInputs((prev) => ({ ...prev, [name]: parsed }));
   };
 
   const handlePanelChange = (panelId: string, e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const parsed = Number(value);
+    const parsed = parseNumberInput(value);
     setPanelTypes((prev) =>
       prev.map((panel) =>
-        panel.id === panelId
-          ? { ...panel, [name]: Number.isFinite(parsed) ? parsed : 0 }
-          : panel
+        panel.id === panelId ? { ...panel, [name]: parsed } : panel
       )
     );
   };
@@ -103,9 +104,9 @@ export default function InstallmentKitConfiguratorPage() {
   };
 
   const layout = useMemo<LayoutResult>(() => {
-    const wW = Number(inputs.wallWidth);
-    const wH = Number(inputs.wallHeight);
-    const joint = Number(inputs.jointSize);
+    const wW = Number.isFinite(inputs.wallWidth) ? inputs.wallWidth : 0;
+    const wH = Number.isFinite(inputs.wallHeight) ? inputs.wallHeight : 0;
+    const joint = Number.isFinite(inputs.jointSize) ? inputs.jointSize : 0;
 
     if (wW <= 0 || wH <= 0) {
       return {
@@ -116,8 +117,8 @@ export default function InstallmentKitConfiguratorPage() {
     }
 
     const byType = panelTypes.map((panel) => {
-      const pW = Number(panel.panelWidth);
-      const pH = Number(panel.panelHeight);
+      const pW = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
+      const pH = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
       if (pW <= 0 || pH <= 0) {
         return { panelId: panel.id, cols: 0, rows: 0, totalPanels: 0, wastePercent: 0 };
       }
@@ -150,7 +151,7 @@ export default function InstallmentKitConfiguratorPage() {
   }, [inputs.substrate]);
 
   const panelTypeResults = useMemo<PanelTypeResult[]>(() => {
-    const jointSize = Number(inputs.jointSize);
+    const jointSize = Number.isFinite(inputs.jointSize) ? inputs.jointSize : 0;
     let spacing = 16;
     if (inputs.windLoad === "low") spacing = 24;
     if (inputs.windLoad === "high") spacing = 12;
@@ -161,12 +162,12 @@ export default function InstallmentKitConfiguratorPage() {
     const wasteFactor = 1.1;
 
     return panelTypes.map((panel, index) => {
-      const width = Number(panel.panelWidth);
-      const height = Number(panel.panelHeight);
+      const width = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
+      const height = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
       const count =
         panelTypes.length === 1 && index === 0
           ? Math.max(0, Number(layout.totalPanels))
-          : Math.max(0, Number(panel.panelCount));
+          : Math.max(0, Number.isFinite(panel.panelCount) ? panel.panelCount : 0);
       const perimeter = 2 * (width + height);
       const clipsPerPanel = Math.ceil(perimeter / spacing);
       const totalClips = clipsPerPanel * count;
@@ -228,9 +229,13 @@ export default function InstallmentKitConfiguratorPage() {
     currentY += 8;
     doc.text(`Wind load: ${inputs.windLoad}`, 14, currentY);
     currentY += 8;
-    doc.text(`Joint size: ${inputs.jointSize}"`, 14, currentY);
+    doc.text(`Joint size: ${printableNumber(inputs.jointSize)}"`, 14, currentY);
     currentY += 8;
-    doc.text(`Wall: ${inputs.wallWidth}" x ${inputs.wallHeight}"`, 14, currentY);
+    doc.text(
+      `Wall: ${printableNumber(inputs.wallWidth)}" x ${printableNumber(inputs.wallHeight)}"`,
+      14,
+      currentY
+    );
     currentY += 8;
     if (layout.byType.length > 0) {
       doc.text("Layout by panel type:", 14, currentY);
@@ -294,7 +299,7 @@ export default function InstallmentKitConfiguratorPage() {
                     type="number"
                     min={1}
                     name="panelWidth"
-                    value={panel.panelWidth}
+                    value={toInputValue(panel.panelWidth)}
                     onChange={(e) => handlePanelChange(panel.id, e)}
                     className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                   />
@@ -307,7 +312,7 @@ export default function InstallmentKitConfiguratorPage() {
                     type="number"
                     min={1}
                     name="panelHeight"
-                    value={panel.panelHeight}
+                    value={toInputValue(panel.panelHeight)}
                     onChange={(e) => handlePanelChange(panel.id, e)}
                     className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                   />
@@ -320,7 +325,7 @@ export default function InstallmentKitConfiguratorPage() {
                     type="number"
                     min={1}
                     name="panelCount"
-                    value={panel.panelCount}
+                    value={toInputValue(panel.panelCount)}
                     onChange={(e) => handlePanelChange(panel.id, e)}
                     className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                   />
@@ -362,7 +367,7 @@ export default function InstallmentKitConfiguratorPage() {
               type="number"
               min={1}
               name="wallWidth"
-              value={inputs.wallWidth}
+              value={toInputValue(inputs.wallWidth)}
               onChange={handleChange}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             />
@@ -373,7 +378,7 @@ export default function InstallmentKitConfiguratorPage() {
               type="number"
               min={1}
               name="wallHeight"
-              value={inputs.wallHeight}
+              value={toInputValue(inputs.wallHeight)}
               onChange={handleChange}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             />
@@ -385,7 +390,7 @@ export default function InstallmentKitConfiguratorPage() {
               min={0.25}
               step={0.25}
               name="jointSize"
-              value={inputs.jointSize}
+              value={toInputValue(inputs.jointSize)}
               onChange={handleChange}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             />
