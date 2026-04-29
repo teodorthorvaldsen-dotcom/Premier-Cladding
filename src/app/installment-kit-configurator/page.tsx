@@ -40,6 +40,8 @@ type PanelTypeResult = {
   trim: number;
 };
 
+type KitTier = "basic" | "pro" | "premium";
+
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const toInputValue = (n: number) => (Number.isFinite(n) ? n : "");
 const parseNumberInput = (raw: string) => (raw.trim() === "" ? Number.NaN : Number(raw));
@@ -48,6 +50,7 @@ const printableNumber = (n: number) => (Number.isFinite(n) ? String(n) : "-");
 export default function InstallmentKitConfiguratorPage() {
   const router = useRouter();
   const { addItem } = useCart();
+  const [selectedKit, setSelectedKit] = useState<KitTier>("pro");
   const [panelTypes, setPanelTypes] = useState<PanelInput[]>([
     {
       id: "panel-1",
@@ -192,6 +195,19 @@ export default function InstallmentKitConfiguratorPage() {
     return { clips, screws, sealant, trim, fastenerType, totalCost };
   }, [panelTypeResults]);
 
+  const kitPricing = useMemo(
+    () => ({
+      basic: results.clips * 2 + results.screws * 0.15,
+      pro: results.clips * 2 + results.screws * 0.15 + results.sealant * 8 + results.trim * 3,
+      premium: results.clips * 2 + results.screws * 0.15 + results.sealant * 10 + results.trim * 4 + 150,
+    }),
+    [results.clips, results.screws, results.sealant, results.trim]
+  );
+
+  const selectedKitPrice = kitPricing[selectedKit];
+  const selectedKitLabel =
+    selectedKit === "basic" ? "Basic Kit" : selectedKit === "premium" ? "Premium Kit" : "Pro Kit";
+
   const handleAddToCart = () => {
     const totalPanels = panelTypes.reduce((sum, panel) => {
       const count = Number.isFinite(panel.panelCount) ? panel.panelCount : 0;
@@ -215,10 +231,10 @@ export default function InstallmentKitConfiguratorPage() {
       finishId: "standard",
       thicknessId: "4mm",
       quantity: 1,
-      unitPrice: Number(results.totalCost.toFixed(2)),
+      unitPrice: Number(selectedKitPrice.toFixed(2)),
       areaFt2: Number(areaFt2.toFixed(2)),
       panelType: "installment-kit",
-      panelTypeLabel: `Installment kit (${totalPanels} panels equivalent)`,
+      panelTypeLabel: `${selectedKitLabel} (${totalPanels} panels equivalent)`,
       clipsNeeded: results.clips,
       clipsPerPanel: Number(clipsPerPanel.toFixed(2)),
       trayBuildSpec: panelTypes
@@ -279,7 +295,9 @@ export default function InstallmentKitConfiguratorPage() {
     doc.text(`Trim (ft): ${results.trim}`, 14, currentY);
     currentY += 12;
     doc.setFontSize(13);
-    doc.text(`Estimated total: ${currency.format(results.totalCost)}`, 14, currentY);
+    doc.text(`Kit type: ${selectedKitLabel}`, 14, currentY);
+    currentY += 10;
+    doc.text(`Estimated total: ${currency.format(selectedKitPrice)}`, 14, currentY);
 
     doc.save("acm-installation-kit-estimate.pdf");
   };
@@ -448,6 +466,45 @@ export default function InstallmentKitConfiguratorPage() {
           </button>
         </div>
 
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setSelectedKit("basic")}
+            className={`rounded-xl border p-4 text-left transition ${
+              selectedKit === "basic"
+                ? "border-blue-500 ring-2 ring-blue-200"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <h3 className="font-semibold text-gray-900">Basic</h3>
+            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.basic)}</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedKit("pro")}
+            className={`rounded-xl border p-4 text-left transition ${
+              selectedKit === "pro"
+                ? "border-blue-500 ring-2 ring-blue-200"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <h3 className="font-semibold text-gray-900">Pro (Most Popular)</h3>
+            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.pro)}</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedKit("premium")}
+            className={`rounded-xl border p-4 text-left transition ${
+              selectedKit === "premium"
+                ? "border-blue-500 ring-2 ring-blue-200"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <h3 className="font-semibold text-gray-900">Premium</h3>
+            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.premium)}</p>
+          </button>
+        </div>
+
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h2 className="text-lg font-semibold text-gray-900">Kit Summary</h2>
           <p className="mt-2 text-[15px] text-gray-700">Mounting Clips: {results.clips}</p>
@@ -456,8 +513,9 @@ export default function InstallmentKitConfiguratorPage() {
           </p>
           <p className="mt-1 text-[15px] text-gray-700">Sealant Tubes: {results.sealant}</p>
           <p className="mt-1 text-[15px] text-gray-700">Trim (ft): {results.trim}</p>
+          <p className="mt-3 text-[15px] text-gray-700">Selected Kit: {selectedKitLabel}</p>
           <p className="mt-3 text-base font-semibold text-gray-900">
-            Estimated Total: {currency.format(results.totalCost)}
+            Estimated Total: {currency.format(selectedKitPrice)}
           </p>
         </div>
 
