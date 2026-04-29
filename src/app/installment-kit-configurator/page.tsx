@@ -28,6 +28,15 @@ type KitResult = {
   totalCost: number;
 };
 
+type PanelTypeResult = {
+  panelId: string;
+  effectiveCount: number;
+  clips: number;
+  screws: number;
+  sealant: number;
+  trim: number;
+};
+
 type LayoutResult = {
   cols: number;
   rows: number;
@@ -126,50 +135,58 @@ export default function InstallmentKitConfiguratorPage() {
     return { cols, rows, totalPanels, wasteWidth, wasteHeight, wastePercent };
   }, [inputs.wallWidth, inputs.wallHeight, inputs.jointSize, panelTypes]);
 
-  const results = useMemo<KitResult>(() => {
+  const fastenerType = useMemo(() => {
+    if (inputs.substrate === "wood") return "Wood Screws";
+    if (inputs.substrate === "concrete") return "Concrete Anchors";
+    return "Self-Drilling Screws";
+  }, [inputs.substrate]);
+
+  const panelTypeResults = useMemo<PanelTypeResult[]>(() => {
     const jointSize = Number(inputs.jointSize);
     let spacing = 16;
     if (inputs.windLoad === "low") spacing = 24;
     if (inputs.windLoad === "high") spacing = 12;
-
-    let totalClips = 0;
-    let jointLength = 0;
-
-    for (const panel of panelTypes) {
-      const width = Number(panel.panelWidth);
-      const height = Number(panel.panelHeight);
-      const count =
-        panelTypes.length === 1 && panel.id === panelTypes[0]?.id
-          ? Math.max(0, Number(layout.totalPanels))
-          : Number(panel.panelCount);
-      const perimeter = 2 * (width + height);
-      const clipsPerPanel = Math.ceil(perimeter / spacing);
-      totalClips += clipsPerPanel * count;
-      jointLength += count * (width + height) * 2;
-    }
-
     const screwsPerClip = 2;
-    let fastenerType = "Self-Drilling Screws";
-    if (inputs.substrate === "wood") fastenerType = "Wood Screws";
-    if (inputs.substrate === "concrete") fastenerType = "Concrete Anchors";
-
-    const totalScrews = totalClips * screwsPerClip;
     const coveragePerTube = 1200;
     const jointMultiplier = Math.max(0.25, jointSize) / 0.5;
     const adjustedCoveragePerTube = coveragePerTube / jointMultiplier;
-    const sealantTubes = Math.ceil(jointLength / adjustedCoveragePerTube);
-    const trimLength = jointLength / 12;
-
     const wasteFactor = 1.1;
 
-    const clips = Math.ceil(totalClips * wasteFactor);
-    const screws = Math.ceil(totalScrews * wasteFactor);
-    const sealant = Math.ceil(sealantTubes * wasteFactor);
-    const trim = Math.ceil(trimLength * wasteFactor);
+    return panelTypes.map((panel, index) => {
+      const width = Number(panel.panelWidth);
+      const height = Number(panel.panelHeight);
+      const count =
+        panelTypes.length === 1 && index === 0
+          ? Math.max(0, Number(layout.totalPanels))
+          : Math.max(0, Number(panel.panelCount));
+      const perimeter = 2 * (width + height);
+      const clipsPerPanel = Math.ceil(perimeter / spacing);
+      const totalClips = clipsPerPanel * count;
+      const totalScrews = totalClips * screwsPerClip;
+      const jointLength = count * (width + height) * 2;
+      const sealantTubes = Math.ceil(jointLength / adjustedCoveragePerTube);
+      const trimLength = jointLength / 12;
+
+      return {
+        panelId: panel.id,
+        effectiveCount: count,
+        clips: Math.ceil(totalClips * wasteFactor),
+        screws: Math.ceil(totalScrews * wasteFactor),
+        sealant: Math.ceil(sealantTubes * wasteFactor),
+        trim: Math.ceil(trimLength * wasteFactor),
+      };
+    });
+  }, [inputs.jointSize, inputs.windLoad, layout.totalPanels, panelTypes]);
+
+  const results = useMemo<KitResult>(() => {
+    const clips = panelTypeResults.reduce((sum, item) => sum + item.clips, 0);
+    const screws = panelTypeResults.reduce((sum, item) => sum + item.screws, 0);
+    const sealant = panelTypeResults.reduce((sum, item) => sum + item.sealant, 0);
+    const trim = panelTypeResults.reduce((sum, item) => sum + item.trim, 0);
     const totalCost = clips * 2.5 + screws * 0.15 + sealant * 8 + trim * 3;
 
     return { clips, screws, sealant, trim, fastenerType, totalCost };
-  }, [inputs, panelTypes, layout.totalPanels]);
+  }, [panelTypeResults, fastenerType]);
 
   const exportPdf = () => {
     const doc = new jsPDF();
@@ -180,12 +197,21 @@ export default function InstallmentKitConfiguratorPage() {
     doc.text("Panel Types:", 14, currentY);
     currentY += 8;
     panelTypes.forEach((panel, idx) => {
+      const perType = panelTypeResults.find((item) => item.panelId === panel.id);
       doc.text(
-        `${idx + 1}. ${panel.panelWidth}" x ${panel.panelHeight}" - Qty ${panel.panelCount}`,
+        `${idx + 1}. ${panel.panelWidth}" x ${panel.panelHeight}" - Qty ${perType?.effectiveCount ?? panel.panelCount}`,
         18,
         currentY
       );
       currentY += 8;
+      if (perType) {
+        doc.text(
+          `   Clips ${perType.clips}, Fasteners ${perType.screws}, Sealant ${perType.sealant}, Trim ${perType.trim} ft`,
+          22,
+          currentY
+        );
+        currentY += 8;
+      }
     });
     currentY += 2;
     doc.text(`Mounting: ${inputs.mounting.replaceAll("_", " ")}`, 14, currentY);
@@ -280,6 +306,24 @@ export default function InstallmentKitConfiguratorPage() {
                     className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                   />
                 </label>
+              </div>
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-[14px] text-gray-700">
+                <p className="font-medium text-gray-800">Per Type Materials</p>
+                <p className="mt-1">
+                  Mounting Clips:{" "}
+                  {panelTypeResults.find((item) => item.panelId === panel.id)?.clips ?? 0}
+                </p>
+                <p className="mt-1">
+                  Fasteners ({fastenerType}):{" "}
+                  {panelTypeResults.find((item) => item.panelId === panel.id)?.screws ?? 0}
+                </p>
+                <p className="mt-1">
+                  Sealant Tubes:{" "}
+                  {panelTypeResults.find((item) => item.panelId === panel.id)?.sealant ?? 0}
+                </p>
+                <p className="mt-1">
+                  Trim (ft): {panelTypeResults.find((item) => item.panelId === panel.id)?.trim ?? 0}
+                </p>
               </div>
             </div>
           ))}
