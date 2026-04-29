@@ -3,10 +3,14 @@
 import { useMemo, useState, type ChangeEvent } from "react";
 import { jsPDF } from "jspdf";
 
-type Inputs = {
+type PanelInput = {
+  id: string;
   panelWidth: number;
   panelHeight: number;
   panelCount: number;
+};
+
+type Inputs = {
   mounting: "rout_return" | "face_fastened" | "rail";
   substrate: "metal" | "wood" | "concrete";
   windLoad: "low" | "medium" | "high";
@@ -25,10 +29,10 @@ type KitResult = {
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 export default function InstallmentKitConfiguratorPage() {
+  const [panelTypes, setPanelTypes] = useState<PanelInput[]>([
+    { id: "panel-1", panelWidth: 48, panelHeight: 96, panelCount: 10 },
+  ]);
   const [inputs, setInputs] = useState<Inputs>({
-    panelWidth: 48,
-    panelHeight: 96,
-    panelCount: 10,
     mounting: "rout_return",
     substrate: "metal",
     windLoad: "medium",
@@ -45,20 +49,52 @@ export default function InstallmentKitConfiguratorPage() {
     setInputs((prev) => ({ ...prev, [name]: Number.isFinite(parsed) ? parsed : 0 }));
   };
 
+  const handlePanelChange = (panelId: string, e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const parsed = Number(value);
+    setPanelTypes((prev) =>
+      prev.map((panel) =>
+        panel.id === panelId
+          ? { ...panel, [name]: Number.isFinite(parsed) ? parsed : 0 }
+          : panel
+      )
+    );
+  };
+
+  const addPanelType = () => {
+    setPanelTypes((prev) => [
+      ...prev,
+      {
+        id: `panel-${Date.now()}`,
+        panelWidth: 48,
+        panelHeight: 96,
+        panelCount: 1,
+      },
+    ]);
+  };
+
+  const removePanelType = (panelId: string) => {
+    setPanelTypes((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== panelId) : prev));
+  };
+
   const results = useMemo<KitResult>(() => {
-    const width = Number(inputs.panelWidth);
-    const height = Number(inputs.panelHeight);
-    const count = Number(inputs.panelCount);
     const jointSize = Number(inputs.jointSize);
-
-    const perimeter = 2 * (width + height);
-
     let spacing = 16;
     if (inputs.windLoad === "low") spacing = 24;
     if (inputs.windLoad === "high") spacing = 12;
 
-    const clipsPerPanel = Math.ceil(perimeter / spacing);
-    const totalClips = clipsPerPanel * count;
+    let totalClips = 0;
+    let jointLength = 0;
+
+    for (const panel of panelTypes) {
+      const width = Number(panel.panelWidth);
+      const height = Number(panel.panelHeight);
+      const count = Number(panel.panelCount);
+      const perimeter = 2 * (width + height);
+      const clipsPerPanel = Math.ceil(perimeter / spacing);
+      totalClips += clipsPerPanel * count;
+      jointLength += count * (width + height) * 2;
+    }
 
     const screwsPerClip = 2;
     let fastenerType = "Self-Drilling Screws";
@@ -66,7 +102,6 @@ export default function InstallmentKitConfiguratorPage() {
     if (inputs.substrate === "concrete") fastenerType = "Concrete Anchors";
 
     const totalScrews = totalClips * screwsPerClip;
-    const jointLength = count * (width + height) * 2;
     const coveragePerTube = 1200;
     const jointMultiplier = Math.max(0.25, jointSize) / 0.5;
     const adjustedCoveragePerTube = coveragePerTube / jointMultiplier;
@@ -82,26 +117,44 @@ export default function InstallmentKitConfiguratorPage() {
     const totalCost = clips * 2.5 + screws * 0.15 + sealant * 8 + trim * 3;
 
     return { clips, screws, sealant, trim, fastenerType, totalCost };
-  }, [inputs]);
+  }, [inputs, panelTypes]);
 
   const exportPdf = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text("ACM Installation Kit Estimate", 14, 18);
     doc.setFontSize(11);
-    doc.text(`Panel size: ${inputs.panelWidth}" x ${inputs.panelHeight}"`, 14, 32);
-    doc.text(`Panel count: ${inputs.panelCount}`, 14, 40);
-    doc.text(`Mounting: ${inputs.mounting.replaceAll("_", " ")}`, 14, 48);
-    doc.text(`Substrate: ${inputs.substrate}`, 14, 56);
-    doc.text(`Wind load: ${inputs.windLoad}`, 14, 64);
-    doc.text(`Joint size: ${inputs.jointSize}"`, 14, 72);
+    let currentY = 32;
+    doc.text("Panel Types:", 14, currentY);
+    currentY += 8;
+    panelTypes.forEach((panel, idx) => {
+      doc.text(
+        `${idx + 1}. ${panel.panelWidth}" x ${panel.panelHeight}" - Qty ${panel.panelCount}`,
+        18,
+        currentY
+      );
+      currentY += 8;
+    });
+    currentY += 2;
+    doc.text(`Mounting: ${inputs.mounting.replaceAll("_", " ")}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Substrate: ${inputs.substrate}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Wind load: ${inputs.windLoad}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Joint size: ${inputs.jointSize}"`, 14, currentY);
 
-    doc.text(`Clips: ${results.clips}`, 14, 88);
-    doc.text(`Fasteners (${results.fastenerType}): ${results.screws}`, 14, 96);
-    doc.text(`Sealant tubes: ${results.sealant}`, 14, 104);
-    doc.text(`Trim (ft): ${results.trim}`, 14, 112);
+    currentY += 16;
+    doc.text(`Clips: ${results.clips}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Fasteners (${results.fastenerType}): ${results.screws}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Sealant tubes: ${results.sealant}`, 14, currentY);
+    currentY += 8;
+    doc.text(`Trim (ft): ${results.trim}`, 14, currentY);
+    currentY += 12;
     doc.setFontSize(13);
-    doc.text(`Estimated total: ${currency.format(results.totalCost)}`, 14, 124);
+    doc.text(`Estimated total: ${currency.format(results.totalCost)}`, 14, currentY);
 
     doc.save("acm-installation-kit-estimate.pdf");
   };
@@ -113,43 +166,77 @@ export default function InstallmentKitConfiguratorPage() {
           Installment Kit Configurator
         </h1>
         <p className="mt-2 text-[15px] text-gray-600">
-          Enter panel details to estimate clips, fasteners, sealant, trim, and total cost.
+          Enter one or more panel types to estimate clips, fasteners, sealant, trim, and total
+          cost.
         </p>
 
+        <div className="mt-6 space-y-4">
+          {panelTypes.map((panel, index) => (
+            <div key={panel.id} className="rounded-xl border border-gray-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-800">Panel Type {index + 1}</h2>
+                <button
+                  type="button"
+                  onClick={() => removePanelType(panel.id)}
+                  disabled={panelTypes.length === 1}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Panel Width (in)
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    name="panelWidth"
+                    value={panel.panelWidth}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Panel Height (in)
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    name="panelHeight"
+                    value={panel.panelHeight}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Number of Panels
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    name="panelCount"
+                    value={panel.panelCount}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addPanelType}
+            className="inline-block rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-[14px] font-medium text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Add Another Panel Type
+          </button>
+        </div>
+
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Panel Width (in)</span>
-            <input
-              type="number"
-              min={1}
-              name="panelWidth"
-              value={inputs.panelWidth}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Panel Height (in)</span>
-            <input
-              type="number"
-              min={1}
-              name="panelHeight"
-              value={inputs.panelHeight}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Number of Panels</span>
-            <input
-              type="number"
-              min={1}
-              name="panelCount"
-              value={inputs.panelCount}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-gray-700">Joint Size (in)</span>
             <input
