@@ -135,10 +135,10 @@ export default function InstallmentKitConfiguratorPage() {
           : 0;
       const layoutPanels = Math.max(0, cols * rows);
       const wallArea = wallWidth * wallHeight;
-      const panelAreaUsed = layoutPanels * (width * height);
-      const wastePercentRaw =
-        panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
-      const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
+      const coveredPanelArea = layoutPanels * (width * height);
+      const wasteArea = Math.max(0, wallArea - coveredPanelArea);
+      const wastePercentRaw = wallArea > 0 ? (wasteArea / wallArea) * 100 : 0;
+      const wastePercent = Number(wastePercentRaw.toFixed(2));
 
       const perimeter = 2 * (width + height);
       const clipsPerPanel = Math.ceil(perimeter / spacing);
