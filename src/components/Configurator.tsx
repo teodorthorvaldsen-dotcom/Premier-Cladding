@@ -431,7 +431,11 @@ export function Configurator({
                 id="quantity"
                 className="py-6 scroll-mt-[200px] sm:scroll-mt-[220px] lg:scroll-mt-[300px]"
               >
-                <QuantityPicker value={quantity} onChange={setQuantity} />
+                <QuantityPicker
+                  value={quantity}
+                  onChange={setQuantity}
+                  unitLabel={variant === "flashing" ? "pieces" : "panels"}
+                />
               </div>
               <div
                 id="size"
