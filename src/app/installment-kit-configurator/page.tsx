@@ -164,10 +164,7 @@ export default function InstallmentKitConfiguratorPage() {
     return panelTypes.map((panel, index) => {
       const width = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
       const height = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
-      const count =
-        panelTypes.length === 1 && index === 0
-          ? Math.max(0, Number(layout.totalPanels))
-          : Math.max(0, Number.isFinite(panel.panelCount) ? panel.panelCount : 0);
+      const count = Math.max(0, Number.isFinite(panel.panelCount) ? panel.panelCount : 0);
       const perimeter = 2 * (width + height);
       const clipsPerPanel = Math.ceil(perimeter / spacing);
       const totalClips = clipsPerPanel * count;
@@ -185,7 +182,7 @@ export default function InstallmentKitConfiguratorPage() {
         trim: Math.ceil(trimLength * wasteFactor),
       };
     });
-  }, [inputs.jointSize, inputs.windLoad, layout.totalPanels, panelTypes]);
+  }, [inputs.jointSize, inputs.windLoad, panelTypes]);
 
   const results = useMemo<KitResult>(() => {
     const clips = panelTypeResults.reduce((sum, item) => sum + item.clips, 0);
