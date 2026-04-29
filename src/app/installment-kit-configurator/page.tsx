@@ -38,12 +38,15 @@ type PanelTypeResult = {
 };
 
 type LayoutResult = {
-  cols: number;
-  rows: number;
   totalPanels: number;
-  wasteWidth: number;
-  wasteHeight: number;
   wastePercent: number;
+  byType: Array<{
+    panelId: string;
+    cols: number;
+    rows: number;
+    totalPanels: number;
+    wastePercent: number;
+  }>;
 };
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -100,39 +103,44 @@ export default function InstallmentKitConfiguratorPage() {
   };
 
   const layout = useMemo<LayoutResult>(() => {
-    const primaryPanel = panelTypes[0] ?? { panelWidth: 0, panelHeight: 0 };
     const wW = Number(inputs.wallWidth);
     const wH = Number(inputs.wallHeight);
-    const pW = Number(primaryPanel.panelWidth);
-    const pH = Number(primaryPanel.panelHeight);
     const joint = Number(inputs.jointSize);
 
-    if (wW <= 0 || wH <= 0 || pW <= 0 || pH <= 0) {
+    if (wW <= 0 || wH <= 0) {
       return {
-        cols: 0,
-        rows: 0,
         totalPanels: 0,
-        wasteWidth: 0,
-        wasteHeight: 0,
         wastePercent: 0,
+        byType: [],
       };
     }
 
-    const effectivePanelWidth = pW + joint;
-    const effectivePanelHeight = pH + joint;
-    const cols = Math.floor((wW + joint) / effectivePanelWidth);
-    const rows = Math.floor((wH + joint) / effectivePanelHeight);
-    const usedWidth = cols * effectivePanelWidth - joint;
-    const usedHeight = rows * effectivePanelHeight - joint;
-    const wasteWidth = Math.max(0, wW - usedWidth);
-    const wasteHeight = Math.max(0, wH - usedHeight);
-    const totalPanels = cols * rows;
-    const wallArea = wW * wH;
-    const panelAreaUsed = totalPanels * (pW * pH);
-    const wastePercentRaw = panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
-    const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
+    const byType = panelTypes.map((panel) => {
+      const pW = Number(panel.panelWidth);
+      const pH = Number(panel.panelHeight);
+      if (pW <= 0 || pH <= 0) {
+        return { panelId: panel.id, cols: 0, rows: 0, totalPanels: 0, wastePercent: 0 };
+      }
+      const effectivePanelWidth = pW + joint;
+      const effectivePanelHeight = pH + joint;
+      const cols = Math.floor((wW + joint) / effectivePanelWidth);
+      const rows = Math.floor((wH + joint) / effectivePanelHeight);
+      const totalPanels = cols * rows;
+      const wallArea = wW * wH;
+      const panelAreaUsed = totalPanels * (pW * pH);
+      const wastePercentRaw =
+        panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
+      const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
+      return { panelId: panel.id, cols, rows, totalPanels, wastePercent };
+    });
 
-    return { cols, rows, totalPanels, wasteWidth, wasteHeight, wastePercent };
+    const totalPanels = byType.reduce((sum, item) => sum + item.totalPanels, 0);
+    const wastePercent =
+      byType.length > 0
+        ? Number((byType.reduce((sum, item) => sum + item.wastePercent, 0) / byType.length).toFixed(2))
+        : 0;
+
+    return { totalPanels, wastePercent, byType };
   }, [inputs.wallWidth, inputs.wallHeight, inputs.jointSize, panelTypes]);
 
   const fastenerType = useMemo(() => {
@@ -224,7 +232,18 @@ export default function InstallmentKitConfiguratorPage() {
     currentY += 8;
     doc.text(`Wall: ${inputs.wallWidth}" x ${inputs.wallHeight}"`, 14, currentY);
     currentY += 8;
-    doc.text(`Layout: ${layout.cols} cols x ${layout.rows} rows = ${layout.totalPanels} panels`, 14, currentY);
+    if (layout.byType.length > 0) {
+      doc.text("Layout by panel type:", 14, currentY);
+      currentY += 8;
+      layout.byType.forEach((item, idx) => {
+        doc.text(
+          `Type ${idx + 1}: ${item.cols} cols x ${item.rows} rows = ${item.totalPanels} panels (${item.wastePercent}% waste)`,
+          18,
+          currentY
+        );
+        currentY += 8;
+      });
+    }
 
     currentY += 16;
     doc.text(`Clips: ${results.clips}`, 14, currentY);
@@ -417,10 +436,18 @@ export default function InstallmentKitConfiguratorPage() {
 
         <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
           <h2 className="text-xl font-semibold text-gray-900">Panel Layout</h2>
-          <p className="mt-2 text-[15px] text-gray-700">Columns: {layout.cols}</p>
-          <p className="mt-1 text-[15px] text-gray-700">Rows: {layout.rows}</p>
-          <p className="mt-1 text-[15px] text-gray-700">Total Panels: {layout.totalPanels}</p>
-          <p className="mt-1 text-[15px] text-gray-700">Waste: {layout.wastePercent}%</p>
+          {layout.byType.map((item, idx) => (
+            <div key={item.panelId} className="mt-2 text-[15px] text-gray-700">
+              <p className="font-medium text-gray-800">Type {idx + 1}</p>
+              <p>Columns: {item.cols}</p>
+              <p>Rows: {item.rows}</p>
+              <p>Total Panels: {item.totalPanels}</p>
+              <p>Waste: {item.wastePercent}%</p>
+            </div>
+          ))}
+          <p className="mt-3 text-[15px] font-medium text-gray-800">
+            Combined Total Panels: {layout.totalPanels}
+          </p>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
