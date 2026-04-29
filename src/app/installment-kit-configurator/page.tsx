@@ -117,76 +117,93 @@ export default function InstallmentKitConfiguratorPage() {
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <input
-            type="number"
-            min={1}
-            name="panelWidth"
-            placeholder="Panel Width (in)"
-            value={inputs.panelWidth}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          />
-          <input
-            type="number"
-            min={1}
-            name="panelHeight"
-            placeholder="Panel Height (in)"
-            value={inputs.panelHeight}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          />
-          <input
-            type="number"
-            min={1}
-            name="panelCount"
-            placeholder="Number of Panels"
-            value={inputs.panelCount}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          />
-          <input
-            type="number"
-            min={0.25}
-            step={0.25}
-            name="jointSize"
-            placeholder="Joint Size (in)"
-            value={inputs.jointSize}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          />
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Panel Width (in)</span>
+            <input
+              type="number"
+              min={1}
+              name="panelWidth"
+              value={inputs.panelWidth}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Panel Height (in)</span>
+            <input
+              type="number"
+              min={1}
+              name="panelHeight"
+              value={inputs.panelHeight}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Number of Panels</span>
+            <input
+              type="number"
+              min={1}
+              name="panelCount"
+              value={inputs.panelCount}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Joint Size (in)</span>
+            <input
+              type="number"
+              min={0.25}
+              step={0.25}
+              name="jointSize"
+              value={inputs.jointSize}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
 
-          <select
-            name="mounting"
-            value={inputs.mounting}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            <option value="rout_return">Rout & Return</option>
-            <option value="face_fastened">Face Fastened</option>
-            <option value="rail">Rail System</option>
-          </select>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Mounting Method</span>
+            <select
+              name="mounting"
+              value={inputs.mounting}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              <option value="rout_return">Rout & Return</option>
+              <option value="face_fastened">Face Fastened</option>
+              <option value="rail">Rail System</option>
+            </select>
+          </label>
 
-          <select
-            name="substrate"
-            value={inputs.substrate}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
-            <option value="metal">Metal Studs</option>
-            <option value="wood">Wood Framing</option>
-            <option value="concrete">Concrete / CMU</option>
-          </select>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Substrate Type</span>
+            <select
+              name="substrate"
+              value={inputs.substrate}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              <option value="metal">Metal Studs</option>
+              <option value="wood">Wood Framing</option>
+              <option value="concrete">Concrete / CMU</option>
+            </select>
+          </label>
 
-          <select
-            name="windLoad"
-            value={inputs.windLoad}
-            onChange={handleChange}
-            className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 sm:col-span-2"
-          >
-            <option value="low">Low Wind</option>
-            <option value="medium">Medium Wind</option>
-            <option value="high">High Wind</option>
-          </select>
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wind Load</span>
+            <select
+              name="windLoad"
+              value={inputs.windLoad}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              <option value="low">Low Wind</option>
+              <option value="medium">Medium Wind</option>
+              <option value="high">High Wind</option>
+            </select>
+          </label>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
