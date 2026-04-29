@@ -207,6 +207,48 @@ export default function InstallmentKitConfiguratorPage() {
   const selectedKitPrice = kitPricing[selectedKit];
   const selectedKitLabel =
     selectedKit === "basic" ? "Basic Kit" : selectedKit === "premium" ? "Premium Kit" : "Pro Kit";
+  const tiers = [
+    {
+      id: "basic" as KitTier,
+      name: "Basic Kit",
+      subtitle: "For Experienced Installers",
+      description:
+        "Includes essential mounting hardware only. Best for contractors who already have sealants and finishing materials.",
+      features: [
+        "Mounting clips (calculated)",
+        "Substrate-specific fasteners",
+        "10% waste factor",
+      ],
+    },
+    {
+      id: "pro" as KitTier,
+      name: "Pro Kit",
+      badge: "Most Popular",
+      subtitle: "Complete Installation",
+      description:
+        "Includes all required materials for a full ACM install. No additional sourcing needed.",
+      features: [
+        "Everything in Basic",
+        "Sealant (joint-calculated)",
+        "Trim & finishing pieces",
+        "12-15% waste factor",
+      ],
+    },
+    {
+      id: "premium" as KitTier,
+      name: "Premium Kit",
+      subtitle: "Zero Headaches",
+      description:
+        "Built for reliability and efficiency. Includes tools, extras, and safety margin to prevent delays.",
+      features: [
+        "Everything in Pro",
+        "Extra fasteners (15-20%)",
+        "Touch-up paint",
+        "Drill bits / cutting tools",
+        "Install accessories",
+      ],
+    },
+  ];
 
   const handleAddToCart = () => {
     const totalPanels = panelTypes.reduce((sum, panel) => {
@@ -466,43 +508,57 @@ export default function InstallmentKitConfiguratorPage() {
           </button>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => setSelectedKit("basic")}
-            className={`rounded-xl border p-4 text-left transition ${
-              selectedKit === "basic"
-                ? "border-blue-500 ring-2 ring-blue-200"
-                : "border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            <h3 className="font-semibold text-gray-900">Basic</h3>
-            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.basic)}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedKit("pro")}
-            className={`rounded-xl border p-4 text-left transition ${
-              selectedKit === "pro"
-                ? "border-blue-500 ring-2 ring-blue-200"
-                : "border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            <h3 className="font-semibold text-gray-900">Pro (Most Popular)</h3>
-            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.pro)}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedKit("premium")}
-            className={`rounded-xl border p-4 text-left transition ${
-              selectedKit === "premium"
-                ? "border-blue-500 ring-2 ring-blue-200"
-                : "border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            <h3 className="font-semibold text-gray-900">Premium</h3>
-            <p className="mt-1 text-[15px] text-gray-700">{currency.format(kitPricing.premium)}</p>
-          </button>
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">Choose Your Installation Kit</h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            {tiers.map((tier) => (
+              <div
+                key={tier.id}
+                onClick={() => setSelectedKit(tier.id)}
+                className={`cursor-pointer rounded-2xl border p-5 transition-all ${
+                  selectedKit === tier.id
+                    ? "border-blue-600 shadow-lg ring-2 ring-blue-200"
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                {tier.badge ? (
+                  <div className="mb-2 inline-block rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
+                    {tier.badge}
+                  </div>
+                ) : null}
+                <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
+                <p className="mb-2 text-sm text-gray-500">{tier.subtitle}</p>
+                <p className="mb-3 text-2xl font-semibold text-gray-900">
+                  {currency.format(kitPricing[tier.id])}
+                </p>
+                <p className="mb-4 text-sm text-gray-600">{tier.description}</p>
+                <ul className="mb-4 space-y-1 text-sm text-gray-700">
+                  {tier.features.map((f) => (
+                    <li key={f}>- {f}</li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className={`w-full rounded-lg py-2 font-semibold ${
+                    selectedKit === tier.id ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900"
+                  }`}
+                >
+                  {selectedKit === tier.id ? "Selected" : "Select Kit"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+            {selectedKit === "basic" ? (
+              <p>Warning: You need to supply sealants and finishing materials separately.</p>
+            ) : null}
+            {selectedKit === "pro" ? (
+              <p>Includes everything needed for a standard install with no additional materials required.</p>
+            ) : null}
+            {selectedKit === "premium" ? (
+              <p>Recommended for projects where delays or missing materials are not an option.</p>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
