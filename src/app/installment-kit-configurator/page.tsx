@@ -11,6 +11,8 @@ type PanelInput = {
 };
 
 type Inputs = {
+  wallWidth: number;
+  wallHeight: number;
   mounting: "rout_return" | "face_fastened" | "rail";
   substrate: "metal" | "wood" | "concrete";
   windLoad: "low" | "medium" | "high";
@@ -26,6 +28,15 @@ type KitResult = {
   totalCost: number;
 };
 
+type LayoutResult = {
+  cols: number;
+  rows: number;
+  totalPanels: number;
+  wasteWidth: number;
+  wasteHeight: number;
+  wastePercent: number;
+};
+
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 export default function InstallmentKitConfiguratorPage() {
@@ -33,6 +44,8 @@ export default function InstallmentKitConfiguratorPage() {
     { id: "panel-1", panelWidth: 48, panelHeight: 96, panelCount: 10 },
   ]);
   const [inputs, setInputs] = useState<Inputs>({
+    wallWidth: 240,
+    wallHeight: 120,
     mounting: "rout_return",
     substrate: "metal",
     windLoad: "medium",
@@ -77,6 +90,42 @@ export default function InstallmentKitConfiguratorPage() {
     setPanelTypes((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== panelId) : prev));
   };
 
+  const layout = useMemo<LayoutResult>(() => {
+    const primaryPanel = panelTypes[0] ?? { panelWidth: 0, panelHeight: 0 };
+    const wW = Number(inputs.wallWidth);
+    const wH = Number(inputs.wallHeight);
+    const pW = Number(primaryPanel.panelWidth);
+    const pH = Number(primaryPanel.panelHeight);
+    const joint = Number(inputs.jointSize);
+
+    if (wW <= 0 || wH <= 0 || pW <= 0 || pH <= 0) {
+      return {
+        cols: 0,
+        rows: 0,
+        totalPanels: 0,
+        wasteWidth: 0,
+        wasteHeight: 0,
+        wastePercent: 0,
+      };
+    }
+
+    const effectivePanelWidth = pW + joint;
+    const effectivePanelHeight = pH + joint;
+    const cols = Math.floor((wW + joint) / effectivePanelWidth);
+    const rows = Math.floor((wH + joint) / effectivePanelHeight);
+    const usedWidth = cols * effectivePanelWidth - joint;
+    const usedHeight = rows * effectivePanelHeight - joint;
+    const wasteWidth = Math.max(0, wW - usedWidth);
+    const wasteHeight = Math.max(0, wH - usedHeight);
+    const totalPanels = cols * rows;
+    const wallArea = wW * wH;
+    const panelAreaUsed = totalPanels * (pW * pH);
+    const wastePercentRaw = panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
+    const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
+
+    return { cols, rows, totalPanels, wasteWidth, wasteHeight, wastePercent };
+  }, [inputs.wallWidth, inputs.wallHeight, inputs.jointSize, panelTypes]);
+
   const results = useMemo<KitResult>(() => {
     const jointSize = Number(inputs.jointSize);
     let spacing = 16;
@@ -89,7 +138,10 @@ export default function InstallmentKitConfiguratorPage() {
     for (const panel of panelTypes) {
       const width = Number(panel.panelWidth);
       const height = Number(panel.panelHeight);
-      const count = Number(panel.panelCount);
+      const count =
+        panelTypes.length === 1 && panel.id === panelTypes[0]?.id
+          ? Math.max(0, Number(layout.totalPanels))
+          : Number(panel.panelCount);
       const perimeter = 2 * (width + height);
       const clipsPerPanel = Math.ceil(perimeter / spacing);
       totalClips += clipsPerPanel * count;
@@ -117,7 +169,7 @@ export default function InstallmentKitConfiguratorPage() {
     const totalCost = clips * 2.5 + screws * 0.15 + sealant * 8 + trim * 3;
 
     return { clips, screws, sealant, trim, fastenerType, totalCost };
-  }, [inputs, panelTypes]);
+  }, [inputs, panelTypes, layout.totalPanels]);
 
   const exportPdf = () => {
     const doc = new jsPDF();
@@ -143,6 +195,10 @@ export default function InstallmentKitConfiguratorPage() {
     doc.text(`Wind load: ${inputs.windLoad}`, 14, currentY);
     currentY += 8;
     doc.text(`Joint size: ${inputs.jointSize}"`, 14, currentY);
+    currentY += 8;
+    doc.text(`Wall: ${inputs.wallWidth}" x ${inputs.wallHeight}"`, 14, currentY);
+    currentY += 8;
+    doc.text(`Layout: ${layout.cols} cols x ${layout.rows} rows = ${layout.totalPanels} panels`, 14, currentY);
 
     currentY += 16;
     doc.text(`Clips: ${results.clips}`, 14, currentY);
@@ -238,6 +294,28 @@ export default function InstallmentKitConfiguratorPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Width (in)</span>
+            <input
+              type="number"
+              min={1}
+              name="wallWidth"
+              value={inputs.wallWidth}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Height (in)</span>
+            <input
+              type="number"
+              min={1}
+              name="wallHeight"
+              value={inputs.wallHeight}
+              onChange={handleChange}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            />
+          </label>
+          <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-gray-700">Joint Size (in)</span>
             <input
               type="number"
@@ -291,6 +369,14 @@ export default function InstallmentKitConfiguratorPage() {
               <option value="high">High Wind</option>
             </select>
           </label>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <h2 className="text-xl font-semibold text-gray-900">Panel Layout</h2>
+          <p className="mt-2 text-[15px] text-gray-700">Columns: {layout.cols}</p>
+          <p className="mt-1 text-[15px] text-gray-700">Rows: {layout.rows}</p>
+          <p className="mt-1 text-[15px] text-gray-700">Total Panels: {layout.totalPanels}</p>
+          <p className="mt-1 text-[15px] text-gray-700">Waste: {layout.wastePercent}%</p>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
