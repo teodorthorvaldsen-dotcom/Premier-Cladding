@@ -8,15 +8,12 @@ type PanelInput = {
   panelWidth: number;
   panelHeight: number;
   panelCount: number;
-};
-
-type Inputs = {
   wallWidth: number;
   wallHeight: number;
+  jointSize: number;
   mounting: "rout_return" | "face_fastened" | "rail";
   substrate: "metal" | "wood" | "concrete";
   windLoad: "low" | "medium" | "high";
-  jointSize: number;
 };
 
 type KitResult = {
@@ -30,23 +27,15 @@ type KitResult = {
 
 type PanelTypeResult = {
   panelId: string;
-  effectiveCount: number;
+  fastenerType: string;
+  cols: number;
+  rows: number;
+  layoutPanels: number;
+  wastePercent: number;
   clips: number;
   screws: number;
   sealant: number;
   trim: number;
-};
-
-type LayoutResult = {
-  totalPanels: number;
-  wastePercent: number;
-  byType: Array<{
-    panelId: string;
-    cols: number;
-    rows: number;
-    totalPanels: number;
-    wastePercent: number;
-  }>;
 };
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -56,29 +45,31 @@ const printableNumber = (n: number) => (Number.isFinite(n) ? String(n) : "-");
 
 export default function InstallmentKitConfiguratorPage() {
   const [panelTypes, setPanelTypes] = useState<PanelInput[]>([
-    { id: "panel-1", panelWidth: 48, panelHeight: 96, panelCount: 10 },
+    {
+      id: "panel-1",
+      panelWidth: 48,
+      panelHeight: 96,
+      panelCount: 10,
+      wallWidth: 240,
+      wallHeight: 120,
+      jointSize: 0.5,
+      mounting: "rout_return",
+      substrate: "metal",
+      windLoad: "medium",
+    },
   ]);
-  const [inputs, setInputs] = useState<Inputs>({
-    wallWidth: 240,
-    wallHeight: 120,
-    mounting: "rout_return",
-    substrate: "metal",
-    windLoad: "medium",
-    jointSize: 0.5,
-  });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handlePanelChange = (
+    panelId: string,
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     if (name === "mounting" || name === "substrate" || name === "windLoad") {
-      setInputs((prev) => ({ ...prev, [name]: value }));
+      setPanelTypes((prev) =>
+        prev.map((panel) => (panel.id === panelId ? { ...panel, [name]: value } : panel))
+      );
       return;
     }
-    const parsed = parseNumberInput(value);
-    setInputs((prev) => ({ ...prev, [name]: parsed }));
-  };
-
-  const handlePanelChange = (panelId: string, e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
     const parsed = parseNumberInput(value);
     setPanelTypes((prev) =>
       prev.map((panel) =>
@@ -95,6 +86,12 @@ export default function InstallmentKitConfiguratorPage() {
         panelWidth: 48,
         panelHeight: 96,
         panelCount: 1,
+        wallWidth: 240,
+        wallHeight: 120,
+        jointSize: 0.5,
+        mounting: "rout_return",
+        substrate: "metal",
+        windLoad: "medium",
       },
     ]);
   };
@@ -103,86 +100,66 @@ export default function InstallmentKitConfiguratorPage() {
     setPanelTypes((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== panelId) : prev));
   };
 
-  const layout = useMemo<LayoutResult>(() => {
-    const wW = Number.isFinite(inputs.wallWidth) ? inputs.wallWidth : 0;
-    const wH = Number.isFinite(inputs.wallHeight) ? inputs.wallHeight : 0;
-    const joint = Number.isFinite(inputs.jointSize) ? inputs.jointSize : 0;
-
-    if (wW <= 0 || wH <= 0) {
-      return {
-        totalPanels: 0,
-        wastePercent: 0,
-        byType: [],
-      };
-    }
-
-    const byType = panelTypes.map((panel) => {
-      const pW = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
-      const pH = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
-      if (pW <= 0 || pH <= 0) {
-        return { panelId: panel.id, cols: 0, rows: 0, totalPanels: 0, wastePercent: 0 };
-      }
-      const effectivePanelWidth = pW + joint;
-      const effectivePanelHeight = pH + joint;
-      const cols = Math.floor((wW + joint) / effectivePanelWidth);
-      const rows = Math.floor((wH + joint) / effectivePanelHeight);
-      const totalPanels = cols * rows;
-      const wallArea = wW * wH;
-      const panelAreaUsed = totalPanels * (pW * pH);
-      const wastePercentRaw =
-        panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
-      const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
-      return { panelId: panel.id, cols, rows, totalPanels, wastePercent };
-    });
-
-    const totalPanels = byType.reduce((sum, item) => sum + item.totalPanels, 0);
-    const wastePercent =
-      byType.length > 0
-        ? Number((byType.reduce((sum, item) => sum + item.wastePercent, 0) / byType.length).toFixed(2))
-        : 0;
-
-    return { totalPanels, wastePercent, byType };
-  }, [inputs.wallWidth, inputs.wallHeight, inputs.jointSize, panelTypes]);
-
-  const fastenerType = useMemo(() => {
-    if (inputs.substrate === "wood") return "Wood Screws";
-    if (inputs.substrate === "concrete") return "Concrete Anchors";
-    return "Self-Drilling Screws";
-  }, [inputs.substrate]);
-
   const panelTypeResults = useMemo<PanelTypeResult[]>(() => {
-    const jointSize = Number.isFinite(inputs.jointSize) ? inputs.jointSize : 0;
-    let spacing = 16;
-    if (inputs.windLoad === "low") spacing = 24;
-    if (inputs.windLoad === "high") spacing = 12;
     const screwsPerClip = 2;
     const coveragePerTube = 1200;
-    const jointMultiplier = Math.max(0.25, jointSize) / 0.5;
-    const adjustedCoveragePerTube = coveragePerTube / jointMultiplier;
     const wasteFactor = 1.1;
 
-    return panelTypes.map((panel, index) => {
+    return panelTypes.map((panel) => {
       const width = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
       const height = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
       const count = Math.max(0, Number.isFinite(panel.panelCount) ? panel.panelCount : 0);
+      const wallWidth = Number.isFinite(panel.wallWidth) ? panel.wallWidth : 0;
+      const wallHeight = Number.isFinite(panel.wallHeight) ? panel.wallHeight : 0;
+      const jointSize = Number.isFinite(panel.jointSize) ? panel.jointSize : 0;
+
+      let spacing = 16;
+      if (panel.windLoad === "low") spacing = 24;
+      if (panel.windLoad === "high") spacing = 12;
+
+      let fastenerType = "Self-Drilling Screws";
+      if (panel.substrate === "wood") fastenerType = "Wood Screws";
+      if (panel.substrate === "concrete") fastenerType = "Concrete Anchors";
+
+      const effectivePanelWidth = width + jointSize;
+      const effectivePanelHeight = height + jointSize;
+      const cols =
+        wallWidth > 0 && width > 0 ? Math.floor((wallWidth + jointSize) / effectivePanelWidth) : 0;
+      const rows =
+        wallHeight > 0 && height > 0
+          ? Math.floor((wallHeight + jointSize) / effectivePanelHeight)
+          : 0;
+      const layoutPanels = Math.max(0, cols * rows);
+      const wallArea = wallWidth * wallHeight;
+      const panelAreaUsed = layoutPanels * (width * height);
+      const wastePercentRaw =
+        panelAreaUsed > 0 ? ((panelAreaUsed - wallArea) / panelAreaUsed) * 100 : 0;
+      const wastePercent = Math.max(0, Number(wastePercentRaw.toFixed(2)));
+
       const perimeter = 2 * (width + height);
       const clipsPerPanel = Math.ceil(perimeter / spacing);
       const totalClips = clipsPerPanel * count;
       const totalScrews = totalClips * screwsPerClip;
       const jointLength = count * (width + height) * 2;
+      const jointMultiplier = Math.max(0.25, jointSize) / 0.5;
+      const adjustedCoveragePerTube = coveragePerTube / jointMultiplier;
       const sealantTubes = Math.ceil(jointLength / adjustedCoveragePerTube);
       const trimLength = jointLength / 12;
 
       return {
         panelId: panel.id,
-        effectiveCount: count,
+        fastenerType,
+        cols,
+        rows,
+        layoutPanels,
+        wastePercent,
         clips: Math.ceil(totalClips * wasteFactor),
         screws: Math.ceil(totalScrews * wasteFactor),
         sealant: Math.ceil(sealantTubes * wasteFactor),
         trim: Math.ceil(trimLength * wasteFactor),
       };
     });
-  }, [inputs.jointSize, inputs.windLoad, panelTypes]);
+  }, [panelTypes]);
 
   const results = useMemo<KitResult>(() => {
     const clips = panelTypeResults.reduce((sum, item) => sum + item.clips, 0);
@@ -190,9 +167,26 @@ export default function InstallmentKitConfiguratorPage() {
     const sealant = panelTypeResults.reduce((sum, item) => sum + item.sealant, 0);
     const trim = panelTypeResults.reduce((sum, item) => sum + item.trim, 0);
     const totalCost = clips * 2.5 + screws * 0.15 + sealant * 8 + trim * 3;
+    const hasWood = panelTypeResults.some((item) => item.fastenerType === "Wood Screws");
+    const hasConcrete = panelTypeResults.some((item) => item.fastenerType === "Concrete Anchors");
+    const hasMetal = panelTypeResults.some((item) => item.fastenerType === "Self-Drilling Screws");
+    const fastenerType =
+      hasWood && hasConcrete && hasMetal
+        ? "Mixed Fasteners"
+        : hasWood && hasConcrete
+          ? "Wood/Concrete Fasteners"
+          : hasWood && hasMetal
+            ? "Wood/Metal Fasteners"
+            : hasConcrete && hasMetal
+              ? "Concrete/Metal Fasteners"
+              : hasWood
+                ? "Wood Screws"
+                : hasConcrete
+                  ? "Concrete Anchors"
+                  : "Self-Drilling Screws";
 
     return { clips, screws, sealant, trim, fastenerType, totalCost };
-  }, [panelTypeResults, fastenerType]);
+  }, [panelTypeResults]);
 
   const exportPdf = () => {
     const doc = new jsPDF();
@@ -205,47 +199,32 @@ export default function InstallmentKitConfiguratorPage() {
     panelTypes.forEach((panel, idx) => {
       const perType = panelTypeResults.find((item) => item.panelId === panel.id);
       doc.text(
-        `${idx + 1}. ${panel.panelWidth}" x ${panel.panelHeight}" - Qty ${perType?.effectiveCount ?? panel.panelCount}`,
+        `${idx + 1}. ${printableNumber(panel.panelWidth)}" x ${printableNumber(panel.panelHeight)}" - Qty ${printableNumber(panel.panelCount)}`,
         18,
         currentY
       );
       currentY += 8;
       if (perType) {
         doc.text(
-          `   Clips ${perType.clips}, Fasteners ${perType.screws}, Sealant ${perType.sealant}, Trim ${perType.trim} ft`,
+          `   Wall ${printableNumber(panel.wallWidth)}" x ${printableNumber(panel.wallHeight)}", Joint ${printableNumber(panel.jointSize)}", ${panel.mounting.replaceAll("_", " ")}, ${panel.windLoad} wind`,
+          22,
+          currentY
+        );
+        currentY += 8;
+        doc.text(
+          `   Layout ${perType.cols}x${perType.rows} (${perType.layoutPanels} panels, ${perType.wastePercent}% waste)`,
+          22,
+          currentY
+        );
+        currentY += 8;
+        doc.text(
+          `   Clips ${perType.clips}, Fasteners ${perType.screws} (${perType.fastenerType}), Sealant ${perType.sealant}, Trim ${perType.trim} ft`,
           22,
           currentY
         );
         currentY += 8;
       }
     });
-    currentY += 2;
-    doc.text(`Mounting: ${inputs.mounting.replaceAll("_", " ")}`, 14, currentY);
-    currentY += 8;
-    doc.text(`Substrate: ${inputs.substrate}`, 14, currentY);
-    currentY += 8;
-    doc.text(`Wind load: ${inputs.windLoad}`, 14, currentY);
-    currentY += 8;
-    doc.text(`Joint size: ${printableNumber(inputs.jointSize)}"`, 14, currentY);
-    currentY += 8;
-    doc.text(
-      `Wall: ${printableNumber(inputs.wallWidth)}" x ${printableNumber(inputs.wallHeight)}"`,
-      14,
-      currentY
-    );
-    currentY += 8;
-    if (layout.byType.length > 0) {
-      doc.text("Layout by panel type:", 14, currentY);
-      currentY += 8;
-      layout.byType.forEach((item, idx) => {
-        doc.text(
-          `Type ${idx + 1}: ${item.cols} cols x ${item.rows} rows = ${item.totalPanels} panels (${item.wastePercent}% waste)`,
-          18,
-          currentY
-        );
-        currentY += 8;
-      });
-    }
 
     currentY += 16;
     doc.text(`Clips: ${results.clips}`, 14, currentY);
@@ -274,7 +253,9 @@ export default function InstallmentKitConfiguratorPage() {
         </p>
 
         <div className="mt-6 space-y-4">
-          {panelTypes.map((panel, index) => (
+          {panelTypes.map((panel, index) => {
+            const perType = panelTypeResults.find((item) => item.panelId === panel.id);
+            return (
             <div key={panel.id} className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">Panel Type {index + 1}</h2>
@@ -328,26 +309,93 @@ export default function InstallmentKitConfiguratorPage() {
                   />
                 </label>
               </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Width (in)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    name="wallWidth"
+                    value={toInputValue(panel.wallWidth)}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Height (in)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    name="wallHeight"
+                    value={toInputValue(panel.wallHeight)}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Joint Size (in)</span>
+                  <input
+                    type="number"
+                    min={0.25}
+                    step={0.25}
+                    name="jointSize"
+                    value={toInputValue(panel.jointSize)}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Mounting Method</span>
+                  <select
+                    name="mounting"
+                    value={panel.mounting}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  >
+                    <option value="rout_return">Rout & Return</option>
+                    <option value="face_fastened">Face Fastened</option>
+                    <option value="rail">Rail System</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Substrate Type</span>
+                  <select
+                    name="substrate"
+                    value={panel.substrate}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  >
+                    <option value="metal">Metal Studs</option>
+                    <option value="wood">Wood Framing</option>
+                    <option value="concrete">Concrete / CMU</option>
+                  </select>
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Wind Load</span>
+                  <select
+                    name="windLoad"
+                    value={panel.windLoad}
+                    onChange={(e) => handlePanelChange(panel.id, e)}
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  >
+                    <option value="low">Low Wind</option>
+                    <option value="medium">Medium Wind</option>
+                    <option value="high">High Wind</option>
+                  </select>
+                </label>
+              </div>
               <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-[14px] text-gray-700">
                 <p className="font-medium text-gray-800">Per Type Materials</p>
-                <p className="mt-1">
-                  Mounting Clips:{" "}
-                  {panelTypeResults.find((item) => item.panelId === panel.id)?.clips ?? 0}
-                </p>
-                <p className="mt-1">
-                  Fasteners ({fastenerType}):{" "}
-                  {panelTypeResults.find((item) => item.panelId === panel.id)?.screws ?? 0}
-                </p>
-                <p className="mt-1">
-                  Sealant Tubes:{" "}
-                  {panelTypeResults.find((item) => item.panelId === panel.id)?.sealant ?? 0}
-                </p>
-                <p className="mt-1">
-                  Trim (ft): {panelTypeResults.find((item) => item.panelId === panel.id)?.trim ?? 0}
-                </p>
+                <p className="mt-1">Layout: {perType?.cols ?? 0} columns x {perType?.rows ?? 0} rows ({perType?.layoutPanels ?? 0} panels)</p>
+                <p className="mt-1">Layout Waste: {perType?.wastePercent ?? 0}%</p>
+                <p className="mt-1">Mounting Clips: {perType?.clips ?? 0}</p>
+                <p className="mt-1">Fasteners ({perType?.fastenerType ?? "Self-Drilling Screws"}): {perType?.screws ?? 0}</p>
+                <p className="mt-1">Sealant Tubes: {perType?.sealant ?? 0}</p>
+                <p className="mt-1">Trim (ft): {perType?.trim ?? 0}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
           <button
             type="button"
             onClick={addPanelType}
@@ -355,101 +403,6 @@ export default function InstallmentKitConfiguratorPage() {
           >
             Add Another Panel Type
           </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Width (in)</span>
-            <input
-              type="number"
-              min={1}
-              name="wallWidth"
-              value={toInputValue(inputs.wallWidth)}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wall Height (in)</span>
-            <input
-              type="number"
-              min={1}
-              name="wallHeight"
-              value={toInputValue(inputs.wallHeight)}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Joint Size (in)</span>
-            <input
-              type="number"
-              min={0.25}
-              step={0.25}
-              name="jointSize"
-              value={toInputValue(inputs.jointSize)}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Mounting Method</span>
-            <select
-              name="mounting"
-              value={inputs.mounting}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              <option value="rout_return">Rout & Return</option>
-              <option value="face_fastened">Face Fastened</option>
-              <option value="rail">Rail System</option>
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Substrate Type</span>
-            <select
-              name="substrate"
-              value={inputs.substrate}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              <option value="metal">Metal Studs</option>
-              <option value="wood">Wood Framing</option>
-              <option value="concrete">Concrete / CMU</option>
-            </select>
-          </label>
-
-          <label className="block sm:col-span-2">
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">Wind Load</span>
-            <select
-              name="windLoad"
-              value={inputs.windLoad}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              <option value="low">Low Wind</option>
-              <option value="medium">Medium Wind</option>
-              <option value="high">High Wind</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
-          <h2 className="text-xl font-semibold text-gray-900">Panel Layout</h2>
-          {layout.byType.map((item, idx) => (
-            <div key={item.panelId} className="mt-2 text-[15px] text-gray-700">
-              <p className="font-medium text-gray-800">Type {idx + 1}</p>
-              <p>Columns: {item.cols}</p>
-              <p>Rows: {item.rows}</p>
-              <p>Total Panels: {item.totalPanels}</p>
-              <p>Waste: {item.wastePercent}%</p>
-            </div>
-          ))}
-          <p className="mt-3 text-[15px] font-medium text-gray-800">
-            Combined Total Panels: {layout.totalPanels}
-          </p>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
