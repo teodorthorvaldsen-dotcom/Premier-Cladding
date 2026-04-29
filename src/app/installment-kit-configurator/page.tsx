@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
+import { useCart } from "@/context/CartContext";
 
 type PanelInput = {
   id: string;
@@ -44,6 +46,8 @@ const parseNumberInput = (raw: string) => (raw.trim() === "" ? Number.NaN : Numb
 const printableNumber = (n: number) => (Number.isFinite(n) ? String(n) : "-");
 
 export default function InstallmentKitConfiguratorPage() {
+  const router = useRouter();
+  const { addItem } = useCart();
   const [panelTypes, setPanelTypes] = useState<PanelInput[]>([
     {
       id: "panel-1",
@@ -187,6 +191,45 @@ export default function InstallmentKitConfiguratorPage() {
 
     return { clips, screws, sealant, trim, fastenerType, totalCost };
   }, [panelTypeResults]);
+
+  const handleAddToCart = () => {
+    const totalPanels = panelTypes.reduce((sum, panel) => {
+      const count = Number.isFinite(panel.panelCount) ? panel.panelCount : 0;
+      return sum + Math.max(0, count);
+    }, 0);
+    const areaFt2 = panelTypes.reduce((sum, panel) => {
+      const width = Number.isFinite(panel.panelWidth) ? panel.panelWidth : 0;
+      const height = Number.isFinite(panel.panelHeight) ? panel.panelHeight : 0;
+      const count = Number.isFinite(panel.panelCount) ? panel.panelCount : 0;
+      return sum + (width * height * Math.max(0, count)) / 144;
+    }, 0);
+    const clipsPerPanel = totalPanels > 0 ? results.clips / totalPanels : results.clips;
+
+    addItem({
+      productKind: "acm",
+      productLabel: "Installment Kit",
+      widthIn: 1,
+      heightIn: 1,
+      standardId: null,
+      colorId: "classic-white",
+      finishId: "standard",
+      thicknessId: "4mm",
+      quantity: 1,
+      unitPrice: Number(results.totalCost.toFixed(2)),
+      areaFt2: Number(areaFt2.toFixed(2)),
+      panelType: "installment-kit",
+      panelTypeLabel: `Installment kit (${totalPanels} panels equivalent)`,
+      clipsNeeded: results.clips,
+      clipsPerPanel: Number(clipsPerPanel.toFixed(2)),
+      trayBuildSpec: panelTypes
+        .map(
+          (panel, i) =>
+            `Type ${i + 1}: ${printableNumber(panel.panelWidth)}x${printableNumber(panel.panelHeight)} in, qty ${printableNumber(panel.panelCount)}, wall ${printableNumber(panel.wallWidth)}x${printableNumber(panel.wallHeight)} in, joint ${printableNumber(panel.jointSize)} in, ${panel.mounting}, ${panel.substrate}, ${panel.windLoad} wind`
+        )
+        .join("\n"),
+    });
+    router.push("/cart");
+  };
 
   const exportPdf = () => {
     const doc = new jsPDF();
@@ -418,13 +461,22 @@ export default function InstallmentKitConfiguratorPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={exportPdf}
-          className="mt-6 inline-block rounded-xl bg-gray-900 px-6 py-3 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-        >
-          Export PDF
-        </button>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="inline-block rounded-xl border border-gray-300 bg-white px-6 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Add to cart
+          </button>
+          <button
+            type="button"
+            onClick={exportPdf}
+            className="inline-block rounded-xl bg-gray-900 px-6 py-3 text-[15px] font-medium text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Export PDF
+          </button>
+        </div>
       </div>
     </div>
   );
