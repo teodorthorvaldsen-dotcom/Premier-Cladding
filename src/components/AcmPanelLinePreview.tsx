@@ -156,7 +156,10 @@ export function AcmPanelLinePreview({
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const pad = 42;
+    // Zoom is for annotation readability, not geometry scaling.
+    // Keep the profile fully inside the viewport at all times.
+    const textZoom = clamp(zoomMul, 0.6, 2.2);
+    const pad = 42 * textZoom;
 
     ctx.clearRect(0, 0, rectW, rectH);
 
@@ -203,7 +206,8 @@ export function AcmPanelLinePreview({
     const rSpanY = Math.max(0.01, rMaxY - rMinY);
 
     const scaleFit = Math.min((rectW - pad * 2) / rSpanX, (rectH - pad * 2) / rSpanY);
-    const k = scaleFit * clamp(zoomMul, 0.42, 3.1);
+    // Geometry always uses the fit scale; zoom affects only labels/callouts.
+    const k = scaleFit;
 
     const tx = (p: Pt): Pt => {
       const x0 = p.x - midX;
@@ -243,7 +247,7 @@ export function AcmPanelLinePreview({
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       const toCenter = { x: mid.x - cx, y: mid.y - cy };
       const sign = toCenter.x * px + toCenter.y * py > 0 ? 1 : -1;
-      const off = 22 * sign;
+      const off = 22 * textZoom * sign;
       const ax = a.x + px * off;
       const ay = a.y + py * off;
       const bx = b.x + px * off;
@@ -266,22 +270,22 @@ export function AcmPanelLinePreview({
       ctx.stroke();
 
       ctx.fillStyle = "rgba(17,24,39,0.9)";
-      drawArrow(ax, ay, ux, uy);
-      drawArrow(bx, by, -ux, -uy);
+      drawArrow(ax, ay, ux, uy, 7 * textZoom);
+      drawArrow(bx, by, -ux, -uy, 7 * textZoom);
 
       ctx.save();
       ctx.translate((ax + bx) / 2, (ay + by) / 2);
       const ang = Math.atan2(by - ay, bx - ax);
       const flip = Math.cos(ang) < 0;
       ctx.rotate(flip ? ang + Math.PI : ang);
-      ctx.font = "700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.font = `700 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
       const m = ctx.measureText(label);
-      const w = m.width + 10;
+      const w = m.width + 10 * textZoom;
       ctx.fillStyle = "rgba(244,245,247,0.92)";
-      ctx.fillRect(-w / 2, -10, w, 20);
+      ctx.fillRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
       ctx.strokeStyle = "rgba(0,0,0,0.12)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -10, w, 20);
+      ctx.strokeRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
       ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -293,14 +297,14 @@ export function AcmPanelLinePreview({
       const t = `${Math.round(deg)}°`;
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.font = "700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.font = `700 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
       const m = ctx.measureText(t);
-      const w = m.width + 10;
+      const w = m.width + 10 * textZoom;
       ctx.fillStyle = "rgba(244,245,247,0.92)";
-      ctx.fillRect(-w / 2, -10, w, 20);
+      ctx.fillRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
       ctx.strokeStyle = "rgba(0,0,0,0.12)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -10, w, 20);
+      ctx.strokeRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
       ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -312,7 +316,7 @@ export function AcmPanelLinePreview({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = Math.max(3, 4 * Math.min(1.15, textZoom));
 
     ctx.beginPath();
     const p0 = tx(points[0]!);
@@ -339,12 +343,12 @@ export function AcmPanelLinePreview({
       ctx.fillStyle = "rgba(244,245,247,0.92)";
       ctx.strokeStyle = "rgba(0,0,0,0.12)";
       ctx.lineWidth = 1;
-      ctx.font = "800 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.font = `800 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
       const t = "COLOR";
       const m = ctx.measureText(t);
-      const w = m.width + 12;
-      ctx.fillRect(labelX - w / 2, labelY - 11, w, 22);
-      ctx.strokeRect(labelX - w / 2, labelY - 11, w, 22);
+      const w = m.width + 12 * textZoom;
+      ctx.fillRect(labelX - w / 2, labelY - 11 * textZoom, w, 22 * textZoom);
+      ctx.strokeRect(labelX - w / 2, labelY - 11 * textZoom, w, 22 * textZoom);
       ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -364,18 +368,18 @@ export function AcmPanelLinePreview({
         const nx = -uy;
         const ny = ux;
         const bg = "#f4f5f7";
-        const gap = hemRender.type === "open" ? 8 : 3;
+        const gap = (hemRender.type === "open" ? 8 : 3) * textZoom;
 
         // Erase the simple hem segment we drew as part of the polyline.
         ctx.strokeStyle = bg;
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 8 * Math.min(1.25, textZoom);
         ctx.beginPath();
         ctx.moveTo(s.x, s.y);
         ctx.lineTo(e.x, e.y);
         ctx.stroke();
 
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = Math.max(3, 4 * Math.min(1.15, textZoom));
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
@@ -431,7 +435,7 @@ export function AcmPanelLinePreview({
         const vlen = Math.hypot(vx, vy) || 1;
         const nx = -vy / vlen;
         const ny = vx / vlen;
-        drawAngle({ x: p.x + nx * 18, y: p.y + ny * 18 }, deg);
+        drawAngle({ x: p.x + nx * 18 * textZoom, y: p.y + ny * 18 * textZoom }, deg);
       }
     }
 
@@ -445,7 +449,7 @@ export function AcmPanelLinePreview({
     }
 
     // Labels.
-    ctx.font = "700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.font = `700 ${Math.round(11 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const l of labels) {
@@ -458,11 +462,11 @@ export function AcmPanelLinePreview({
       ctx.rotate(flip ? a + Math.PI : a);
       ctx.fillStyle = "rgba(255,255,255,0.92)";
       const m = ctx.measureText(l.text);
-      const w = m.width + 10;
-      ctx.fillRect(-w / 2, -9, w, 18);
+      const w = m.width + 10 * textZoom;
+      ctx.fillRect(-w / 2, -9 * textZoom, w, 18 * textZoom);
       ctx.strokeStyle = "rgba(0,0,0,0.12)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -9, w, 18);
+      ctx.strokeRect(-w / 2, -9 * textZoom, w, 18 * textZoom);
       ctx.fillStyle = "#111827";
       ctx.fillText(l.text, 0, 0);
       ctx.restore();
