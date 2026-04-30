@@ -122,7 +122,7 @@ export function AcmPanelLinePreview({
   boxSides = [],
   panelColorName,
   title = "Fold & bend preview",
-  subtitle = "Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each fold.",
+  subtitle = "Scaled detail view (no rotation). Use +, −, and 1× to zoom. Dimensions and angles reflect your inputs.",
   compact = false,
   scale = 1,
   canvasRef,
@@ -135,8 +135,8 @@ export function AcmPanelLinePreview({
   const outCanvasRef = canvasRef ?? localCanvasRef;
 
   const [zoomMul, setZoomMul] = useState(1);
-  const [rot, setRot] = useState(() => -Math.PI / 2);
-  const drag = useRef<{ x: number; y: number; rot: number; active: boolean } | null>(null);
+  /** Fixed orthographic orientation (shop-detail style). */
+  const rot = 0;
 
   const { points, labels, segmentLensIn, vertexAnglesDeg, hemRender } = useMemo(
     () => buildProfilePolyline(panelWidthIn, boxSides),
@@ -323,6 +323,34 @@ export function AcmPanelLinePreview({
     }
     ctx.stroke();
 
+    // COLOR leader (like typical detail callout).
+    if (screenPts.length >= 2) {
+      const a = screenPts[0]!;
+      const b = screenPts[1]!;
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const labelX = mid.x + 70;
+      const labelY = mid.y - 55;
+      ctx.strokeStyle = "rgba(17,24,39,0.75)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mid.x, mid.y);
+      ctx.lineTo(labelX - 8, labelY + 8);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(244,245,247,0.92)";
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 1;
+      ctx.font = "800 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      const t = "COLOR";
+      const m = ctx.measureText(t);
+      const w = m.width + 12;
+      ctx.fillRect(labelX - w / 2, labelY - 11, w, 22);
+      ctx.strokeRect(labelX - w / 2, labelY - 11, w, 22);
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(t, labelX, labelY);
+    }
+
     // Hem rendering: draw like open / flattened hem rather than a single segment.
     if (hemRender) {
       const s = screenPts[hemRender.startIndex];
@@ -385,7 +413,11 @@ export function AcmPanelLinePreview({
       const a = screenPts[i]!;
       const b = screenPts[i + 1]!;
       const len = segmentLensIn[i] ?? 0;
-      if (len > 0) drawDim(a, b, fmtIn(len));
+      if (len > 0) {
+        // Base/face dimension is typically labeled "A" in shop details.
+        if (i === 0) drawDim(a, b, `A  ${fmtIn(len)}`);
+        else drawDim(a, b, fmtIn(len));
+      }
     }
     for (let i = 1; i < screenPts.length - 1; i++) {
       const deg = vertexAnglesDeg[i - 1];
@@ -441,7 +473,7 @@ export function AcmPanelLinePreview({
     ctx.fillStyle = "rgba(17,24,39,0.82)";
     ctx.textAlign = "center";
     ctx.fillText(`${panelWidthIn}" × ${panelLengthIn}" · ${panelColorName}`, rectW / 2, rectH - 18);
-  }, [outCanvasRef, viewportH, viewportW, points, labels, zoomMul, rot, panelWidthIn, panelLengthIn, panelColorName]);
+  }, [outCanvasRef, viewportH, viewportW, points, labels, zoomMul, panelWidthIn, panelLengthIn, panelColorName, segmentLensIn, vertexAnglesDeg, hemRender]);
 
   return (
     <section
@@ -491,23 +523,7 @@ export function AcmPanelLinePreview({
           ref={(el) => {
             outCanvasRef.current = el;
           }}
-          className="block h-full w-full cursor-grab active:cursor-grabbing"
-          onPointerDown={(e) => {
-            (e.currentTarget as HTMLCanvasElement).setPointerCapture(e.pointerId);
-            drag.current = { x: e.clientX, y: e.clientY, rot, active: true };
-          }}
-          onPointerMove={(e) => {
-            if (!drag.current?.active) return;
-            const dx = e.clientX - drag.current.x;
-            setRot(drag.current.rot + dx * 0.01);
-          }}
-          onPointerUp={(e) => {
-            (e.currentTarget as HTMLCanvasElement).releasePointerCapture(e.pointerId);
-            drag.current = null;
-          }}
-          onPointerCancel={() => {
-            drag.current = null;
-          }}
+          className="block h-full w-full cursor-default"
           aria-label="Line preview"
         />
       </div>
