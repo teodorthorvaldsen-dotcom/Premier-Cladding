@@ -55,6 +55,7 @@ function buildProfilePolyline(
   labels: { text: string; at: Pt; angleRad: number }[];
   segmentLensIn: number[];
   vertexAnglesDeg: number[];
+  hemRender?: { type: "open" | "closed"; startIndex: number; endIndex: number };
 } {
   const width = Math.max(0.01, Number(panelWidthIn) || 0.01);
   const n = normalizeBoxTraySidesForFlashing(sides);
@@ -89,6 +90,7 @@ function buildProfilePolyline(
   }
 
   // Hem is stored per-fold; only leaf folds have a free edge. Flashing is linear, so the last row is the leaf.
+  let hemRender: { type: "open" | "closed"; startIndex: number; endIndex: number } | undefined;
   if (n.length > 0) {
     const last = n[n.length - 1]!;
     const hemType = last.hemType;
@@ -107,10 +109,11 @@ function buildProfilePolyline(
       });
       segmentLensIn.push(hemSize);
       vertexAnglesDeg.push(a);
+      hemRender = { type: hemType, startIndex: pts.length - 2, endIndex: pts.length - 1 };
     }
   }
 
-  return { points: pts, labels, segmentLensIn, vertexAnglesDeg };
+  return { points: pts, labels, segmentLensIn, vertexAnglesDeg, ...(hemRender ? { hemRender } : {}) };
 }
 
 export function AcmPanelLinePreview({
@@ -135,7 +138,7 @@ export function AcmPanelLinePreview({
   const [rot, setRot] = useState(() => -Math.PI / 2);
   const drag = useRef<{ x: number; y: number; rot: number; active: boolean } | null>(null);
 
-  const { points, labels, segmentLensIn, vertexAnglesDeg } = useMemo(
+  const { points, labels, segmentLensIn, vertexAnglesDeg, hemRender } = useMemo(
     () => buildProfilePolyline(panelWidthIn, boxSides),
     [panelWidthIn, boxSides]
   );
@@ -319,6 +322,63 @@ export function AcmPanelLinePreview({
       ctx.lineTo(p.x, p.y);
     }
     ctx.stroke();
+
+    // Hem rendering: draw like open / flattened hem rather than a single segment.
+    if (hemRender) {
+      const s = screenPts[hemRender.startIndex];
+      const e = screenPts[hemRender.endIndex];
+      if (s && e) {
+        const dx = e.x - s.x;
+        const dy = e.y - s.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        const nx = -uy;
+        const ny = ux;
+        const bg = "#f4f5f7";
+        const gap = hemRender.type === "open" ? 8 : 3;
+
+        // Erase the simple hem segment we drew as part of the polyline.
+        ctx.strokeStyle = bg;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (hemRender.type === "open") {
+          // Open hem: show a loop with a visible gap.
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(s.x + nx * gap, s.y + ny * gap);
+          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
+          ctx.lineTo(e.x, e.y);
+          ctx.stroke();
+        } else {
+          // Flattened hem: show two layers pressed together (double line).
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(e.x, e.y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(s.x + nx * gap, s.y + ny * gap);
+          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
+          ctx.stroke();
+
+          // Small closure at the tip.
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y);
+          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
+          ctx.stroke();
+        }
+      }
+    }
 
     // Dimensions (NorthClad-style callouts).
     for (let i = 0; i < screenPts.length - 1; i++) {
