@@ -102,10 +102,16 @@ function buildProfilePolyline(
       const p0 = pts[pts.length - 1]!;
       const p1 = { x: p0.x + Math.cos(dir) * hemSize, y: p0.y + Math.sin(dir) * hemSize };
       pts.push(p1);
+      // Place the hem label near the hem start and rotate it perpendicular,
+      // so it doesn't cover the hem end detail.
+      const hemLabelAt = {
+        x: p0.x + (p1.x - p0.x) * 0.35,
+        y: p0.y + (p1.y - p0.y) * 0.35,
+      };
       labels.push({
         text: hemType === "closed" ? "Hem (closed)" : "Hem (open)",
-        at: midpoint(p0, p1),
-        angleRad: dir,
+        at: hemLabelAt,
+        angleRad: dir + Math.PI / 2,
       });
       segmentLensIn.push(hemSize);
       vertexAnglesDeg.push(a);
