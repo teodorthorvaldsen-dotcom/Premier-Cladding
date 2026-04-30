@@ -74,6 +74,8 @@ export function PanelPreviewModal({
               panelWidthIn={item.widthIn}
               panelLengthIn={item.heightIn}
               boxSides={normalizeBoxTraySides(item.boxTraySides ?? [])}
+              hemType={item.hemType}
+              hemSizeIn={item.hemSizeIn}
               panelColorName={color?.name ?? item.colorId}
               scale={1}
             />

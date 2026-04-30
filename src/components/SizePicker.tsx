@@ -36,6 +36,10 @@ export interface SizeSelection {
    * Tray returns in list order. Extra folds on one edge use `parentId` and are stored consecutively; preview chains them from the free edge of the previous return.
    */
   boxSides: BoxTraySideRow[];
+  /** Flashing only: hem at the free edge (after the last fold). */
+  hemType?: "none" | "open" | "closed";
+  /** Flashing only: hem size (in). */
+  hemSizeIn?: number;
 }
 
 interface SideDraft {
@@ -144,6 +148,16 @@ export function SizePicker({
   const maxReturnHeightIn = 120;
   const defaultReturnHeightIn = isFlashing ? 0.5 : 1;
   const minReturnHeightIn = isFlashing ? 0.5 : 0.01;
+  const [hemType, setHemType] = useState<"none" | "open" | "closed">(
+    () => (value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none")
+  );
+  const [hemSizeStr, setHemSizeStr] = useState(() =>
+    String(
+      typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn) && value.hemSizeIn > 0
+        ? value.hemSizeIn
+        : 0.5
+    )
+  );
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
@@ -154,6 +168,14 @@ export function SizePicker({
   );
 
   useEffect(() => {
+    setHemType(value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none");
+    setHemSizeStr(
+      String(
+        typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn) && value.hemSizeIn > 0
+          ? value.hemSizeIn
+          : 0.5
+      )
+    );
     setSideDrafts(
       value.boxSides.map((s) => ({
         height: String(s.flangeHeightIn),
@@ -161,6 +183,18 @@ export function SizePicker({
       }))
     );
   }, [value.boxSides]);
+
+  useEffect(() => {
+    // Keep hem controls in sync when value object changes (but avoid re-render loops on draft typing).
+    if (value.hemType !== hemType && (value.hemType === "open" || value.hemType === "closed" || value.hemType == null)) {
+      setHemType(value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none");
+    }
+    if (typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn)) {
+      const next = String(value.hemSizeIn);
+      if (next !== hemSizeStr) setHemSizeStr(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.hemType, value.hemSizeIn]);
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
@@ -173,6 +207,17 @@ export function SizePicker({
     onChange({
       ...value,
       boxSides: isFlashing ? normalizeBoxTraySidesForFlashing(next) : normalizeBoxTraySides(next),
+    });
+  };
+
+  const commitHem = (nextType: "none" | "open" | "closed", nextSizeRaw?: string) => {
+    const raw = nextSizeRaw ?? hemSizeStr;
+    const n = Number(raw);
+    const hemSizeIn = Number.isFinite(n) ? Math.min(2, Math.max(0.25, n)) : 0.5;
+    onChange({
+      ...value,
+      hemType: nextType,
+      hemSizeIn,
     });
   };
 
@@ -443,6 +488,59 @@ export function SizePicker({
                 : "Panel sides (start at 1\")"}
             </button>
           </div>
+
+          {isFlashing ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-3">
+              <p className="text-xs font-medium text-gray-800">Hem</p>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Optional. Adds a hem on the free edge (after the last fold).
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-600" htmlFor="hem-type">
+                    Hem type
+                  </label>
+                  <select
+                    id="hem-type"
+                    value={hemType}
+                    onChange={(e) => {
+                      const t = (e.target.value as "none" | "open" | "closed") ?? "none";
+                      setHemType(t);
+                      commitHem(t);
+                    }}
+                    className="mt-1 block h-10 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                  >
+                    <option value="none">No hem</option>
+                    <option value="open">Open hem</option>
+                    <option value="closed">Closed hem</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-600" htmlFor="hem-size">
+                    Hem size (in)
+                  </label>
+                  <input
+                    id="hem-size"
+                    type="number"
+                    inputMode="decimal"
+                    min={0.25}
+                    max={2}
+                    step={0.01}
+                    value={hemSizeStr}
+                    disabled={hemType === "none"}
+                    onChange={(e) => setHemSizeStr(e.target.value)}
+                    onBlur={() => commitHem(hemType, hemSizeStr)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                    className={`mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 ${
+                      hemType === "none" ? "bg-gray-50 text-gray-400" : "bg-white text-gray-800"
+                    }`}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {value.boxSides.length === 0 ? (
             <p className="mt-3 text-[13px] text-gray-600">

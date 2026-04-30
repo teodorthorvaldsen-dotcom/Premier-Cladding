@@ -30,6 +30,10 @@ export interface CartItem {
   panelBendsAlongWidth?: PanelBendSpec[];
   /** Tray / box returns (fixed center W×L); informational. */
   boxTraySides?: BoxTraySideRow[];
+  /** Flashing only: hem at the free edge (after the last fold). */
+  hemType?: "none" | "open" | "closed";
+  /** Flashing only: hem size (in). */
+  hemSizeIn?: number;
   /** Multi-line spec for fabrication (edges, returns, angles, parent chain). */
   trayBuildSpec?: string;
   /** data:image/jpeg;base64,... 3D preview snapshot when added to cart. */

@@ -13,16 +13,25 @@ export function getCartSizeLabel(item: CartItem): string {
 export function getCartTrayLines(item: CartItem): string[] {
   const trayNorm = item.boxTraySides?.length ? normalizeBoxTraySides(item.boxTraySides) : [];
   if (trayNorm.length > 0) {
-    return formatBoxTrayReproductionSpec(trayNorm)
+    const base = formatBoxTrayReproductionSpec(trayNorm)
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
+    const hemLine =
+      item.productKind === "flashing" && item.hemType && item.hemType !== "none"
+        ? `Hem · ${item.hemType} · ${typeof item.hemSizeIn === "number" && Number.isFinite(item.hemSizeIn) ? `${item.hemSizeIn}"` : ""}`.trim()
+        : "";
+    return hemLine ? [...base, hemLine] : base;
   }
   if (item.trayBuildSpec?.trim()) {
     return item.trayBuildSpec
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
+  }
+  if (item.productKind === "flashing" && item.hemType && item.hemType !== "none") {
+    const hem = typeof item.hemSizeIn === "number" && Number.isFinite(item.hemSizeIn) ? `${item.hemSizeIn}"` : "";
+    return [`Hem · ${item.hemType}${hem ? ` · ${hem}` : ""}`];
   }
   return [];
 }
