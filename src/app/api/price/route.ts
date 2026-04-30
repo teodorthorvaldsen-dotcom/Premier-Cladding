@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const minWidthIn = kind === "flashing" ? 1 : CUSTOM_WIDTH_MIN_IN;
     const minLengthIn = kind === "flashing" ? 1 : MIN_LENGTH_IN;
     const maxWidthIn = kind === "flashing" ? 48 : CUSTOM_WIDTH_MAX_IN;
-    const maxLengthIn = kind === "flashing" ? 120 : undefined;
+    const maxLengthIn = kind === "flashing" ? 10 : undefined;
 
     const widthIn = Number(rawWidthIn);
     const isStandardWidth = (VALID_WIDTHS_IN as readonly number[]).includes(widthIn);

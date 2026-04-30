@@ -21,6 +21,7 @@ import { SizePicker, type SizeSelection } from "./SizePicker";
 import { ThicknessPicker } from "./ThicknessPicker";
 import { AcmPanel3DPreview } from "./AcmPanel3DPreview";
 import { AcmPanelFlatPreview } from "./AcmPanelFlatPreview";
+import { AcmPanelLinePreview } from "./AcmPanelLinePreview";
 import {
   formatBoxTrayReproductionSpec,
   normalizeBoxTraySides,
@@ -449,7 +450,7 @@ export function Configurator({
                   minWidthIn={hideSizeMinimums ? null : undefined}
                   minLengthIn={hideSizeMinimums ? null : undefined}
                   maxWidthIn={variant === "flashing" ? 48 : undefined}
-                  maxLengthIn={variant === "flashing" ? 120 : undefined}
+                  maxLengthIn={variant === "flashing" ? 10 : undefined}
                   hideAllowedText={hideSizeMinimums}
                 />
               </div>
@@ -495,35 +496,39 @@ export function Configurator({
                   }
                 />
               ) : null}
-              <AcmPanel3DPreview
-                panelWidthIn={size.widthIn}
-                panelHeightIn={size.lengthIn}
-                panelDepthIn={previewDepthIn}
-                boxSides={size.boxSides}
-                panelColorHex={color.swatchHex}
-                panelColorName={color.name}
-                title={variant === "flashing" ? "Fold & bend preview" : undefined}
-                subtitle={
-                  variant === "flashing"
-                    ? "Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each side; stacked folds may repeat on the same edge."
-                    : undefined
-                }
-                returnsLabel={variant === "flashing" ? "Sides" : "Returns"}
-                sidedLabel={variant === "flashing" ? "sides" : "tray"}
-                defaultZoomMul={variant === "flashing" ? 1.7 : undefined}
-                allowFullRotate={variant === "flashing"}
-                foldLabelStyle={variant === "flashing" ? "flashing" : undefined}
-                rotateFlatCenterLabel={variant === "flashing"}
-                compact
-                scale={2}
-                panelSwatchImage={
-                  "swatchImage" in color &&
-                  typeof (color as { swatchImage?: string }).swatchImage === "string"
-                    ? (color as { swatchImage: string }).swatchImage
-                    : undefined
-                }
-                glCanvasRef={previewGlCanvasRef}
-              />
+              {variant === "flashing" ? (
+                <AcmPanelLinePreview
+                  panelWidthIn={size.widthIn}
+                  panelLengthIn={size.lengthIn}
+                  boxSides={size.boxSides}
+                  panelColorName={color.name}
+                  title="Fold & bend preview"
+                  subtitle='Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each fold.'
+                  compact
+                  scale={2}
+                  canvasRef={previewGlCanvasRef}
+                />
+              ) : (
+                <AcmPanel3DPreview
+                  panelWidthIn={size.widthIn}
+                  panelHeightIn={size.lengthIn}
+                  panelDepthIn={previewDepthIn}
+                  boxSides={size.boxSides}
+                  panelColorHex={color.swatchHex}
+                  panelColorName={color.name}
+                  returnsLabel="Returns"
+                  sidedLabel="tray"
+                  compact
+                  scale={2}
+                  panelSwatchImage={
+                    "swatchImage" in color &&
+                    typeof (color as { swatchImage?: string }).swatchImage === "string"
+                      ? (color as { swatchImage: string }).swatchImage
+                      : undefined
+                  }
+                  glCanvasRef={previewGlCanvasRef}
+                />
+              )}
             </div>
 
             <div className="shrink-0 space-y-3 lg:space-y-4">

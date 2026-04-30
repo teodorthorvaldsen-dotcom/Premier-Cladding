@@ -6,6 +6,7 @@ import { colors } from "@/data/acm";
 import { normalizeBoxTraySides } from "@/lib/boxTray";
 import type { CartItem } from "@/types/cart";
 import { TrayInteractivePreview } from "./AcmPanel3DPreview";
+import { AcmPanelLinePreview } from "./AcmPanelLinePreview";
 
 function previewDepthInFromThicknessId(thicknessId: string): number {
   const mm = Number(thicknessId.replace("mm", ""));
@@ -47,7 +48,7 @@ export function PanelPreviewModal({
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
-      aria-label="Panel 3D preview"
+      aria-label={item.productKind === "flashing" ? "Flashing preview" : "Panel 3D preview"}
       onClick={onClose}
     >
       <div
@@ -56,7 +57,8 @@ export function PanelPreviewModal({
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-gray-900">
-            {item.widthIn}&quot; × {item.heightIn}&quot; preview — drag to rotate
+            {item.widthIn}&quot; × {item.heightIn}&quot; preview — drag to{" "}
+            {item.productKind === "flashing" ? "rotate" : "orbit"}
           </p>
           <button
             type="button"
@@ -66,16 +68,28 @@ export function PanelPreviewModal({
             Close
           </button>
         </div>
-        <TrayInteractivePreview
-          panelWidthIn={item.widthIn}
-          panelHeightIn={item.heightIn}
-          panelDepthIn={previewDepthInFromThicknessId(item.thicknessId)}
-          boxSides={normalizeBoxTraySides(item.boxTraySides ?? [])}
-          panelColorHex={color?.swatchHex ?? "#c8cdd3"}
-          panelSwatchImage={swatch}
-          heightPx={440}
-          className="mx-auto"
-        />
+        {item.productKind === "flashing" ? (
+          <div className="mx-auto max-w-2xl">
+            <AcmPanelLinePreview
+              panelWidthIn={item.widthIn}
+              panelLengthIn={item.heightIn}
+              boxSides={normalizeBoxTraySides(item.boxTraySides ?? [])}
+              panelColorName={color?.name ?? item.colorId}
+              scale={1}
+            />
+          </div>
+        ) : (
+          <TrayInteractivePreview
+            panelWidthIn={item.widthIn}
+            panelHeightIn={item.heightIn}
+            panelDepthIn={previewDepthInFromThicknessId(item.thicknessId)}
+            boxSides={normalizeBoxTraySides(item.boxTraySides ?? [])}
+            panelColorHex={color?.swatchHex ?? "#c8cdd3"}
+            panelSwatchImage={swatch}
+            heightPx={440}
+            className="mx-auto"
+          />
+        )}
         <p className="mt-3 text-center text-xs text-gray-500">
           Zoom with + / −. Geometry matches your cart configuration (not the static thumbnail).
         </p>
