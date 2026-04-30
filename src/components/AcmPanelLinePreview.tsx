@@ -104,25 +104,26 @@ export function AcmPanelLinePreview({
   useEffect(() => {
     const canvas = outCanvasRef.current;
     if (!canvas) return;
+    const parent = canvas.parentElement;
+    const rectW = parent?.clientWidth && parent.clientWidth > 0 ? parent.clientWidth : viewportW;
+    const rectH = parent?.clientHeight && parent.clientHeight > 0 ? parent.clientHeight : viewportH;
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    canvas.width = Math.floor(viewportW * dpr);
-    canvas.height = Math.floor(viewportH * dpr);
-    canvas.style.width = `${viewportW}px`;
-    canvas.style.height = `${viewportH}px`;
+    canvas.width = Math.floor(rectW * dpr);
+    canvas.height = Math.floor(rectH * dpr);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const pad = 42;
 
-    ctx.clearRect(0, 0, viewportW, viewportH);
+    ctx.clearRect(0, 0, rectW, rectH);
 
     // Background.
     ctx.fillStyle = "#f4f5f7";
-    ctx.fillRect(0, 0, viewportW, viewportH);
+    ctx.fillRect(0, 0, rectW, rectH);
 
-    const cx = viewportW / 2;
-    const cy = viewportH / 2;
+    const cx = rectW / 2;
+    const cy = rectH / 2;
 
     // Fit based on rotated bounds so long shallow profiles stay centered and visible.
     let minX = Infinity,
@@ -159,7 +160,7 @@ export function AcmPanelLinePreview({
     const rSpanX = Math.max(0.01, rMaxX - rMinX);
     const rSpanY = Math.max(0.01, rMaxY - rMinY);
 
-    const scaleFit = Math.min((viewportW - pad * 2) / rSpanX, (viewportH - pad * 2) / rSpanY);
+    const scaleFit = Math.min((rectW - pad * 2) / rSpanX, (rectH - pad * 2) / rSpanY);
     const k = scaleFit * clamp(zoomMul, 0.42, 3.1);
 
     const tx = (p: Pt): Pt => {
@@ -224,7 +225,7 @@ export function AcmPanelLinePreview({
     ctx.font = "500 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillStyle = "rgba(17,24,39,0.82)";
     ctx.textAlign = "center";
-    ctx.fillText(`${panelWidthIn}" × ${panelLengthIn}" · ${panelColorName}`, viewportW / 2, viewportH - 18);
+    ctx.fillText(`${panelWidthIn}" × ${panelLengthIn}" · ${panelColorName}`, rectW / 2, rectH - 18);
   }, [outCanvasRef, viewportH, viewportW, points, labels, zoomMul, rot, panelWidthIn, panelLengthIn, panelColorName]);
 
   return (
