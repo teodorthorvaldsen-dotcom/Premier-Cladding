@@ -10,4 +10,8 @@ export interface BoxTraySideRow {
   angleDeg: number;
   /** When set, this return continues from the free edge of the parent row (same edge); UI nests under that side. */
   parentId?: string | null;
+  /** Optional hem on the free edge of this fold (only meaningful on leaf folds). */
+  hemType?: "none" | "open" | "closed";
+  /** Hem size (in). */
+  hemSizeIn?: number;
 }

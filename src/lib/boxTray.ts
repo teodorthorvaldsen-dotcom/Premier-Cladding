@@ -41,6 +41,17 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+function normalizeHemType(raw: unknown): "none" | "open" | "closed" | undefined {
+  if (raw === "open" || raw === "closed" || raw === "none") return raw;
+  return undefined;
+}
+
+function clampHemSizeIn(raw: unknown): number | undefined {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  return round2(Math.min(2, Math.max(0.25, n)));
+}
+
 const VALID_EDGES: BoxTrayEdge[] = ["south", "north", "west", "east"];
 
 function isBoxTrayEdge(x: unknown): x is BoxTrayEdge {
@@ -80,7 +91,17 @@ export function normalizeBoxTraySides(
       const parentRow = out.find((r) => r.id === rawParent);
       if (parentRow && parentRow.edge === edge) parentId = rawParent;
     }
-    out.push({ id, edge, flangeHeightIn: h, angleDeg: a, ...(parentId ? { parentId } : {}) });
+    const hemType = normalizeHemType((row as BoxTraySideRow).hemType);
+    const hemSizeIn = clampHemSizeIn((row as BoxTraySideRow).hemSizeIn);
+    out.push({
+      id,
+      edge,
+      flangeHeightIn: h,
+      angleDeg: a,
+      ...(parentId ? { parentId } : {}),
+      ...(hemType ? { hemType } : {}),
+      ...(hemType && hemType !== "none" && hemSizeIn ? { hemSizeIn } : {}),
+    });
     if (out.length >= MAX_TRAY_SIDE_ROWS) break;
   }
   return out;

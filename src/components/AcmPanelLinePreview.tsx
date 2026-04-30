@@ -30,10 +30,6 @@ export interface AcmPanelLinePreviewProps {
   panelLengthIn: number;
   /** Flashing/tray side rows; flashing uses a single-edge fold chain. */
   boxSides?: BoxTraySideRow[];
-  /** Flashing: hem at the free edge (after the last fold). */
-  hemType?: "none" | "open" | "closed";
-  /** Flashing: hem size (in). */
-  hemSizeIn?: number;
   panelColorName: string;
   title?: string;
   subtitle?: string;
@@ -53,9 +49,7 @@ function fmtIn(n: number): string {
 
 function buildProfilePolyline(
   panelWidthIn: number,
-  sides: BoxTraySideRow[],
-  hemType: "none" | "open" | "closed",
-  hemSizeIn: number
+  sides: BoxTraySideRow[]
 ): {
   points: Pt[];
   labels: { text: string; at: Pt; angleRad: number }[];
@@ -94,20 +88,26 @@ function buildProfilePolyline(
     vertexAnglesDeg.push(a);
   }
 
-  const hemSize = Math.max(0.01, Number(hemSizeIn) || 0.5);
-  if (hemType !== "none") {
-    const a = 180;
-    dir += (anchorRight ? 1 : -1) * degToRad(a);
-    const p0 = pts[pts.length - 1]!;
-    const p1 = { x: p0.x + Math.cos(dir) * hemSize, y: p0.y + Math.sin(dir) * hemSize };
-    pts.push(p1);
-    labels.push({
-      text: hemType === "closed" ? "Hem (closed)" : "Hem (open)",
-      at: midpoint(p0, p1),
-      angleRad: dir,
-    });
-    segmentLensIn.push(hemSize);
-    vertexAnglesDeg.push(a);
+  // Hem is stored per-fold; only leaf folds have a free edge. Flashing is linear, so the last row is the leaf.
+  if (n.length > 0) {
+    const last = n[n.length - 1]!;
+    const hemType = last.hemType;
+    const hemSize =
+      typeof last.hemSizeIn === "number" && Number.isFinite(last.hemSizeIn) ? last.hemSizeIn : 0.5;
+    if (hemType === "open" || hemType === "closed") {
+      const a = 180;
+      dir += (anchorRight ? 1 : -1) * degToRad(a);
+      const p0 = pts[pts.length - 1]!;
+      const p1 = { x: p0.x + Math.cos(dir) * hemSize, y: p0.y + Math.sin(dir) * hemSize };
+      pts.push(p1);
+      labels.push({
+        text: hemType === "closed" ? "Hem (closed)" : "Hem (open)",
+        at: midpoint(p0, p1),
+        angleRad: dir,
+      });
+      segmentLensIn.push(hemSize);
+      vertexAnglesDeg.push(a);
+    }
   }
 
   return { points: pts, labels, segmentLensIn, vertexAnglesDeg };
@@ -117,8 +117,6 @@ export function AcmPanelLinePreview({
   panelWidthIn,
   panelLengthIn,
   boxSides = [],
-  hemType = "none",
-  hemSizeIn = 0.5,
   panelColorName,
   title = "Fold & bend preview",
   subtitle = "Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each fold.",
@@ -138,8 +136,8 @@ export function AcmPanelLinePreview({
   const drag = useRef<{ x: number; y: number; rot: number; active: boolean } | null>(null);
 
   const { points, labels, segmentLensIn, vertexAnglesDeg } = useMemo(
-    () => buildProfilePolyline(panelWidthIn, boxSides, hemType, hemSizeIn),
-    [panelWidthIn, boxSides, hemType, hemSizeIn]
+    () => buildProfilePolyline(panelWidthIn, boxSides),
+    [panelWidthIn, boxSides]
   );
 
   useEffect(() => {

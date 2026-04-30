@@ -36,15 +36,16 @@ export interface SizeSelection {
    * Tray returns in list order. Extra folds on one edge use `parentId` and are stored consecutively; preview chains them from the free edge of the previous return.
    */
   boxSides: BoxTraySideRow[];
-  /** Flashing only: hem at the free edge (after the last fold). */
-  hemType?: "none" | "open" | "closed";
-  /** Flashing only: hem size (in). */
-  hemSizeIn?: number;
 }
 
 interface SideDraft {
   height: string;
   angle: string;
+}
+
+interface HemDraft {
+  type: "none" | "open" | "closed";
+  size: string;
 }
 
 function angleInputStr(deg: number): string {
@@ -148,16 +149,6 @@ export function SizePicker({
   const maxReturnHeightIn = 120;
   const defaultReturnHeightIn = isFlashing ? 0.5 : 1;
   const minReturnHeightIn = isFlashing ? 0.5 : 0.01;
-  const [hemType, setHemType] = useState<"none" | "open" | "closed">(
-    () => (value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none")
-  );
-  const [hemSizeStr, setHemSizeStr] = useState(() =>
-    String(
-      typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn) && value.hemSizeIn > 0
-        ? value.hemSizeIn
-        : 0.5
-    )
-  );
   const [widthStr, setWidthStr] = useState(() => String(value.widthIn));
   const [lengthStr, setLengthStr] = useState(() => String(value.lengthIn));
   const [sideDrafts, setSideDrafts] = useState<SideDraft[]>(() =>
@@ -166,35 +157,33 @@ export function SizePicker({
       angle: angleInputStr(s.angleDeg),
     }))
   );
+  const [hemDrafts, setHemDrafts] = useState<HemDraft[]>(() =>
+    value.boxSides.map((s) => ({
+      type: s.hemType === "open" || s.hemType === "closed" ? s.hemType : "none",
+      size:
+        typeof s.hemSizeIn === "number" && Number.isFinite(s.hemSizeIn) && s.hemSizeIn > 0
+          ? String(s.hemSizeIn)
+          : "0.5",
+    }))
+  );
 
   useEffect(() => {
-    setHemType(value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none");
-    setHemSizeStr(
-      String(
-        typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn) && value.hemSizeIn > 0
-          ? value.hemSizeIn
-          : 0.5
-      )
-    );
     setSideDrafts(
       value.boxSides.map((s) => ({
         height: String(s.flangeHeightIn),
         angle: angleInputStr(s.angleDeg),
       }))
     );
+    setHemDrafts(
+      value.boxSides.map((s) => ({
+        type: s.hemType === "open" || s.hemType === "closed" ? s.hemType : "none",
+        size:
+          typeof s.hemSizeIn === "number" && Number.isFinite(s.hemSizeIn) && s.hemSizeIn > 0
+            ? String(s.hemSizeIn)
+            : "0.5",
+      }))
+    );
   }, [value.boxSides]);
-
-  useEffect(() => {
-    // Keep hem controls in sync when value object changes (but avoid re-render loops on draft typing).
-    if (value.hemType !== hemType && (value.hemType === "open" || value.hemType === "closed" || value.hemType == null)) {
-      setHemType(value.hemType === "open" || value.hemType === "closed" ? value.hemType : "none");
-    }
-    if (typeof value.hemSizeIn === "number" && Number.isFinite(value.hemSizeIn)) {
-      const next = String(value.hemSizeIn);
-      if (next !== hemSizeStr) setHemSizeStr(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value.hemType, value.hemSizeIn]);
 
   const clampLength = (val: number): number => {
     const n = Math.round(Number(val));
@@ -210,15 +199,22 @@ export function SizePicker({
     });
   };
 
-  const commitHem = (nextType: "none" | "open" | "closed", nextSizeRaw?: string) => {
-    const raw = nextSizeRaw ?? hemSizeStr;
-    const n = Number(raw);
+  const commitHemRow = (index: number) => {
+    const row = value.boxSides[index];
+    const draft = hemDrafts[index];
+    if (!row || !draft) return;
+    const t = draft.type;
+    const n = Number(draft.size);
     const hemSizeIn = Number.isFinite(n) ? Math.min(2, Math.max(0.25, n)) : 0.5;
-    onChange({
-      ...value,
-      hemType: nextType,
-      hemSizeIn,
+    const next = value.boxSides.map((s, i) => {
+      if (i !== index) return s;
+      return {
+        ...s,
+        hemType: t,
+        hemSizeIn: t === "none" ? undefined : hemSizeIn,
+      };
     });
+    pushSides(next);
   };
 
   const handleWidthChange = (raw: string) => {
@@ -489,59 +485,6 @@ export function SizePicker({
             </button>
           </div>
 
-          {isFlashing ? (
-            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-3">
-              <p className="text-xs font-medium text-gray-800">Hem</p>
-              <p className="mt-1 text-[11px] text-gray-500">
-                Optional. Adds a hem on the free edge (after the last fold).
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[11px] font-medium text-gray-600" htmlFor="hem-type">
-                    Hem type
-                  </label>
-                  <select
-                    id="hem-type"
-                    value={hemType}
-                    onChange={(e) => {
-                      const t = (e.target.value as "none" | "open" | "closed") ?? "none";
-                      setHemType(t);
-                      commitHem(t);
-                    }}
-                    className="mt-1 block h-10 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-[15px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
-                  >
-                    <option value="none">No hem</option>
-                    <option value="open">Open hem</option>
-                    <option value="closed">Closed hem</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-gray-600" htmlFor="hem-size">
-                    Hem size (in)
-                  </label>
-                  <input
-                    id="hem-size"
-                    type="number"
-                    inputMode="decimal"
-                    min={0.25}
-                    max={2}
-                    step={0.01}
-                    value={hemSizeStr}
-                    disabled={hemType === "none"}
-                    onChange={(e) => setHemSizeStr(e.target.value)}
-                    onBlur={() => commitHem(hemType, hemSizeStr)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    }}
-                    className={`mt-1 block h-10 w-full rounded-lg border border-gray-200 px-2.5 text-[15px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 ${
-                      hemType === "none" ? "bg-gray-50 text-gray-400" : "bg-white text-gray-800"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
-
           {value.boxSides.length === 0 ? (
             <p className="mt-3 text-[13px] text-gray-600">
               {productNoun === "flashing" ? "No sides — flat flashing." : "No sides — flat panel."}
@@ -559,6 +502,7 @@ export function SizePicker({
                       .map((s, i) => (s.parentId === side.id ? i : -1))
                       .filter((i) => i >= 0)
                       .sort((a, b) => a - b);
+                    const isLeaf = childIndices.length === 0;
                     return (
                       <div
                         className={isRoot ? undefined : "mt-4 border-l-2 border-gray-200/90 pl-3"}
@@ -718,6 +662,73 @@ export function SizePicker({
                             ) : null}
                           </div>
                         </div>
+                        {isFlashing ? (
+                          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+                            <p className="text-[11px] font-medium text-gray-700">Hem (free edge)</p>
+                            {!isLeaf ? (
+                              <p className="mt-1 text-[10px] text-gray-500">
+                                This fold continues into another fold, so it has no free edge (hem disabled).
+                              </p>
+                            ) : null}
+                            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <label className="block text-[10px] font-medium text-gray-600" htmlFor={`hem-type-${side.id}`}>
+                                  Type
+                                </label>
+                                <select
+                                  id={`hem-type-${side.id}`}
+                                  value={hemDrafts[index]?.type ?? "none"}
+                                  disabled={!isLeaf}
+                                  onChange={(e) =>
+                                    setHemDrafts((prev) => {
+                                      const copy = [...prev];
+                                      const t = (e.target.value as "none" | "open" | "closed") ?? "none";
+                                      copy[index] = { ...(copy[index] ?? { type: "none", size: "0.5" }), type: t };
+                                      return copy;
+                                    })
+                                  }
+                                  onBlur={() => commitHemRow(index)}
+                                  className={`mt-1 block h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-[13px] text-gray-800 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 ${
+                                    !isLeaf ? "opacity-60" : ""
+                                  }`}
+                                >
+                                  <option value="none">No hem</option>
+                                  <option value="open">Open hem</option>
+                                  <option value="closed">Closed hem</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-medium text-gray-600" htmlFor={`hem-size-${side.id}`}>
+                                  Size (in)
+                                </label>
+                                <input
+                                  id={`hem-size-${side.id}`}
+                                  type="number"
+                                  inputMode="decimal"
+                                  min={0.25}
+                                  max={2}
+                                  step={0.01}
+                                  disabled={!isLeaf || (hemDrafts[index]?.type ?? "none") === "none"}
+                                  value={hemDrafts[index]?.size ?? "0.5"}
+                                  onChange={(e) =>
+                                    setHemDrafts((prev) => {
+                                      const copy = [...prev];
+                                      copy[index] = { ...(copy[index] ?? { type: "none", size: "0.5" }), size: e.target.value };
+                                      return copy;
+                                    })
+                                  }
+                                  onBlur={() => commitHemRow(index)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  }}
+                                  className={`mt-1 block h-9 w-full rounded-lg border border-gray-200 px-2 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 ${
+                                    !isLeaf || (hemDrafts[index]?.type ?? "none") === "none" ? "bg-gray-100 text-gray-400" : "bg-white text-gray-800"
+                                  }`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
                         {childIndices.map((ci) => renderNode(ci, false))}
                       </div>
                     );

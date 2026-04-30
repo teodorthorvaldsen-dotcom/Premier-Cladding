@@ -109,8 +109,6 @@ export function Configurator({
     widthIn: defaultWidthIn,
     lengthIn: defaultLengthIn,
     boxSides: [],
-    hemType: "none",
-    hemSizeIn: 0.5,
   }));
   const [colorId, setColorId] = useState<ColorId>("classic-white");
   const [thicknessId, setThicknessId] = useState<ThicknessId>("4mm");
@@ -230,12 +228,6 @@ export function Configurator({
           panelTypeLabel: pricing.panelTypeLabel,
           ...(showClips && clipsPerPanel > 0 ? { clipsPerPanel, clipsNeeded } : {}),
           ...(boxTraySides.length > 0 ? { boxTraySides } : {}),
-          ...(variant === "flashing"
-            ? {
-                hemType: size.hemType ?? "none",
-                hemSizeIn: size.hemSizeIn,
-              }
-            : {}),
           ...(trayBuildSpec ? { trayBuildSpec } : {}),
           ...(previewImageDataUrl ? { previewImageDataUrl } : {}),
           ...(colorId === "custom-color-match"
@@ -509,8 +501,6 @@ export function Configurator({
                   panelWidthIn={size.widthIn}
                   panelLengthIn={size.lengthIn}
                   boxSides={size.boxSides}
-                  hemType={size.hemType}
-                  hemSizeIn={size.hemSizeIn}
                   panelColorName={color.name}
                   title="Fold & bend preview"
                   subtitle='Drag to rotate; use +, −, and 1× to zoom. Labels show the flat center and each fold.'

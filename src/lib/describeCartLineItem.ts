@@ -17,21 +17,23 @@ export function getCartTrayLines(item: CartItem): string[] {
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-    const hemLine =
-      item.productKind === "flashing" && item.hemType && item.hemType !== "none"
-        ? `Hem · ${item.hemType} · ${typeof item.hemSizeIn === "number" && Number.isFinite(item.hemSizeIn) ? `${item.hemSizeIn}"` : ""}`.trim()
-        : "";
-    return hemLine ? [...base, hemLine] : base;
+    if (item.productKind === "flashing") {
+      const hemRows = trayNorm
+        .filter((r) => r.hemType && r.hemType !== "none")
+        .map((r, idx) => {
+          const size =
+            typeof r.hemSizeIn === "number" && Number.isFinite(r.hemSizeIn) ? `${r.hemSizeIn}"` : "";
+          return `Hem · F${idx + 1} · ${r.hemType}${size ? ` · ${size}` : ""}`.trim();
+        });
+      return hemRows.length ? [...base, ...hemRows] : base;
+    }
+    return base;
   }
   if (item.trayBuildSpec?.trim()) {
     return item.trayBuildSpec
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-  }
-  if (item.productKind === "flashing" && item.hemType && item.hemType !== "none") {
-    const hem = typeof item.hemSizeIn === "number" && Number.isFinite(item.hemSizeIn) ? `${item.hemSizeIn}"` : "";
-    return [`Hem · ${item.hemType}${hem ? ` · ${hem}` : ""}`];
   }
   return [];
 }
