@@ -31,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { id: "acm-stock", label: "ACM Stock", href: "/stock-material" },
+  { id: "accessories", label: "Accessories", href: "/accessories" },
   {
     id: "drawings-consultations",
     label: "Our Services",

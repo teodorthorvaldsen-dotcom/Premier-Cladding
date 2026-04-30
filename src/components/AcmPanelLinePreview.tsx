@@ -113,7 +113,18 @@ export function AcmPanelLinePreview({
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Compute bounds.
+    const pad = 42;
+
+    ctx.clearRect(0, 0, viewportW, viewportH);
+
+    // Background.
+    ctx.fillStyle = "#f4f5f7";
+    ctx.fillRect(0, 0, viewportW, viewportH);
+
+    const cx = viewportW / 2;
+    const cy = viewportH / 2;
+
+    // Fit based on rotated bounds so long shallow profiles stay centered and visible.
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -124,28 +135,40 @@ export function AcmPanelLinePreview({
       maxX = Math.max(maxX, p.x);
       maxY = Math.max(maxY, p.y);
     }
-    const spanX = Math.max(0.01, maxX - minX);
-    const spanY = Math.max(0.01, maxY - minY);
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
 
-    const pad = 42;
-    const scaleFit = Math.min((viewportW - pad * 2) / spanX, (viewportH - pad * 2) / spanY);
+    const cosR = Math.cos(rot);
+    const sinR = Math.sin(rot);
+    const rotPts = points.map((p) => {
+      const x0 = p.x - midX;
+      const y0 = p.y - midY;
+      return { x: x0 * cosR - y0 * sinR, y: x0 * sinR + y0 * cosR };
+    });
+
+    let rMinX = Infinity,
+      rMinY = Infinity,
+      rMaxX = -Infinity,
+      rMaxY = -Infinity;
+    for (const p of rotPts) {
+      rMinX = Math.min(rMinX, p.x);
+      rMinY = Math.min(rMinY, p.y);
+      rMaxX = Math.max(rMaxX, p.x);
+      rMaxY = Math.max(rMaxY, p.y);
+    }
+    const rSpanX = Math.max(0.01, rMaxX - rMinX);
+    const rSpanY = Math.max(0.01, rMaxY - rMinY);
+
+    const scaleFit = Math.min((viewportW - pad * 2) / rSpanX, (viewportH - pad * 2) / rSpanY);
     const k = scaleFit * clamp(zoomMul, 0.42, 3.1);
 
-    ctx.clearRect(0, 0, viewportW, viewportH);
-
-    // Background.
-    ctx.fillStyle = "#f4f5f7";
-    ctx.fillRect(0, 0, viewportW, viewportH);
-
-    // Axes / sheet stroke.
-    const cx = viewportW / 2;
-    const cy = viewportH / 2;
-
     const tx = (p: Pt): Pt => {
-      const x0 = (p.x - (minX + maxX) / 2) * k;
-      const y0 = (p.y - (minY + maxY) / 2) * k;
-      const x1 = x0 * Math.cos(rot) - y0 * Math.sin(rot);
-      const y1 = x0 * Math.sin(rot) + y0 * Math.cos(rot);
+      const x0 = p.x - midX;
+      const y0 = p.y - midY;
+      const xr = x0 * cosR - y0 * sinR;
+      const yr = x0 * sinR + y0 * cosR;
+      const x1 = (xr - (rMinX + rMaxX) / 2) * k;
+      const y1 = (yr - (rMinY + rMaxY) / 2) * k;
       return { x: cx + x1, y: cy - y1 };
     };
 
