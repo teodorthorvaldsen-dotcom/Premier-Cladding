@@ -253,8 +253,9 @@ export function AcmPanelLinePreview({
       const bx = b.x + px * off;
       const by = b.y + py * off;
 
-      ctx.strokeStyle = "rgba(17,24,39,0.65)";
-      ctx.lineWidth = 1.5;
+      // Light CAD-style dimension lines (no filled boxes).
+      ctx.strokeStyle = "rgba(55,65,81,0.55)";
+      ctx.lineWidth = 1.25;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(ax, ay);
@@ -262,16 +263,16 @@ export function AcmPanelLinePreview({
       ctx.lineTo(bx, by);
       ctx.stroke();
 
-      ctx.strokeStyle = "rgba(17,24,39,0.9)";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(55,65,81,0.75)";
+      ctx.lineWidth = 1.25;
       ctx.beginPath();
       ctx.moveTo(ax, ay);
       ctx.lineTo(bx, by);
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(17,24,39,0.9)";
-      drawArrow(ax, ay, ux, uy, 7 * textZoom);
-      drawArrow(bx, by, -ux, -uy, 7 * textZoom);
+      ctx.fillStyle = "rgba(55,65,81,0.85)";
+      drawArrow(ax, ay, ux, uy, 5.5 * textZoom);
+      drawArrow(bx, by, -ux, -uy, 5.5 * textZoom);
 
       ctx.save();
       ctx.translate((ax + bx) / 2, (ay + by) / 2);
@@ -279,17 +280,18 @@ export function AcmPanelLinePreview({
       const flip = Math.cos(ang) < 0;
       ctx.rotate(flip ? ang + Math.PI : ang);
       ctx.font = `700 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-      const m = ctx.measureText(label);
-      const w = m.width + 10 * textZoom;
-      ctx.fillStyle = "rgba(244,245,247,0.92)";
-      ctx.fillRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
-      ctx.strokeStyle = "rgba(0,0,0,0.12)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
-      ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, 0, 0);
+      // Small halo so text stays readable without blocking geometry.
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.lineWidth = 4.5;
+      ctx.strokeStyle = "rgba(244,245,247,0.95)";
+      ctx.strokeText(label, 0, -8 * textZoom);
+      ctx.fillStyle = "rgba(17,24,39,0.9)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, 0, -8 * textZoom);
       ctx.restore();
     };
 
@@ -297,17 +299,15 @@ export function AcmPanelLinePreview({
       const t = `${Math.round(deg)}°`;
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.font = `700 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-      const m = ctx.measureText(t);
-      const w = m.width + 10 * textZoom;
-      ctx.fillStyle = "rgba(244,245,247,0.92)";
-      ctx.fillRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
-      ctx.strokeStyle = "rgba(0,0,0,0.12)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -10 * textZoom, w, 20 * textZoom);
-      ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      ctx.font = `700 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.lineWidth = 4.5;
+      ctx.strokeStyle = "rgba(244,245,247,0.95)";
+      ctx.strokeText(t, 0, 0);
+      ctx.fillStyle = "rgba(17,24,39,0.9)";
       ctx.fillText(t, 0, 0);
       ctx.restore();
     };
@@ -340,18 +340,16 @@ export function AcmPanelLinePreview({
       ctx.moveTo(mid.x, mid.y);
       ctx.lineTo(labelX - 8, labelY + 8);
       ctx.stroke();
-      ctx.fillStyle = "rgba(244,245,247,0.92)";
-      ctx.strokeStyle = "rgba(0,0,0,0.12)";
-      ctx.lineWidth = 1;
       ctx.font = `800 ${Math.round(12 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
       const t = "COLOR";
-      const m = ctx.measureText(t);
-      const w = m.width + 12 * textZoom;
-      ctx.fillRect(labelX - w / 2, labelY - 11 * textZoom, w, 22 * textZoom);
-      ctx.strokeRect(labelX - w / 2, labelY - 11 * textZoom, w, 22 * textZoom);
-      ctx.fillStyle = "#111827";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(244,245,247,0.95)";
+      ctx.strokeText(t, labelX, labelY);
+      ctx.fillStyle = "rgba(17,24,39,0.9)";
       ctx.fillText(t, labelX, labelY);
     }
 
@@ -448,11 +446,12 @@ export function AcmPanelLinePreview({
       ctx.fill();
     }
 
-    // Labels.
-    ctx.font = `700 ${Math.round(11 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    // Fold labels (minimal, like a detail drawing).
+    ctx.font = `700 ${Math.round(10 * textZoom)}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const l of labels) {
+      if (l.text === "Flat center") continue;
       const q = tx(l.at);
       ctx.save();
       ctx.translate(q.x, q.y);
@@ -460,14 +459,12 @@ export function AcmPanelLinePreview({
       const a = rot + l.angleRad;
       const flip = Math.cos(a) < 0;
       ctx.rotate(flip ? a + Math.PI : a);
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      const m = ctx.measureText(l.text);
-      const w = m.width + 10 * textZoom;
-      ctx.fillRect(-w / 2, -9 * textZoom, w, 18 * textZoom);
-      ctx.strokeStyle = "rgba(0,0,0,0.12)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -9 * textZoom, w, 18 * textZoom);
-      ctx.fillStyle = "#111827";
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(244,245,247,0.95)";
+      ctx.strokeText(l.text, 0, 0);
+      ctx.fillStyle = "rgba(17,24,39,0.9)";
       ctx.fillText(l.text, 0, 0);
       ctx.restore();
     }
