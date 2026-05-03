@@ -30,7 +30,7 @@ export function getCartTrayLines(item: CartItem): string[] {
         .map((r, idx) => {
           const size =
             typeof r.hemSizeIn === "number" && Number.isFinite(r.hemSizeIn) ? `${r.hemSizeIn}"` : "";
-          return `Hem · F${idx + 1} · ${hemTypeLabel(r.hemType)}${size ? ` · ${size}` : ""}`.trim();
+          return `Hem · F${idx + 1} · ${hemTypeLabel(r.hemType ?? "")}${size ? ` · ${size}` : ""}`.trim();
         });
       return hemRows.length ? [...base, ...hemRows] : base;
     }
