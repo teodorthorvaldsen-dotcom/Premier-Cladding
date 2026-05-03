@@ -23,6 +23,138 @@ function midpoint(a: Pt, b: Pt): Pt {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
+function dist(a: Pt, b: Pt): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function vlen(p: Pt): number {
+  return Math.hypot(p.x, p.y);
+}
+
+function vunit(p: Pt): Pt {
+  const L = vlen(p) || 1;
+  return { x: p.x / L, y: p.y / L };
+}
+
+function cross2d(a: Pt, b: Pt): number {
+  return a.x * b.y - a.y * b.x;
+}
+
+/** Outward sheet-normal for the hem bend (cross-section “inside” the fold). */
+function hemBendNormal(S: Pt, E: Pt, prevPt: Pt): Pt {
+  const tu = vunit({ x: E.x - S.x, y: E.y - S.y });
+  let n: Pt = { x: -tu.y, y: tu.x };
+  if (cross2d(tu, vunit({ x: S.x - prevPt.x, y: S.y - prevPt.y })) < 0) {
+    n = { x: tu.y, y: -tu.x };
+  }
+  return n;
+}
+
+function arcChordSweep(S: Pt, E: Pt, C: Pt, R: number, n: Pt, M: Pt): { a0: number; sweep: number } {
+  const aS = Math.atan2(S.y - C.y, S.x - C.x);
+  const aE = Math.atan2(E.y - C.y, E.x - C.x);
+  let sweep = aE - aS;
+  while (sweep <= -Math.PI) sweep += 2 * Math.PI;
+  while (sweep > Math.PI) sweep -= 2 * Math.PI;
+  const midA = aS + sweep / 2;
+  const midP = { x: C.x + R * Math.cos(midA), y: C.y + R * Math.sin(midA) };
+  const vm = { x: midP.x - M.x, y: midP.y - M.y };
+  if (vm.x * n.x + vm.y * n.y < 0) {
+    sweep = sweep > 0 ? sweep - 2 * Math.PI : sweep + 2 * Math.PI;
+  }
+  return { a0: aS, sweep };
+}
+
+function sampleArc(C: Pt, R: number, a0: number, sweep: number, steps: number): Pt[] {
+  const out: Pt[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const a = a0 + sweep * t;
+    out.push({ x: C.x + R * Math.cos(a), y: C.y + R * Math.sin(a) });
+  }
+  return out;
+}
+
+/** Tight 180° bend (flat hem): semicircle on chord S–E + inner semicircle offset. */
+function flatHemStrokes(S: Pt, E: Pt, n: Pt): Pt[][] {
+  const L = dist(S, E);
+  const half = L / 2;
+  const R = half;
+  const M = midpoint(S, E);
+  const C = M;
+  const g = Math.max(L * 0.045, 0.015);
+  const outerOs = arcChordSweep(S, E, C, R, n, M);
+  const outer = sampleArc(C, R, outerOs.a0, outerOs.sweep, 26);
+  const S2 = { x: S.x + n.x * g, y: S.y + n.y * g };
+  const E2 = { x: E.x + n.x * g, y: E.y + n.y * g };
+  const M2 = midpoint(S2, E2);
+  const R2 = Math.max(R - g, L * 0.08);
+  const d2 = Math.sqrt(Math.max(0, R2 * R2 - half * half));
+  const C2 = { x: M2.x + n.x * d2, y: M2.y + n.y * d2 };
+  const innerOs = arcChordSweep(S2, E2, C2, R2, n, M2);
+  const inner = sampleArc(C2, R2, innerOs.a0, innerOs.sweep, 22);
+  return [outer, inner];
+}
+
+/** Gentler bend + visible gap (open hem). */
+function openHemStrokes(S: Pt, E: Pt, n: Pt): Pt[][] {
+  const L = dist(S, E);
+  const M = midpoint(S, E);
+  const half = L / 2;
+  const R = Math.max(L * 0.78, half + 1e-6);
+  const dCent = Math.sqrt(Math.max(0, R * R - half * half));
+  const C = { x: M.x + n.x * dCent, y: M.y + n.y * dCent };
+  const g = Math.max(L * 0.11, 0.02);
+  const { a0, sweep } = arcChordSweep(S, E, C, R, n, M);
+  const outer = sampleArc(C, R, a0, sweep, 28);
+  const S2 = { x: S.x + n.x * g, y: S.y + n.y * g };
+  const E2 = { x: E.x + n.x * g, y: E.y + n.y * g };
+  const M2 = midpoint(S2, E2);
+  const R2 = Math.max(R - g, half * 0.52);
+  const d2 = Math.sqrt(Math.max(0, R2 * R2 - half * half));
+  const C2 = { x: M2.x + n.x * d2, y: M2.y + n.y * d2 };
+  const innerSweep = arcChordSweep(S2, E2, C2, R2, n, M2);
+  const inner = sampleArc(C2, R2, innerSweep.a0, innerSweep.sweep, 26);
+  return [outer, inner];
+}
+
+function cubicSample(p0: Pt, p1: Pt, p2: Pt, p3: Pt, steps: number): Pt[] {
+  const out: Pt[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const u = 1 - t;
+    const x = u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
+    const y = u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
+    out.push({ x, y });
+  }
+  return out;
+}
+
+/** Bulb + tip landing near hem root (teardrop hem). */
+function teardropHemStroke(S: Pt, E: Pt, n: Pt, tu: Pt): Pt[] {
+  const L = dist(S, E);
+  const tip = { x: S.x + tu.x * L * 0.22, y: S.y + tu.y * L * 0.22 };
+  const cp1 = { x: S.x + n.x * L * 1.08 + tu.x * L * 0.42, y: S.y + n.y * L * 1.08 + tu.y * L * 0.42 };
+  const cp2 = { x: tip.x + n.x * L * 0.52 + tu.x * L * 0.48, y: tip.y + n.y * L * 0.52 + tu.y * L * 0.48 };
+  return cubicSample(S, cp1, cp2, tip, 30);
+}
+
+function hemPreviewStrokesWorld(S: Pt, E: Pt, prevPt: Pt, kind: "closed" | "open" | "teardrop"): Pt[][] {
+  const tu = vunit({ x: E.x - S.x, y: E.y - S.y });
+  const n = hemBendNormal(S, E, prevPt);
+  if (kind === "closed") return flatHemStrokes(S, E, n);
+  if (kind === "open") return openHemStrokes(S, E, n);
+  return [teardropHemStroke(S, E, n, tu)];
+}
+
+function flattenStrokes(strokes: Pt[][]): Pt[] {
+  const out: Pt[] = [];
+  for (const s of strokes) {
+    for (const p of s) out.push(p);
+  }
+  return out;
+}
+
 export interface AcmPanelLinePreviewProps {
   /** Flat center width (in). */
   panelWidthIn: number;
@@ -55,7 +187,10 @@ function buildProfilePolyline(
   labels: { text: string; at: Pt; angleRad: number }[];
   segmentLensIn: number[];
   vertexAnglesDeg: number[];
-  hemRender?: { type: "open" | "closed"; startIndex: number; endIndex: number };
+  hemRender?: { type: "open" | "closed" | "teardrop"; startIndex: number; endIndex: number };
+  /** Hem outline samples (world inches) for fit bounds + drawing. */
+  hemStrokesWorld?: Pt[][];
+  hemBoundsPts?: Pt[];
 } {
   const width = Math.max(0.01, Number(panelWidthIn) || 0.01);
   const n = normalizeBoxTraySidesForFlashing(sides);
@@ -90,17 +225,20 @@ function buildProfilePolyline(
   }
 
   // Hem is stored per-fold; only leaf folds have a free edge. Flashing is linear, so the last row is the leaf.
-  let hemRender: { type: "open" | "closed"; startIndex: number; endIndex: number } | undefined;
+  let hemRender: { type: "open" | "closed" | "teardrop"; startIndex: number; endIndex: number } | undefined;
+  let hemStrokesWorld: Pt[][] | undefined;
+  let hemBoundsPts: Pt[] | undefined;
   if (n.length > 0) {
     const last = n[n.length - 1]!;
     const hemType = last.hemType;
     const hemSize =
       typeof last.hemSizeIn === "number" && Number.isFinite(last.hemSizeIn) ? last.hemSizeIn : 0.5;
-    if (hemType === "open" || hemType === "closed") {
+    if (hemType === "open" || hemType === "closed" || hemType === "teardrop") {
       const a = 180;
       dir += (anchorRight ? 1 : -1) * degToRad(a);
       const p0 = pts[pts.length - 1]!;
       const p1 = { x: p0.x + Math.cos(dir) * hemSize, y: p0.y + Math.sin(dir) * hemSize };
+      const prevForHem = pts.length >= 2 ? pts[pts.length - 2]! : baseStart;
       pts.push(p1);
       // Place the hem label near the hem start and rotate it perpendicular,
       // so it doesn't cover the hem end detail.
@@ -108,18 +246,30 @@ function buildProfilePolyline(
         x: p0.x + (p1.x - p0.x) * 0.35,
         y: p0.y + (p1.y - p0.y) * 0.35,
       };
+      const hemLabel =
+        hemType === "closed" ? "Flat hem" : hemType === "open" ? "Open hem" : "Teardrop hem";
       labels.push({
-        text: hemType === "closed" ? "Hem (closed)" : "Hem (open)",
+        text: hemLabel,
         at: hemLabelAt,
         angleRad: dir + Math.PI / 2,
       });
       segmentLensIn.push(hemSize);
       vertexAnglesDeg.push(a);
       hemRender = { type: hemType, startIndex: pts.length - 2, endIndex: pts.length - 1 };
+      hemStrokesWorld = hemPreviewStrokesWorld(p0, p1, prevForHem, hemType);
+      hemBoundsPts = flattenStrokes(hemStrokesWorld);
     }
   }
 
-  return { points: pts, labels, segmentLensIn, vertexAnglesDeg, ...(hemRender ? { hemRender } : {}) };
+  return {
+    points: pts,
+    labels,
+    segmentLensIn,
+    vertexAnglesDeg,
+    ...(hemRender ? { hemRender } : {}),
+    ...(hemStrokesWorld ? { hemStrokesWorld } : {}),
+    ...(hemBoundsPts ? { hemBoundsPts } : {}),
+  };
 }
 
 export function AcmPanelLinePreview({
@@ -144,10 +294,8 @@ export function AcmPanelLinePreview({
   /** Fixed orthographic orientation (shop-detail style). */
   const rot = 0;
 
-  const { points, labels, segmentLensIn, vertexAnglesDeg, hemRender } = useMemo(
-    () => buildProfilePolyline(panelWidthIn, boxSides),
-    [panelWidthIn, boxSides]
-  );
+  const { points, labels, segmentLensIn, vertexAnglesDeg, hemRender, hemStrokesWorld, hemBoundsPts } =
+    useMemo(() => buildProfilePolyline(panelWidthIn, boxSides), [panelWidthIn, boxSides]);
 
   useEffect(() => {
     const canvas = outCanvasRef.current;
@@ -181,7 +329,8 @@ export function AcmPanelLinePreview({
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
-    for (const p of points) {
+    const boundsPts = hemBoundsPts ?? points;
+    for (const p of boundsPts) {
       minX = Math.min(minX, p.x);
       minY = Math.min(minY, p.y);
       maxX = Math.max(maxX, p.x);
@@ -359,24 +508,16 @@ export function AcmPanelLinePreview({
       ctx.fillText(t, labelX, labelY);
     }
 
-    // Hem rendering: draw like open / flattened hem rather than a single segment.
-    if (hemRender) {
+    // Hem: replace straight chord with flat / open / teardrop profile (world-space arcs → screen).
+    if (hemRender && hemStrokesWorld && hemStrokesWorld.length > 0) {
       const s = screenPts[hemRender.startIndex];
       const e = screenPts[hemRender.endIndex];
       if (s && e) {
-        const dx = e.x - s.x;
-        const dy = e.y - s.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const ux = dx / len;
-        const uy = dy / len;
-        const nx = -uy;
-        const ny = ux;
         const bg = "#f4f5f7";
-        const gap = (hemRender.type === "open" ? 8 : 3) * textZoom;
-
-        // Erase the simple hem segment we drew as part of the polyline.
         ctx.strokeStyle = bg;
-        ctx.lineWidth = 8 * Math.min(1.25, textZoom);
+        ctx.lineWidth = 10 * Math.min(1.25, textZoom);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         ctx.beginPath();
         ctx.moveTo(s.x, s.y);
         ctx.lineTo(e.x, e.y);
@@ -384,33 +525,15 @@ export function AcmPanelLinePreview({
 
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = Math.max(3, 4 * Math.min(1.15, textZoom));
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        if (hemRender.type === "open") {
-          // Open hem: show a loop with a visible gap.
+        for (const stroke of hemStrokesWorld) {
+          if (stroke.length === 0) continue;
           ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(s.x + nx * gap, s.y + ny * gap);
-          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
-          ctx.lineTo(e.x, e.y);
-          ctx.stroke();
-        } else {
-          // Flattened hem: show two layers pressed together (double line).
-          ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(e.x, e.y);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(s.x + nx * gap, s.y + ny * gap);
-          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
-          ctx.stroke();
-
-          // Small closure at the tip.
-          ctx.beginPath();
-          ctx.moveTo(e.x, e.y);
-          ctx.lineTo(e.x + nx * gap, e.y + ny * gap);
+          const pFirst = tx(stroke[0]!);
+          ctx.moveTo(pFirst.x, pFirst.y);
+          for (let i = 1; i < stroke.length; i++) {
+            const q = tx(stroke[i]!);
+            ctx.lineTo(q.x, q.y);
+          }
           ctx.stroke();
         }
       }
@@ -480,7 +603,22 @@ export function AcmPanelLinePreview({
     ctx.fillStyle = "rgba(17,24,39,0.82)";
     ctx.textAlign = "center";
     ctx.fillText(`${panelWidthIn}" × ${panelLengthIn}" · ${panelColorName}`, rectW / 2, rectH - 18);
-  }, [outCanvasRef, viewportH, viewportW, points, labels, zoomMul, panelWidthIn, panelLengthIn, panelColorName, segmentLensIn, vertexAnglesDeg, hemRender]);
+  }, [
+    outCanvasRef,
+    viewportH,
+    viewportW,
+    points,
+    labels,
+    zoomMul,
+    panelWidthIn,
+    panelLengthIn,
+    panelColorName,
+    segmentLensIn,
+    vertexAnglesDeg,
+    hemRender,
+    hemStrokesWorld,
+    hemBoundsPts,
+  ]);
 
   return (
     <section

@@ -2,6 +2,13 @@ import { allWidths, colors, finishes, thicknesses } from "@/data/acm";
 import { formatBoxTrayReproductionSpec, normalizeBoxTraySides } from "@/lib/boxTray";
 import type { CartItem } from "@/types/cart";
 
+function hemTypeLabel(t: string): string {
+  if (t === "closed") return "flat";
+  if (t === "open") return "open";
+  if (t === "teardrop") return "teardrop";
+  return t;
+}
+
 export function getCartSizeLabel(item: CartItem): string {
   const widthLabel = item.standardId
     ? allWidths.find((w) => w.id === item.standardId)?.label ?? `${item.widthIn}"`
@@ -23,7 +30,7 @@ export function getCartTrayLines(item: CartItem): string[] {
         .map((r, idx) => {
           const size =
             typeof r.hemSizeIn === "number" && Number.isFinite(r.hemSizeIn) ? `${r.hemSizeIn}"` : "";
-          return `Hem · F${idx + 1} · ${r.hemType}${size ? ` · ${size}` : ""}`.trim();
+          return `Hem · F${idx + 1} · ${hemTypeLabel(r.hemType)}${size ? ` · ${size}` : ""}`.trim();
         });
       return hemRows.length ? [...base, ...hemRows] : base;
     }

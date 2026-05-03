@@ -41,8 +41,8 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function normalizeHemType(raw: unknown): "none" | "open" | "closed" | undefined {
-  if (raw === "open" || raw === "closed" || raw === "none") return raw;
+function normalizeHemType(raw: unknown): "none" | "open" | "closed" | "teardrop" | undefined {
+  if (raw === "open" || raw === "closed" || raw === "teardrop" || raw === "none") return raw;
   return undefined;
 }
 

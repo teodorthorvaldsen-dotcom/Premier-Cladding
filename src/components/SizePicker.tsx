@@ -44,7 +44,7 @@ interface SideDraft {
 }
 
 interface HemDraft {
-  type: "none" | "open" | "closed";
+  type: "none" | "open" | "closed" | "teardrop";
   size: string;
 }
 
@@ -159,7 +159,10 @@ export function SizePicker({
   );
   const [hemDrafts, setHemDrafts] = useState<HemDraft[]>(() =>
     value.boxSides.map((s) => ({
-      type: s.hemType === "open" || s.hemType === "closed" ? s.hemType : "none",
+      type:
+        s.hemType === "open" || s.hemType === "closed" || s.hemType === "teardrop"
+          ? s.hemType
+          : "none",
       size:
         typeof s.hemSizeIn === "number" && Number.isFinite(s.hemSizeIn) && s.hemSizeIn > 0
           ? String(s.hemSizeIn)
@@ -176,7 +179,10 @@ export function SizePicker({
     );
     setHemDrafts(
       value.boxSides.map((s) => ({
-        type: s.hemType === "open" || s.hemType === "closed" ? s.hemType : "none",
+        type:
+        s.hemType === "open" || s.hemType === "closed" || s.hemType === "teardrop"
+          ? s.hemType
+          : "none",
         size:
           typeof s.hemSizeIn === "number" && Number.isFinite(s.hemSizeIn) && s.hemSizeIn > 0
             ? String(s.hemSizeIn)
@@ -682,7 +688,7 @@ export function SizePicker({
                                   onChange={(e) =>
                                     setHemDrafts((prev) => {
                                       const copy = [...prev];
-                                      const t = (e.target.value as "none" | "open" | "closed") ?? "none";
+                                      const t = (e.target.value as "none" | "open" | "closed" | "teardrop") ?? "none";
                                       copy[index] = { ...(copy[index] ?? { type: "none", size: "0.5" }), type: t };
                                       return copy;
                                     })
@@ -693,8 +699,9 @@ export function SizePicker({
                                   }`}
                                 >
                                   <option value="none">No hem</option>
+                                  <option value="closed">Flat hem</option>
                                   <option value="open">Open hem</option>
-                                  <option value="closed">Closed hem</option>
+                                  <option value="teardrop">Teardrop hem</option>
                                 </select>
                               </div>
                               <div>
